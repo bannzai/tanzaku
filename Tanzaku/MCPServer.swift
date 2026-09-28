@@ -30,6 +30,8 @@ struct MCPServerEnvironment {
   var requiresDeletionConfirmation: @MainActor () -> Bool
   /// 削除の確認を出し、ユーザーが認証して許可した時だけ `true` を返す。
   var confirmSnippetDeletion: @MainActor (SnippetDeletionRequest) async -> Bool
+  /// クライアント (`MCPClient.id`) が JSON-RPC の `id` の依頼を取り消した。確認待ちの削除の依頼なら拒否する。
+  var cancelClientRequest: @MainActor (_ clientID: UUID, _ rpcRequestID: String) -> Void
   /// 今の日時。
   var now: @MainActor () -> Date
 }
@@ -100,13 +102,17 @@ func handleMCPHTTPRequest(request: MCPHTTPRequest, environment: MCPServerEnviron
   }
 
   guard let id else {
-    // クライアントからの通知 (`notifications/initialized` など) に応じてすることは無い。
+    // 2026-07-28 より前の版のクライアントは、依頼の取り消しを通知で送る。確認待ちの削除の依頼を取り消されたら、ユーザーが後から許可しても消さないよう拒否する。
+    // ほかの通知 (`notifications/initialized` など) に応じてすることは無い。
+    if method == "notifications/cancelled", let requestID = params["requestId"] {
+      environment.cancelClientRequest(client.id, mcpRPCRequestIDText(id: requestID))
+    }
     return MCPHTTPResponse(statusCode: 202, headers: [:], body: Data())
   }
   do {
     return mcpJSONRPCResultResponse(
       id: id,
-      result: try await mcpResult(method: method, params: params, client: client, environment: environment)
+      result: try await mcpResult(method: method, params: params, rpcRequestID: mcpRPCRequestIDText(id: id), client: client, environment: environment)
     )
   } catch let error as MCPProtocolError {
     // 2026-07-28 の版は、知らないメソッドを 404 で返す決まり (Streamable HTTP「Protocol Version Header」)。
@@ -172,7 +178,7 @@ func decodedMCPHeaderValue(headerValue: String) -> String? {
 }
 
 /// JSON-RPC のメソッドを実行し、`result` を返す。
-func mcpResult(method: String, params: [String: Any], client: MCPClient, environment: MCPServerEnvironment) async throws -> [String: Any] {
+func mcpResult(method: String, params: [String: Any], rpcRequestID: String, client: MCPClient, environment: MCPServerEnvironment) async throws -> [String: Any] {
   // serverInfo の version は表示とログのためだけに使われ ( https://modelcontextprotocol.io/specification/2026-07-28/server/discover )、
   // Info.plist にバージョンが無いのは生成の設定を誤った時だけのため、その時は版が不明なことを示す "0" にする。
   let serverInfo: [String: Any] = ["name": mcpServerName, "version": Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "0"]
@@ -202,7 +208,7 @@ func mcpResult(method: String, params: [String: Any], client: MCPClient, environ
     guard let name = params["name"] as? String else {
       throw MCPProtocolError(code: -32602, message: "Missing tool name")
     }
-    return try await callMCPTool(name: name, arguments: params["arguments"] as? [String: Any] ?? [:], client: client, environment: environment)
+    return try await callMCPTool(name: name, arguments: params["arguments"] as? [String: Any] ?? [:], rpcRequestID: rpcRequestID, client: client, environment: environment)
   default:
     throw MCPProtocolError(code: -32601, message: "Method not found: \(method)")
   }
@@ -211,6 +217,19 @@ func mcpResult(method: String, params: [String: Any], client: MCPClient, environ
 /// エージェントに渡すサーバーの使い方。
 let mcpServerInstructions =
   "Tanzaku stores the user's snippets (reusable text, commands, and prompts). Search before creating to avoid duplicates. Deleting asks the user to confirm with Touch ID, so explain the reason clearly."
+
+/// JSON-RPC の `id` (文字列か数) を、依頼の照合に使う文字列にする。`id` のリクエストと `notifications/cancelled` の `requestId` で同じ変換を使う。
+/// 文字列の `"1"` と数の `1` は別の `id` のため、種類を前に付けて区別する。
+func mcpRPCRequestIDText(id: Any) -> String {
+  switch id {
+  case let text as String:
+    "string:\(text)"
+  case let number as NSNumber:
+    "number:\(number.stringValue)"
+  default:
+    "other:\(id)"
+  }
+}
 
 /// JSON-RPC の結果のレスポンス。
 func mcpJSONRPCResultResponse(id: Any, result: [String: Any]) -> MCPHTTPResponse {

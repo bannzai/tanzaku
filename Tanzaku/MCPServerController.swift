@@ -106,6 +106,9 @@ final class MCPServerController {
       snippetsDidChange: { [weak self] in self?.requestSnippetEmbeddingRefresh() },
       requiresDeletionConfirmation: { [weak self] in self?.requiresDeletionConfirmation ?? true },
       confirmSnippetDeletion: { [weak self] request in await self?.confirmSnippetDeletion(request: request) ?? false },
+      cancelClientRequest: { [weak self] clientID, rpcRequestID in
+        self?.cancelDeletion(clientID: clientID, rpcRequestID: rpcRequestID)
+      },
       now: { Date.now }
     )
   }
@@ -237,10 +240,27 @@ final class MCPServerController {
   }
 
   /// 削除の確認を出し、ユーザーが選ぶまで待つ。確認を待つ依頼が複数あれば、届いた順に 1 件ずつ出す。
+  ///
+  /// クライアントが接続を閉じて依頼を取り消した (処理のタスクが取り消された) 時は、確認の画面から外して拒否する。
   func confirmSnippetDeletion(request: SnippetDeletionRequest) async -> Bool {
-    await withCheckedContinuation { continuation in
-      pendingDeletions.append(PendingSnippetDeletion(request: request, continuation: continuation))
-      showDeletionConfirmationPanel()
+    let requestID = request.id
+    return await withTaskCancellationHandler {
+      await withCheckedContinuation { continuation in
+        pendingDeletions.append(PendingSnippetDeletion(request: request, continuation: continuation))
+        showDeletionConfirmationPanel()
+      }
+    } onCancel: {
+      // 取り消しはほかのスレッドから届くため、確認を待つ依頼を触るメインアクターへ移ってから拒否する。
+      Task { @MainActor [weak self] in
+        self?.resolveDeletion(requestID: requestID, isApproved: false)
+      }
+    }
+  }
+
+  /// クライアントが `notifications/cancelled` で取り消した依頼が確認待ちの削除なら、確認の画面から外して拒否する。
+  func cancelDeletion(clientID: UUID, rpcRequestID: String) {
+    for pendingDeletion in pendingDeletions where pendingDeletion.request.clientID == clientID && pendingDeletion.request.rpcRequestID == rpcRequestID {
+      resolveDeletion(requestID: pendingDeletion.request.id, isApproved: false)
     }
   }
 

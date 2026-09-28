@@ -11,6 +11,8 @@ struct SnippetDeletionRequest: Identifiable {
   var id = UUID()
   /// 依頼元のクライアントの `MCPClient.id`。接続を取り消した時に、そのクライアントの確認待ちの依頼を拒否するために使う。
   var clientID: UUID
+  /// 依頼の JSON-RPC の `id` (`mcpRPCRequestIDText(id:)`)。クライアントが `notifications/cancelled` で依頼を取り消した時に、確認待ちの依頼を拒否するために使う。
+  var rpcRequestID: String
   /// 依頼元のクライアント名。
   var clientName: String
   /// エージェントが書いた削除の理由。
@@ -129,9 +131,9 @@ let mcpToolDefinitions: [[String: Any]] = [
 ///
 /// 知らないツール名は JSON-RPC のエラー (`MCPProtocolError`) にし、引数の誤り・見つからないスニペット・保存前の検査の失敗はツールの結果 (`isError: true`) にする。
 /// 失敗したツールの変更は取り消す。残すと同じコンテキストの次の保存 (最後のアクセスの記録など) で、失敗した操作まで保存されるため。
-func callMCPTool(name: String, arguments: [String: Any], client: MCPClient, environment: MCPServerEnvironment) async throws -> [String: Any] {
+func callMCPTool(name: String, arguments: [String: Any], rpcRequestID: String, client: MCPClient, environment: MCPServerEnvironment) async throws -> [String: Any] {
   do {
-    return try await mcpToolResult(name: name, arguments: arguments, client: client, environment: environment)
+    return try await mcpToolResult(name: name, arguments: arguments, rpcRequestID: rpcRequestID, client: client, environment: environment)
   } catch {
     environment.modelContext.rollback()
     throw error
@@ -139,7 +141,7 @@ func callMCPTool(name: String, arguments: [String: Any], client: MCPClient, envi
 }
 
 /// ツールを実行した `tools/call` の結果。ツールのエラーにする失敗は結果にし、それ以外は投げる。
-private func mcpToolResult(name: String, arguments: [String: Any], client: MCPClient, environment: MCPServerEnvironment) async throws -> [String: Any] {
+private func mcpToolResult(name: String, arguments: [String: Any], rpcRequestID: String, client: MCPClient, environment: MCPServerEnvironment) async throws -> [String: Any] {
   do {
     let structuredContent: [String: Any]
     switch name {
@@ -152,7 +154,7 @@ private func mcpToolResult(name: String, arguments: [String: Any], client: MCPCl
     case "update_snippet":
       structuredContent = ["snippet": mcpSnippetJSONObject(snippet: try updateSnippetTool(arguments: arguments, client: client, environment: environment))]
     case "delete_snippet":
-      structuredContent = try await deleteSnippetTool(arguments: arguments, client: client, environment: environment)
+      structuredContent = try await deleteSnippetTool(arguments: arguments, rpcRequestID: rpcRequestID, client: client, environment: environment)
     default:
       throw MCPProtocolError(code: -32602, message: "Unknown tool: \(name)")
     }
@@ -341,7 +343,7 @@ func updateSnippetTool(arguments: [String: Any], client: MCPClient, environment:
 /// 確認を待つ間に同じスニペットが消えていることがあるため、許可の後にスニペットを読み直す。
 /// 確認を待つ間にスニペットが更新されていたら、ユーザーが確かめた内容と違うものを消さないよう、消さずにツールのエラーを返す。
 /// 確認を待つ間に依頼元のクライアントの接続が取り消されていたら、取り消したクライアントの依頼を実行しないよう、消さずにツールのエラーを返す。
-func deleteSnippetTool(arguments: [String: Any], client: MCPClient, environment: MCPServerEnvironment) async throws -> [String: Any] {
+func deleteSnippetTool(arguments: [String: Any], rpcRequestID: String, client: MCPClient, environment: MCPServerEnvironment) async throws -> [String: Any] {
   let snippet = try fetchSnippetArgument(arguments: arguments, modelContext: environment.modelContext)
   let reason = try mcpRequiredStringArgument(arguments: arguments, name: "reason")
   let confirmedUpdatedAt = snippet.updatedAt
@@ -349,7 +351,7 @@ func deleteSnippetTool(arguments: [String: Any], client: MCPClient, environment:
   let clientID = client.id
   if environment.requiresDeletionConfirmation() {
     let isApproved = await environment.confirmSnippetDeletion(
-      SnippetDeletionRequest(clientID: clientID, clientName: client.name, reason: reason, snippet: snippet, receivedAt: environment.now())
+      SnippetDeletionRequest(clientID: clientID, rpcRequestID: rpcRequestID, clientName: client.name, reason: reason, snippet: snippet, receivedAt: environment.now())
     )
     guard isApproved else {
       throw MCPToolError(description: "The user did not approve deleting the snippet. It was not deleted.")

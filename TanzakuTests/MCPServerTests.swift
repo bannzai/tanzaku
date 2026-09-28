@@ -13,6 +13,8 @@ final class RecordingSnippetDeletionConfirmation {
   var requests: [SnippetDeletionRequest] = []
   /// 確認を待つ間に起きること (ほかのリクエストによる更新など) を再現する処理。
   var whileConfirming: (SnippetDeletionRequest) -> Void = { _ in }
+  /// クライアントが取り消した依頼 (クライアントの識別子と JSON-RPC の `id`)。
+  var cancelledRequests: [(clientID: UUID, rpcRequestID: String)] = []
 
   /// 確認に返す答えを受け取る。
   init(isApproved: Bool) {
@@ -64,6 +66,9 @@ struct MCPServerTests {
         confirmation.requests.append(request)
         confirmation.whileConfirming(request)
         return confirmation.isApproved
+      },
+      cancelClientRequest: { clientID, rpcRequestID in
+        confirmation.cancelledRequests.append((clientID, rpcRequestID))
       },
       now: { Date(timeIntervalSince1970: 1000) }
     )
@@ -515,6 +520,31 @@ struct MCPServerTests {
     )
 
     #expect(result["isError"] as? Bool == true)
+  }
+
+  @Test("削除の確認に依頼の JSON-RPC の id を渡し、notifications/cancelled で同じ id を取り消しに渡す")
+  func deleteSnippetRequestCanBeCancelled() async throws {
+    let confirmation = RecordingSnippetDeletionConfirmation(isApproved: false)
+    let environment = try makeEnvironment(confirmation: confirmation)
+    let snippet = try insertSnippet(environment: environment, body: "echo dummy")
+    let client = try #require(try environment.modelContext.fetch(FetchDescriptor<MCPClient>()).first)
+
+    _ = await handleMCPHTTPRequest(
+      request: try makeToolCallRequest(name: "delete_snippet", arguments: ["id": snippet.id.uuidString, "reason": "No longer used"]),
+      environment: environment
+    )
+    let cancelResponse = await handleMCPHTTPRequest(
+      request: try makeRequest(
+        message: ["jsonrpc": "2.0", "method": "notifications/cancelled", "params": ["requestId": 1, "reason": "User cancelled"] as [String: Any]],
+        token: clientToken
+      ),
+      environment: environment
+    )
+
+    #expect(cancelResponse.statusCode == 202)
+    #expect(confirmation.requests.map(\.rpcRequestID) == ["number:1"])
+    #expect(confirmation.cancelledRequests.map(\.clientID) == [client.id])
+    #expect(confirmation.cancelledRequests.map(\.rpcRequestID) == ["number:1"])
   }
 
   @Test("削除のツールは、設定で確認を切っていれば確認を出さずに消す")

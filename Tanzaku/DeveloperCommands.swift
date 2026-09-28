@@ -60,6 +60,7 @@
       request: SnippetDeletionRequest(
         // 見本の依頼はどの接続済みのクライアントにも属さないため、取り消しで拒否されない新しい識別子にする。
         clientID: UUID(),
+        rpcRequestID: "sample",
         clientName: "Claude Code",
         reason: String(localized: "direnv is no longer used, so this template is not needed anymore."),
         snippet: snippet,

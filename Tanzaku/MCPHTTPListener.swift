@@ -81,12 +81,25 @@ private func receiveMCPHTTPRequest(
       case .invalid(let statusCode):
         sendMCPHTTPResponse(connection: connection, response: MCPHTTPResponse(statusCode: statusCode, headers: [:], body: Data()))
       case .complete(let request):
-        Task { @MainActor in
+        let handlerTask = Task { @MainActor in
           let response = await handler(request)
           mcpServerLogger.info("\(request.method, privacy: .public) \(request.path, privacy: .public) -> \(response.statusCode)")
           sendMCPHTTPResponse(connection: connection, response: response)
         }
+        cancelMCPHTTPHandlerWhenPeerCloses(connection: connection, handlerTask: handlerTask)
       }
+    }
+  }
+}
+
+/// 応答を返す前にクライアントが接続を閉じたら、リクエストの処理を取り消す。
+///
+/// 2026-07-28 の版は、依頼の取り消しを接続を閉じることで伝える (Streamable HTTP「Cancellation」)。確認待ちの削除の依頼を、取り消した後にユーザーが許可して消さないため。
+/// 応答を返した後にこちらが接続を閉じた時も呼ばれるが、処理は終わっているため取り消しは何もしない。
+private func cancelMCPHTTPHandlerWhenPeerCloses(connection: NWConnection, handlerTask: Task<Void, Never>) {
+  connection.receive(minimumIncompleteLength: 1, maximumLength: 1) { @Sendable _, _, isComplete, error in
+    if isComplete || error != nil {
+      handlerTask.cancel()
     }
   }
 }
