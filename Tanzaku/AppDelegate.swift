@@ -40,6 +40,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
   }
 
+  /// 管理ウィンドウを閉じてもアプリを終了させない。ランチャーはグローバルショートカットでいつでも開くため常駐する必要があり、1 つだけの `Window` の scene は閉じるとアプリを終了させるため。
+  func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
+    false
+  }
+
   /// 端末の優先言語の埋め込みモデルを用意する。資産が無ければダウンロードを待つ。用意できなければ `nil` を返し、ランチャーは文字列の一致だけで検索する。
   private func loadSnippetTextEmbedder() async -> SnippetTextEmbedder? {
     let language = snippetEmbeddingLanguage(preferredLanguages: Locale.preferredLanguages)
