@@ -1,0 +1,1 @@
+snippet,text expander,launcher,MCP,AI agent,semantic search,code,prompt,clipboard,template

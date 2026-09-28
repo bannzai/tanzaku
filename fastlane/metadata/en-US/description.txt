@@ -1,0 +1,22 @@
+Tanzaku is a snippet manager for Mac. Save boilerplate text, commands, code and AI prompts, and pull them up from a launcher you open with a shortcut.
+
+- Find snippets even when you forget the abbreviation
+As your snippets grow, you stop remembering their keywords. Along with fuzzy search over titles, bodies and keywords, the launcher uses semantic search, including Japanese, to find a snippet from whatever fragment you remember. Searching happens on your Mac.
+
+- Copy, or paste right away
+The snippet you pick is copied to the clipboard. Grant the Accessibility permission and Tanzaku pastes it into the front app for you.
+
+- Let AI agents organize them
+Tanzaku has a built-in MCP server. AI agents that support MCP can search, add, update and delete snippets. The server accepts connections only from the same Mac, and only from clients holding a token Tanzaku issued.
+
+- Deletions need Touch ID
+When an AI agent tries to delete a snippet, Tanzaku asks for Touch ID. You can hand the work over and still decide what gets deleted.
+
+- Your snippets stay on your Mac
+No account. Snippets are stored only on your Mac and never sent to the developer's servers.
+
+- One-time purchase
+Try every feature for free, up to 20 snippets. A single purchase removes the limit.
+
+Terms of Use: https://bannzai.github.io/tanzaku/Terms-en
+Privacy Policy: https://bannzai.github.io/tanzaku/PrivacyPolicy-en
