@@ -17,6 +17,12 @@ public struct SnippetKeywordMatch {
   public var snippet: Snippet
   /// 一致した場所。
   public var kind: SnippetKeywordMatchKind
+
+  /// モジュールの外 (ランチャーのテスト) で結果を組み立てられるよう public にする。
+  public init(snippet: Snippet, kind: SnippetKeywordMatchKind) {
+    self.snippet = snippet
+    self.kind = kind
+  }
 }
 
 /// 検索の結果。ランチャーは「キーワードが一致」と意味検索の欄を分けて表示するため (`documents/design/Main.dc.html`)、2 つに分けて返す。
@@ -25,6 +31,12 @@ public struct SnippetSearchResult {
   public var keywordMatches: [SnippetKeywordMatch]
   /// 意味検索で見つかったスニペット。`keywordMatches` に入ったものは除き、意味が近い順に並ぶ。
   public var semanticMatches: [Snippet]
+
+  /// モジュールの外 (ランチャーの検索前の空の結果・テスト) で結果を組み立てられるよう public にする。
+  public init(keywordMatches: [SnippetKeywordMatch], semanticMatches: [Snippet]) {
+    self.keywordMatches = keywordMatches
+    self.semanticMatches = semanticMatches
+  }
 }
 
 /// 意味検索の結果に出す最大の件数。ランチャーの意味検索の欄は文字列の一致の欄の下に置く補助の欄のため (`documents/design/Main.dc.html`)、精度のテストで測る「上位 3 件」と同じ件数にとどめる。

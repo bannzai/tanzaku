@@ -7,6 +7,8 @@ public enum SnippetValidationError: Error, Equatable, CustomStringConvertible {
   case keywordAlreadyUsed(keyword: String)
   /// 本文が空 (空白と改行だけの本文を含む)。
   case emptyBody
+  /// スニペットグループの名前が空 (空白と改行だけの名前を含む)。
+  case emptySnippetGroupName
 
   /// 画面にそのまま表示する文言。
   public var description: String {
@@ -15,6 +17,8 @@ public enum SnippetValidationError: Error, Equatable, CustomStringConvertible {
       "The keyword \"\(keyword)\" is already used by another snippet or snippet group."
     case .emptyBody:
       "The snippet body is empty."
+    case .emptySnippetGroupName:
+      "The snippet group name is empty."
     }
   }
 }
