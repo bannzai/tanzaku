@@ -9,6 +9,8 @@ let snippetAuthorKindMCP = "mcp"
 struct SnippetDeletionRequest: Identifiable {
   /// 確認の画面を依頼ごとに区別する識別子。
   var id = UUID()
+  /// 依頼元のクライアントの `MCPClient.id`。接続を取り消した時に、そのクライアントの確認待ちの依頼を拒否するために使う。
+  var clientID: UUID
   /// 依頼元のクライアント名。
   var clientName: String
   /// エージェントが書いた削除の理由。
@@ -37,6 +39,10 @@ struct MCPProtocolError: Error {
 /// 検索のツールが返す文字列の一致の件数の既定値。エージェントのコンテキストに本文を入れすぎないため、ランチャーの 1 画面に並ぶ程度にとどめる。
 let mcpSearchDefaultLimit = 20
 
+/// 検索のツールが受け付けるクエリの最大の文字数。検索のクエリは語か短い文で、500 文字あれば言い換えた文章でも足りるため。
+/// ベクトルを作る時間は文字数に比例して延びるため (`makeContextualSnippetTextEmbedder(language:)` は文章を区切って順に埋め込む)、上限で抑える。
+let mcpSearchMaximumQueryLength = 500
+
 /// `tools/list` で返すツールの定義。並びは返す順で、クライアントがキャッシュできるよう毎回同じにする。
 let mcpToolDefinitions: [[String: Any]] = [
   [
@@ -47,7 +53,9 @@ let mcpToolDefinitions: [[String: Any]] = [
     "inputSchema": [
       "type": "object",
       "properties": [
-        "query": ["type": "string", "description": "Words to search for. Japanese and English are supported."],
+        "query": [
+          "type": "string", "description": "Words to search for. Japanese and English are supported.", "maxLength": mcpSearchMaximumQueryLength,
+        ] as [String: Any],
         "limit": ["type": "integer", "description": "Maximum number of keywordMatches to return. Defaults to \(mcpSearchDefaultLimit).", "minimum": 1] as [String: Any],
       ] as [String: Any],
       "required": ["query"],
@@ -241,6 +249,10 @@ func mcpOptionalText(text: String) -> String? {
 /// `search_snippets` の結果。
 func searchSnippetsTool(arguments: [String: Any], environment: MCPServerEnvironment) throws -> [String: Any] {
   let query = try mcpRequiredStringArgument(arguments: arguments, name: "query")
+  // クエリの意味検索のベクトルはメインアクターで作るため、長いクエリで画面とほかのリクエストの処理を止めないよう長さを抑える。
+  guard query.count <= mcpSearchMaximumQueryLength else {
+    throw MCPToolError(description: "The argument \"query\" must be \(mcpSearchMaximumQueryLength) characters or fewer.")
+  }
   let limit: Int
   switch arguments["limit"] {
   case nil:
@@ -328,14 +340,16 @@ func updateSnippetTool(arguments: [String: Any], client: MCPClient, environment:
 /// 設定で確認を求めている時は、依頼元のクライアント名・理由・スニペットを確認に出し、許可された時だけ消す。
 /// 確認を待つ間に同じスニペットが消えていることがあるため、許可の後にスニペットを読み直す。
 /// 確認を待つ間にスニペットが更新されていたら、ユーザーが確かめた内容と違うものを消さないよう、消さずにツールのエラーを返す。
+/// 確認を待つ間に依頼元のクライアントの接続が取り消されていたら、取り消したクライアントの依頼を実行しないよう、消さずにツールのエラーを返す。
 func deleteSnippetTool(arguments: [String: Any], client: MCPClient, environment: MCPServerEnvironment) async throws -> [String: Any] {
   let snippet = try fetchSnippetArgument(arguments: arguments, modelContext: environment.modelContext)
   let reason = try mcpRequiredStringArgument(arguments: arguments, name: "reason")
   let confirmedUpdatedAt = snippet.updatedAt
   let confirmedBody = snippet.body
+  let clientID = client.id
   if environment.requiresDeletionConfirmation() {
     let isApproved = await environment.confirmSnippetDeletion(
-      SnippetDeletionRequest(clientName: client.name, reason: reason, snippet: snippet, receivedAt: environment.now())
+      SnippetDeletionRequest(clientID: clientID, clientName: client.name, reason: reason, snippet: snippet, receivedAt: environment.now())
     )
     guard isApproved else {
       throw MCPToolError(description: "The user did not approve deleting the snippet. It was not deleted.")
@@ -343,6 +357,9 @@ func deleteSnippetTool(arguments: [String: Any], client: MCPClient, environment:
   }
   // 確認を待つ間にほかのコンテキストで保存された更新を読むため、読み込み済みのモデルを持たない新しいコンテキストで読み直す。
   let deletionModelContext = ModelContext(environment.modelContext.container)
+  guard try deletionModelContext.fetchCount(FetchDescriptor<MCPClient>(predicate: #Predicate { $0.id == clientID })) > 0 else {
+    throw MCPToolError(description: "This client's access was revoked while waiting for the user's confirmation. The snippet was not deleted.")
+  }
   let approvedSnippet = try fetchSnippetArgument(arguments: arguments, modelContext: deletionModelContext)
   guard approvedSnippet.updatedAt == confirmedUpdatedAt, approvedSnippet.body == confirmedBody else {
     throw MCPToolError(description: "The snippet was changed while waiting for the user's confirmation. It was not deleted. Call delete_snippet again if it should still be deleted.")

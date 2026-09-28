@@ -449,6 +449,43 @@ struct MCPServerTests {
     #expect(try fetchSnippets(environment: environment).map(\.id) == [snippet.id])
   }
 
+  @Test("削除のツールは、確認を待つ間に依頼元のクライアントの接続が取り消されたら、許可されても消さない")
+  func deleteSnippetRejectsRevokedClientDuringConfirmation() async throws {
+    let confirmation = RecordingSnippetDeletionConfirmation(isApproved: true)
+    let environment = try makeEnvironment(confirmation: confirmation)
+    let snippet = try insertSnippet(environment: environment, body: "echo dummy")
+    confirmation.whileConfirming = { request in
+      let otherModelContext = ModelContext(environment.modelContext.container)
+      if let client = try? otherModelContext.fetch(FetchDescriptor<MCPClient>()).first(where: { $0.id == request.clientID }) {
+        try? revokeMCPClient(client: client, modelContext: otherModelContext, tokenStore: environment.tokenStore)
+      }
+    }
+
+    let result = try toolResult(
+      response: await handleMCPHTTPRequest(
+        request: try makeToolCallRequest(name: "delete_snippet", arguments: ["id": snippet.id.uuidString, "reason": "No longer used"]),
+        environment: environment
+      )
+    )
+
+    #expect(result["isError"] as? Bool == true)
+    #expect(try fetchSnippets(environment: environment).map(\.id) == [snippet.id])
+  }
+
+  @Test("検索のツールは、上限を超える長さのクエリをツールのエラーで返す")
+  func searchSnippetsRejectsLongQuery() async throws {
+    let environment = try makeEnvironment()
+
+    let result = try toolResult(
+      response: await handleMCPHTTPRequest(
+        request: try makeToolCallRequest(name: "search_snippets", arguments: ["query": String(repeating: "a", count: mcpSearchMaximumQueryLength + 1)]),
+        environment: environment
+      )
+    )
+
+    #expect(result["isError"] as? Bool == true)
+  }
+
   @Test("削除のツールは、設定で確認を切っていれば確認を出さずに消す")
   func deleteSnippetWithoutConfirmation() async throws {
     let confirmation = RecordingSnippetDeletionConfirmation(isApproved: false)

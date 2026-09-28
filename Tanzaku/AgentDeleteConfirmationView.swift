@@ -36,6 +36,11 @@ struct AgentDeleteConfirmationView: View {
   /// 240pt は 12 行ほど (1 行 約 20pt) で、デザインの見本 (5 行の `.envrc`) の 2 倍を超える。本文を 240pt にしても確認の画面が約 600pt に収まり、13 インチの MacBook の画面 (高さ 800pt 前後) でもはみ出さないため。
   private let bodyMaximumHeightWithoutScroll: CGFloat = 240
 
+  /// スクロールなしでエージェントの理由を並べる最大の高さ。
+  ///
+  /// 80pt は 12pt の文字で 5 行ほどで、デザインの見本の理由 (2 行) を折り返しても収まり、本文の上限 (240pt) と合わせても確認の画面が 13 インチの MacBook の画面に収まるため。
+  private let reasonMaximumHeightWithoutScroll: CGFloat = 80
+
   var body: some View {
     VStack(alignment: .leading, spacing: 18) {
       HStack(alignment: .top, spacing: 14) {
@@ -69,8 +74,16 @@ struct AgentDeleteConfirmationView: View {
         GridRow {
           Text("Agent's reason")
             .foregroundStyle(.tertiary)
-          Text("“\(request.reason)”")
-            .fixedSize(horizontal: false, vertical: true)
+          // 理由の長さはエージェント次第のため、長い理由はスクロールで全文を見せ、確認の画面が画面の外まで伸びないようにする。
+          ViewThatFits(in: .vertical) {
+            Text("“\(request.reason)”")
+              .fixedSize(horizontal: false, vertical: true)
+            ScrollView {
+              Text("“\(request.reason)”")
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+          }
+          .frame(maxHeight: reasonMaximumHeightWithoutScroll)
         }
         GridRow {
           Text("Received")

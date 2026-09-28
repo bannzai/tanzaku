@@ -222,13 +222,17 @@ final class MCPServerController {
     }
   }
 
-  /// クライアントの接続を取り消す。
+  /// クライアントの接続を取り消す。取り消したクライアントの確認待ちの削除の依頼は、確認の画面から外して拒否する。
   func revoke(client: MCPClient) {
+    let clientID = client.id
     do {
       try revokeMCPClient(client: client, modelContext: modelContainer.mainContext, tokenStore: tokenStore)
       tokenErrorMessage = nil
     } catch {
       tokenErrorMessage = "\(error)"
+    }
+    for pendingDeletion in pendingDeletions where pendingDeletion.request.clientID == clientID {
+      resolveDeletion(requestID: pendingDeletion.request.id, isApproved: false)
     }
   }
 
