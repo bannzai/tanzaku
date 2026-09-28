@@ -44,49 +44,43 @@ public func makeContextualSnippetTextEmbedder(language: NLLanguage) throws -> Sn
   }
   try embedding.load()
   return SnippetTextEmbedder(modelIdentifier: "\(embedding.modelIdentifier)@\(embedding.revision)") { text in
-    meanTokenVector(
-      tokenVectors: try contextualTokenVectorsByChunk(embedding: embedding, language: language, text: text).flatMap { $0 }.map(\.vector),
-      dimension: embedding.dimension
-    )
+    var sum = [Double](repeating: 0, count: embedding.dimension)
+    var tokenCount = 0
+    try enumerateContextualTokenVectors(embedding: embedding, language: language, text: text) { _, tokenVector, _ in
+      for index in sum.indices {
+        sum[index] += tokenVector[index]
+      }
+      tokenCount += 1
+    }
+    return sum.map { Float($0 / Double(max(tokenCount, 1))) }
   }
 }
 
-/// 文章を `maximumSequenceLength` に収まる長さに区切り、区切りごとにトークンのベクトルと、そのトークンが表す区切りの中の文字の範囲を返す。`embedding` は読み込み (`load()`) 済みのもの。
+/// 文章を `maximumSequenceLength` に収まる長さに区切り、区切りごとのトークンのベクトルを 1 つずつ `body` に渡す。`embedding` は読み込み (`load()`) 済みのもの。
 ///
-/// 範囲が空のトークンは、文字に対応しない特別なトークン (区切りの先頭に付く) を表す。
-func contextualTokenVectorsByChunk(
+/// `body` には区切りの番号 (0 から)、トークンのベクトル、そのトークンが表す区切りの中の文字の範囲を渡す。範囲が空のトークンは、文字に対応しない特別なトークン (区切りの先頭に付く) を表す。
+/// 長い本文でも全トークンのベクトルを同時に持たずに集約できるよう、配列にまとめず 1 つずつ渡す。
+func enumerateContextualTokenVectors(
   embedding: NLContextualEmbedding,
   language: NLLanguage,
-  text: String
-) throws -> [[(vector: [Double], range: Range<String.Index>)]] {
+  text: String,
+  body: (_ chunkIndex: Int, _ tokenVector: [Double], _ tokenRange: Range<String.Index>) -> Void
+) throws {
   // 漢字かなのモデルは 1 文字がおよそ 1 トークンで、ラテン文字のモデルは 1 トークンが複数の文字になる。
   // 文字数を上限の半分にすれば、1 文字が 2 トークンに分かれる文字や先頭・末尾の特別なトークンがあっても上限に収まるため。
   let chunkCharacterCount = max(embedding.maximumSequenceLength / 2, 1)
-  var tokenVectorsByChunk: [[(vector: [Double], range: Range<String.Index>)]] = []
+  var chunkIndex = 0
   var chunkStartIndex = text.startIndex
   while chunkStartIndex < text.endIndex {
     let chunkEndIndex = text.index(chunkStartIndex, offsetBy: chunkCharacterCount, limitedBy: text.endIndex) ?? text.endIndex
     let chunk = String(text[chunkStartIndex..<chunkEndIndex])
-    var tokenVectors: [(vector: [Double], range: Range<String.Index>)] = []
     try embedding.embeddingResult(for: chunk, language: language).enumerateTokenVectors(in: chunk.startIndex..<chunk.endIndex) { tokenVector, tokenRange in
-      tokenVectors.append((vector: tokenVector, range: tokenRange))
+      body(chunkIndex, tokenVector, tokenRange)
       return true
     }
-    tokenVectorsByChunk.append(tokenVectors)
+    chunkIndex += 1
     chunkStartIndex = chunkEndIndex
   }
-  return tokenVectorsByChunk
-}
-
-/// トークンのベクトルの平均。トークンが無い時は長さ `dimension` の 0 のベクトルを返す。
-func meanTokenVector(tokenVectors: [[Double]], dimension: Int) -> [Float] {
-  var sum = [Double](repeating: 0, count: dimension)
-  for tokenVector in tokenVectors {
-    for index in sum.indices {
-      sum[index] += tokenVector[index]
-    }
-  }
-  return sum.map { Float($0 / Double(max(tokenVectors.count, 1))) }
 }
 
 /// NLContextualEmbedding の資産をダウンロードする。ダウンロード済みか、ダウンロードできた時に `true` を返す。

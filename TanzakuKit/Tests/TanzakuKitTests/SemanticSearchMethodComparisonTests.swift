@@ -33,12 +33,11 @@ struct SemanticSearchMethodComparisonTests {
     printContextualTokenDiagnostics(embedding: contextualEmbedding)
     let contextualModelIdentifier = "contextual:\(contextualEmbedding.modelIdentifier)@\(contextualEmbedding.revision)"
     var embedders = [
-      SnippetTextEmbedder(modelIdentifier: "\(contextualModelIdentifier)/mean") { text in
-        meanTokenVector(
-          tokenVectors: try contextualTokenVectorsByChunk(embedding: contextualEmbedding, language: .japanese, text: text).flatMap { $0 }.map(\.vector),
-          dimension: contextualEmbedding.dimension
-        )
-      },
+      // 平均は `TanzakuKit` の既定の埋め込みそのものを測る。
+      SnippetTextEmbedder(
+        modelIdentifier: "\(contextualModelIdentifier)/mean",
+        vector: try #require(try makeContextualSnippetTextEmbedder(language: .japanese)).vector
+      ),
       SnippetTextEmbedder(modelIdentifier: "\(contextualModelIdentifier)/max") { text in
         maxTokenVector(
           tokenVectors: try contextualTokenVectorsByChunk(embedding: contextualEmbedding, language: .japanese, text: text).flatMap { $0 }.map(\.vector),
@@ -230,6 +229,33 @@ func similarityZScores(similarities: [Float]) -> [Float] {
 /// `isIncluded` を満たす添字を、類似度の高い順に最大 3 件返す。3 件は `semanticMatchLimit` と同じ。
 func topSimilarityIndices(similarities: [Float], isIncluded: (Int) -> Bool) -> [Int] {
   Array(similarities.indices.filter(isIncluded).sorted { similarities[$0] > similarities[$1] }.prefix(semanticMatchLimit))
+}
+
+/// 文章のトークンのベクトルと文字の範囲を、区切りごとにまとめて返す。集約の方法を比べるため、`enumerateContextualTokenVectors` が 1 つずつ渡すものを集める。
+func contextualTokenVectorsByChunk(
+  embedding: NLContextualEmbedding,
+  language: NLLanguage,
+  text: String
+) throws -> [[(vector: [Double], range: Range<String.Index>)]] {
+  var tokenVectorsByChunk: [[(vector: [Double], range: Range<String.Index>)]] = []
+  try enumerateContextualTokenVectors(embedding: embedding, language: language, text: text) { chunkIndex, tokenVector, tokenRange in
+    while tokenVectorsByChunk.count <= chunkIndex {
+      tokenVectorsByChunk.append([])
+    }
+    tokenVectorsByChunk[chunkIndex].append((vector: tokenVector, range: tokenRange))
+  }
+  return tokenVectorsByChunk
+}
+
+/// トークンのベクトルの平均。トークンが無い時は長さ `dimension` の 0 のベクトルを返す。
+func meanTokenVector(tokenVectors: [[Double]], dimension: Int) -> [Float] {
+  var sum = [Double](repeating: 0, count: dimension)
+  for tokenVector in tokenVectors {
+    for index in sum.indices {
+      sum[index] += tokenVector[index]
+    }
+  }
+  return sum.map { Float($0 / Double(max(tokenVectors.count, 1))) }
 }
 
 /// トークンのベクトルの要素ごとの最大値。トークンが無い時は長さ `dimension` の 0 のベクトルを返す。
