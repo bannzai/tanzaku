@@ -308,12 +308,14 @@ func printKeywordOnlyRow(snippets: [Snippet], paraphrasedQueries: [String], unre
     let matchKinds = snippets.map { snippetKeywordMatchKind(snippet: $0, normalizedQuery: normalizedQuery) }
     return [SnippetKeywordMatchKind.keywordExact, .keywordPrefix, .titleOrBody].flatMap { kind in matchKinds.indices.filter { matchKinds[$0] == kind } }
   }
-  let row = SemanticSearchComparisonRow(
-    embeddingName: "keyword-only",
-    ruleName: "keyword-only",
-    parameter: 0,
-    paraphrasedQueryHits: paraphrasedQueries.indices.map { matchedIndices(paraphrasedQueries[$0]).prefix(3).contains($0) },
-    unrelatedQueryZeroResults: unrelatedQueries.map { matchedIndices($0).isEmpty }
+  print(
+    "[SemanticSearchComparison] "
+      + SemanticSearchComparisonRow(
+        embeddingName: "keyword-only",
+        ruleName: "keyword-only",
+        parameter: 0,
+        paraphrasedQueryHits: paraphrasedQueries.indices.map { matchedIndices(paraphrasedQueries[$0]).prefix(semanticMatchLimit).contains($0) },
+        unrelatedQueryZeroResults: unrelatedQueries.map { matchedIndices($0).isEmpty }
+      ).description
   )
-  print("[SemanticSearchComparison] \(row.description)")
 }
