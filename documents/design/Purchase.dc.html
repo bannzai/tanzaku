@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>購入</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="width: 640px; height: 700px; box-sizing: border-box; display: flex; align-items: center; justify-content: center; background: {{t.backdrop}}; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', sans-serif; color: {{t.fg}}">
+<div role="dialog" aria-labelledby="buy-title" style="width: 500px; display: flex; flex-direction: column; gap: 20px; padding: 32px 32px 24px; box-sizing: border-box; background: {{t.panel}}; border: 1px solid {{t.panelLine}}; border-radius: 12px; box-shadow: {{t.shadow}}">
+
+<div style="display: flex; flex-direction: column; align-items: center; gap: 12px; text-align: center">
+<svg width="56" height="56" viewBox="0 0 56 56" fill="none" aria-hidden="true"><rect x="0.5" y="0.5" width="55" height="55" rx="13" fill="{{t.iconBg}}" stroke="{{t.line}}"></rect><rect x="21" y="10" width="14" height="36" rx="2.5" fill="{{t.band.ai}}"></rect><circle cx="28" cy="15.5" r="1.8" fill="{{t.iconBg}}"></circle></svg>
+<div id="buy-title" style="font-size: 17px; font-weight: 700">無料版で保存できるのは 20 件までです</div>
+<div style="font-size: 13px; color: {{t.fg2}}; line-height: 1.6">いま 20 件のスニペットを保存しています。<br>21 件目からは、ライセンスの購入で保存できるようになります。</div>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 6px">
+<div style="display: flex; gap: 3px" aria-label="20 件中 20 件を使用">
+<sc-for list="{{slips}}" as="s" hint-placeholder-count="20">
+<span style="flex-grow: 1; height: 14px; border-radius: 2px; background: {{s.color}}"></span>
+</sc-for>
+</div>
+<div style="display: flex; justify-content: space-between; font-size: 12px; color: {{t.fg3}}"><span>無料版</span><span>20 / 20 件</span></div>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 12px; padding: 16px 18px; border-radius: 10px; border: 1px solid {{t.line}}">
+<div style="display: flex; align-items: baseline; justify-content: space-between">
+<span style="font-size: 14px; font-weight: 700">Tanzaku ライセンス</span>
+<span style="font-size: 14px; font-weight: 600">買い切り [価格]</span>
+</div>
+<ul style="margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 8px; font-size: 13px; line-height: 1.5">
+<sc-for list="{{points}}" as="p" hint-placeholder-count="4">
+<li style="display: flex; gap: 8px; align-items: flex-start">
+<svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="{{p.check}}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="margin-top: 3px; flex-shrink: 0" aria-hidden="true"><path d="M2.5 7.5 5.5 10.5 11.5 3.5"></path></svg>
+<span>{{p.text}}</span>
+</li>
+</sc-for>
+</ul>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 10px">
+<button type="button" style="height: 34px; border: 0; border-radius: 7px; background: {{t.accent}}; color: #FFFFFF; font-size: 14px; font-weight: 600; font-family: inherit">[価格] で購入</button>
+<div style="display: flex; align-items: center; justify-content: space-between">
+<button type="button" style="height: 28px; padding: 0 12px; border-radius: 6px; border: 1px solid {{t.fieldLine}}; background: {{t.field}}; color: {{t.fg}}; font-size: 13px; font-family: inherit">購入を復元</button>
+<button type="button" style="height: 28px; padding: 0 12px; border: 0; background: transparent; color: {{t.accentText}}; font-size: 13px; font-family: inherit">あとで</button>
+</div>
+<div style="font-size: 11px; color: {{t.fg3}}; text-align: center">支払いは Mac App Store で行われます。同じ Apple アカウントの Mac では「購入を復元」で使えます。</div>
+</div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"dark":{"editor":"boolean","default":false},"$preview":{"width":640,"height":700}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const LIGHT = {
+      backdrop: '#C9CDD4', panel: '#FFFFFF', panelLine: 'rgba(0,0,0,0.12)', iconBg: '#F1F1F4',
+      shadow: '0 24px 60px rgba(0,0,0,0.22), 0 2px 8px rgba(0,0,0,0.10)',
+      fg: '#1D1D1F', fg2: '#56565B', fg3: '#6E6E73', line: '#E4E4E7',
+      field: '#FFFFFF', fieldLine: '#CFCFD4', accent: '#2A5CA8', accentText: '#1F4F99', check: '#3E7A4B',
+      band: { shu: '#D2452C', ai: '#2E4F86', matsuba: '#3E7A4B', yamabuki: '#D39A1C', murasaki: '#74509A' }
+    };
+    const DARK = {
+      backdrop: '#0E0E10', panel: '#252527', panelLine: 'rgba(255,255,255,0.12)', iconBg: '#303033',
+      shadow: '0 24px 60px rgba(0,0,0,0.6), 0 2px 8px rgba(0,0,0,0.4)',
+      fg: '#F2F2F4', fg2: '#AEAEB4', fg3: '#9A9AA0', line: '#3A3A3E',
+      field: '#343437', fieldLine: '#4C4C51', accent: '#3A6BC0', accentText: '#8DB5F2', check: '#6BAF78',
+      band: { shu: '#E4634A', ai: '#6F92CC', matsuba: '#6BAF78', yamabuki: '#E6B84A', murasaki: '#A585CC' }
+    };
+    const t = this.props.dark ? DARK : LIGHT;
+    const b = t.band;
+    const cycle = [b.shu, b.ai, b.matsuba, b.yamabuki, b.murasaki];
+    const slips = Array.from({ length: 20 }, (_, i) => ({ color: cycle[i % 5] }));
+    const points = [
+      'スニペットを件数の上限なく保存できます',
+      '意味検索・MCP での連携・Touch ID の確認は、無料版と同じく使えます',
+      '一度の支払いで、月額や年額の料金はかかりません',
+      '保存済みの 20 件はそのまま引き継がれます'
+    ].map((text) => ({ text, check: t.check }));
+    return { t, slips, points };
+  }
+}
+</script>
+</body>
+</html>

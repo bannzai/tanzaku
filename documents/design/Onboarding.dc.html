@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>初回起動</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="width: 760px; height: 560px; box-sizing: border-box; display: flex; flex-direction: column; background: {{t.window}}; border: 1px solid {{t.frame}}; border-radius: 10px; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', sans-serif; color: {{t.fg}}">
+
+<div style="height: 40px; flex-shrink: 0; display: flex; align-items: center; gap: 8px; padding: 0 16px">
+<span style="width: 12px; height: 12px; border-radius: 6px; background: #FF5F57"></span>
+<span style="width: 12px; height: 12px; border-radius: 6px; background: {{t.lightOff}}"></span>
+<span style="width: 12px; height: 12px; border-radius: 6px; background: {{t.lightOff}}"></span>
+</div>
+
+<div style="display: flex; justify-content: center; gap: 28px; padding: 4px 0 0">
+<sc-for list="{{steps}}" as="s" hint-placeholder-count="3">
+<div style="width: 140px; display: flex; flex-direction: column; align-items: center; gap: 8px">
+<span style="width: 140px; height: 5px; border-radius: 2px; background: {{s.bar}}"></span>
+<span style="font-size: 12px; font-weight: {{s.weight}}; color: {{s.color}}">{{s.label}}</span>
+</div>
+</sc-for>
+</div>
+
+<div style="flex-grow: 1; display: flex; flex-direction: column; justify-content: center; padding: 0 96px; box-sizing: border-box">
+
+<sc-if value="{{isStep1}}" hint-placeholder-val="{{ true }}">
+<div style="display: flex; flex-direction: column; align-items: center; gap: 16px; text-align: center">
+<div style="font-size: 22px; font-weight: 700">ランチャーを開くキーを決めます</div>
+<div style="font-size: 13px; color: {{t.fg2}}; line-height: 1.7">どのアプリを使っていても、このキーで画面の中央にランチャーが開きます。<br>打って探し、Return でコピー、Esc で閉じます。</div>
+<div style="display: flex; align-items: center; gap: 8px; margin-top: 10px; padding: 14px 20px; border-radius: 10px; border: 1px solid {{t.fieldLine}}; background: {{t.field}}">
+<span style="display: inline-flex; align-items: center; justify-content: center; min-width: 40px; height: 36px; padding: 0 10px; box-sizing: border-box; border: 1px solid {{t.keyLine}}; border-bottom-width: 2px; border-radius: 6px; font-size: 16px">⌥</span>
+<span style="font-size: 14px; color: {{t.fg3}}">+</span>
+<span style="display: inline-flex; align-items: center; justify-content: center; min-width: 120px; height: 36px; padding: 0 12px; box-sizing: border-box; border: 1px solid {{t.keyLine}}; border-bottom-width: 2px; border-radius: 6px; font-size: 14px">Space</span>
+</div>
+<button type="button" style="height: 26px; padding: 0 10px; border: 0; background: transparent; color: {{t.accentText}}; font-size: 13px; font-family: inherit">別のキーを記録する</button>
+</div>
+</sc-if>
+
+<sc-if value="{{isStep2}}" hint-placeholder-val="{{ false }}">
+<div style="display: flex; flex-direction: column; gap: 14px">
+<div style="display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center">
+<div style="font-size: 22px; font-weight: 700">最初の短冊を書きます</div>
+<div style="font-size: 13px; color: {{t.fg2}}">よく打つ定型文やコマンドを 1 つ入れてみてください。</div>
+</div>
+<div style="display: grid; grid-template-columns: 76px minmax(0, 1fr); column-gap: 12px; row-gap: 10px; align-items: center; font-size: 13px; margin-top: 6px">
+<label for="o-title" style="text-align: right; color: {{t.fg2}}">タイトル</label>
+<input id="o-title" type="text" value="環境変数からトークンを取得" style="height: 28px; padding: 0 8px; box-sizing: border-box; border-radius: 6px; border: 1px solid {{t.fieldLine}}; background: {{t.field}}; color: {{t.fg}}; font-size: 13px; font-family: inherit">
+<label for="o-kw" style="text-align: right; color: {{t.fg2}}">キーワード</label>
+<div style="display: flex; align-items: center; gap: 10px">
+<input id="o-kw" type="text" value="envkey" style="width: 140px; height: 28px; padding: 0 8px; box-sizing: border-box; border-radius: 6px; border: 1px solid {{t.fieldLine}}; background: {{t.field}}; color: {{t.fg}}; font-size: 13px; font-family: inherit">
+<span style="font-size: 12px; color: {{t.fg3}}">なくても、本文の意味から探せます</span>
+</div>
+<label for="o-body" style="text-align: right; align-self: start; padding-top: 8px; color: {{t.fg2}}">本文</label>
+<textarea id="o-body" rows="4" value="{{sampleBody}}" style="resize: none; padding: 8px 10px; box-sizing: border-box; border-radius: 6px; border: 1px solid {{t.fieldLine}}; background: {{t.code}}; color: {{t.fg}}; font-family: 'SF Mono', ui-monospace, Menlo, monospace; font-size: 12px; line-height: 1.6"></textarea>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{isStep3}}" hint-placeholder-val="{{ false }}">
+<div style="display: flex; flex-direction: column; gap: 14px">
+<div style="display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center">
+<div style="font-size: 22px; font-weight: 700">AI エージェントをつなぎます</div>
+<div style="font-size: 13px; color: {{t.fg2}}; line-height: 1.7">Claude Code から Tanzaku のスニペットを検索・追加・整理できるようになります。<br>AI からの削除は、毎回 Touch ID で確認します。</div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 8px; margin-top: 6px; padding: 14px 16px; border-radius: 9px; border: 1px solid {{t.fieldLine}}; background: {{t.field}}">
+<span style="font-size: 12px; color: {{t.fg2}}">ターミナルで実行するコマンド</span>
+<div style="display: flex; align-items: center; gap: 10px">
+<code style="flex-grow: 1; min-width: 0; padding: 8px 10px; border-radius: 6px; background: {{t.code}}; font-family: 'SF Mono', ui-monospace, Menlo, monospace; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">claude mcp add --transport http tanzaku http://127.0.0.1:47831/mcp</code>
+<button type="button" style="height: 26px; padding: 0 12px; flex-shrink: 0; border-radius: 6px; border: 1px solid {{t.fieldLine}}; background: {{t.window}}; color: {{t.fg}}; font-size: 12px; font-family: inherit">コピー</button>
+</div>
+</div>
+<div style="font-size: 12px; color: {{t.fg3}}; text-align: center">あとからでも 設定 › AI エージェント でつなげます</div>
+</div>
+</sc-if>
+
+</div>
+
+<div style="height: 60px; flex-shrink: 0; display: flex; align-items: center; gap: 10px; padding: 0 20px; border-top: 1px solid {{t.line}}">
+<button type="button" onClick="{{ skip }}" style="height: 28px; padding: 0 10px; border: 0; background: transparent; color: {{t.fg2}}; font-size: 13px; font-family: inherit">スキップ</button>
+<div style="flex-grow: 1"></div>
+<sc-if value="{{canBack}}" hint-placeholder-val="{{ false }}">
+<button type="button" onClick="{{ back }}" style="height: 28px; padding: 0 14px; border-radius: 6px; border: 1px solid {{t.fieldLine}}; background: {{t.field}}; color: {{t.fg}}; font-size: 13px; font-family: inherit">戻る</button>
+</sc-if>
+<button type="button" onClick="{{ next }}" style="height: 28px; min-width: 88px; padding: 0 16px; border: 0; border-radius: 6px; background: {{t.accent}}; color: #FFFFFF; font-size: 13px; font-weight: 600; font-family: inherit">{{nextLabel}}</button>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"dark":{"editor":"boolean","default":false},"step":{"editor":"int","min":1,"max":3,"default":1},"$preview":{"width":760,"height":560}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const LIGHT = {
+      window: '#FFFFFF', frame: 'rgba(0,0,0,0.18)', lightOff: '#C8C8CC',
+      fg: '#1D1D1F', fg2: '#56565B', fg3: '#6E6E73', line: '#E4E4E7', off: '#E4E4E7',
+      field: '#F7F7F9', fieldLine: '#D4D4D9', keyLine: '#B9B9BF', code: '#FFFFFF',
+      accent: '#2A5CA8', accentText: '#1F4F99',
+      band: { shu: '#D2452C', ai: '#2E4F86', matsuba: '#3E7A4B', yamabuki: '#D39A1C', murasaki: '#74509A' }
+    };
+    const DARK = {
+      window: '#1F1F21', frame: 'rgba(255,255,255,0.14)', lightOff: '#4A4A4E',
+      fg: '#F2F2F4', fg2: '#AEAEB4', fg3: '#9A9AA0', line: '#36363A', off: '#3A3A3E',
+      field: '#28282B', fieldLine: '#45454A', keyLine: '#5A5A60', code: '#1A1A1C',
+      accent: '#3A6BC0', accentText: '#8DB5F2',
+      band: { shu: '#E4634A', ai: '#6F92CC', matsuba: '#6BAF78', yamabuki: '#E6B84A', murasaki: '#A585CC' }
+    };
+    const t = this.props.dark ? DARK : LIGHT;
+    const b = t.band;
+    const initial = Math.min(3, Math.max(1, Number(this.props.step ?? 1)));
+    const step = (this.state && this.state.step) || initial;
+    const steps = [
+      { label: 'ショートカット', color: b.shu },
+      { label: '最初のスニペット', color: b.ai },
+      { label: 'AI エージェント', color: b.matsuba }
+    ].map((s, i) => ({
+      label: s.label,
+      bar: i + 1 <= step ? s.color : t.off,
+      weight: i + 1 === step ? '700' : '400',
+      color: i + 1 === step ? t.fg : t.fg3
+    }));
+    return {
+      t,
+      steps,
+      isStep1: step === 1,
+      isStep2: step === 2,
+      isStep3: step === 3,
+      canBack: step > 1,
+      nextLabel: step === 3 ? 'はじめる' : '次へ',
+      next: () => this.setState({ step: Math.min(3, step + 1) }),
+      back: () => this.setState({ step: Math.max(1, step - 1) }),
+      skip: () => this.setState({ step: 3 }),
+      sampleBody: 'export API_TOKEN="${API_TOKEN:-dummy-token}"\ncurl -sS -H "Authorization: Bearer ${API_TOKEN}" \\\n  https://api.example.com/v1/me'
+    };
+  }
+}
+</script>
+</body>
+</html>
