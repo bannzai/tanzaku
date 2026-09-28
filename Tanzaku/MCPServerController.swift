@@ -73,6 +73,8 @@ final class MCPServerController {
   @ObservationIgnored private var listener: NWListener?
   /// 削除の確認の画面。確認を待つ依頼が無い時は閉じる。
   @ObservationIgnored private var deletionConfirmationPanel: NSPanel?
+  /// 削除の確認の画面の内容の、最後に測った大きさ。
+  @ObservationIgnored private var deletionConfirmationContentSize: CGSize?
   /// ベクトルの作り直しだけに使う埋め込みモデル。資産のダウンロードが済むまでは `nil`。
   @ObservationIgnored private var snippetEmbeddingRefreshEmbedder: UncheckedSendableEmbedder?
   /// ベクトルを作り直している途中か。
@@ -297,19 +299,35 @@ final class MCPServerController {
         // パネルの既定 (アプリが前面でない時は隠す) のままだと確認の画面が出ず、MCP の依頼が待ち続けるため。
         panel.hidesOnDeactivate = false
         let hostingController = NSHostingController(rootView: AgentDeleteConfirmationPanelContent(controller: self))
-        // 依頼ごとに本文の長さで高さが変わるため、SwiftUI の内容の大きさにパネルを合わせる。
-        hostingController.sizingOptions = [.preferredContentSize]
+        // パネルの大きさは、内容の大きさが変わるたびに `resizeDeletionConfirmationPanel(contentSize:)` で合わせるため、SwiftUI に決めさせない。
+        hostingController.sizingOptions = []
+        // 隠したタイトルバーの高さを安全領域として内容の大きさに足さないため (足すとパネルの下に余白が残る)。
+        hostingController.safeAreaRegions = []
         panel.contentViewController = hostingController
         deletionConfirmationPanel = panel
         return panel
       }()
     NSApp.activate()
-    if let contentView = panel.contentView {
-      panel.setContentSize(contentView.fittingSize)
+    if let deletionConfirmationContentSize {
+      resizeDeletionConfirmationPanel(contentSize: deletionConfirmationContentSize)
     }
     panel.center()
     panel.makeKeyAndOrderFront(nil)
     // アプリが前面に出なかった時も、ほかのアプリのウィンドウの上に出す。
     panel.orderFrontRegardless()
+  }
+
+  /// 削除の確認のパネルの大きさを内容に合わせる。依頼ごとに本文と理由の長さで高さが変わるため、上端の位置を保って高さを変える。
+  /// パネルを作った直後の内容の測定は、パネルを `deletionConfirmationPanel` に入れる前に届くことがあるため、測った大きさを持っておき、パネルを出す時にも合わせる。
+  func resizeDeletionConfirmationPanel(contentSize: CGSize) {
+    deletionConfirmationContentSize = contentSize
+    guard let panel = deletionConfirmationPanel, contentSize.width > 0, contentSize.height > 0 else {
+      return
+    }
+    // パネルは内容をタイトルバーの下まで広げている (`.fullSizeContentView`) ため、`frameRect(forContentRect:)` が足すタイトルバーの高さを足さず、内容の大きさをそのままパネルの大きさにする。
+    panel.setFrame(
+      NSRect(x: panel.frame.minX, y: panel.frame.maxY - contentSize.height, width: contentSize.width, height: contentSize.height),
+      display: true
+    )
   }
 }

@@ -15,6 +15,12 @@ struct AgentDeleteConfirmationPanelContent: View {
       .id(pendingDeletion.request.id)
       // パネルはタイトルバーを隠して内容を上端まで広げているため、タイトルバーの分の余白を空けない。
       .ignoresSafeArea()
+      // 本文と理由の高さを測った後に内容の高さが変わるため、そのたびにパネルの大きさを内容に合わせる。
+      .onGeometryChange(for: CGSize.self) { geometry in
+        geometry.size
+      } action: { size in
+        controller.resizeDeletionConfirmationPanel(contentSize: size)
+      }
     }
   }
 }
@@ -30,6 +36,10 @@ struct AgentDeleteConfirmationView: View {
 
   /// 認証の画面を出している間は、ボタンを押せなくする。
   @State private var isAuthenticating = false
+  /// 折り返した後の本文の高さ。スクロールの枠の高さを決めるために測る。
+  @State private var bodyTextHeight: CGFloat = 0
+  /// 折り返した後の理由の高さ。スクロールの枠の高さを決めるために測る。
+  @State private var reasonTextHeight: CGFloat = 0
 
   /// スクロールなしで本文を並べる最大の高さ。これより高い本文 (改行が多いものも、折り返しで長くなるものも) はスクロールで全文を見せ、確認の画面が画面の外まで伸びないようにする。
   ///
@@ -71,19 +81,22 @@ struct AgentDeleteConfirmationView: View {
             .foregroundStyle(.tertiary)
           Text("Delete 1 snippet")
         }
-        GridRow {
+        // 理由はスクロールの中に置くため文字のベースラインで揃えられず、見出しを理由の最後の行に揃えてしまうため、上端で揃える。
+        GridRow(alignment: .top) {
           Text("Agent's reason")
             .foregroundStyle(.tertiary)
           // 理由の長さはエージェント次第のため、長い理由はスクロールで全文を見せ、確認の画面が画面の外まで伸びないようにする。
-          ViewThatFits(in: .vertical) {
+          ScrollView {
             Text("“\(request.reason)”")
+              .frame(maxWidth: .infinity, alignment: .leading)
               .fixedSize(horizontal: false, vertical: true)
-            ScrollView {
-              Text("“\(request.reason)”")
-                .frame(maxWidth: .infinity, alignment: .leading)
-            }
+              .onGeometryChange(for: CGFloat.self) { geometry in
+                geometry.size.height
+              } action: { height in
+                reasonTextHeight = height
+              }
           }
-          .frame(maxHeight: reasonMaximumHeightWithoutScroll)
+          .frame(height: min(reasonTextHeight, reasonMaximumHeightWithoutScroll))
         }
         GridRow {
           Text("Received")
@@ -150,26 +163,30 @@ struct AgentDeleteConfirmationView: View {
     }
     .padding(EdgeInsets(top: 28, leading: 28, bottom: 24, trailing: 28))
     .frame(width: 540)
+    // 本文と理由の高さを測った後にパネルの高さを内容に合わせるため、余った高さを内容に配らず、内容の高さそのものを求める。
+    .fixedSize(horizontal: false, vertical: true)
   }
 
   /// 削除するスニペットの全文。本文は言語を問わず等幅で出す (`documents/DIRECTION.md`「決めたこと」)。
   @ViewBuilder
   private var snippetBodyView: some View {
-    let bodyText = Text(request.snippet.body)
-      .font(.system(size: 12, design: .monospaced))
-      .lineSpacing(3)
-      .textSelection(.enabled)
-      .frame(maxWidth: .infinity, alignment: .leading)
-      .padding(.vertical, 10)
-      .padding(.horizontal, 12)
-    // 折り返した後の高さで比べるため、行数ではなく、高さの上限に収まるかで本文そのものとスクロールを選ぶ。
-    ViewThatFits(in: .vertical) {
-      bodyText
-      ScrollView {
-        bodyText
-      }
+    // ScrollView は内容の高さを自分の高さにしないため、折り返した後の本文の高さを測って枠の高さを決める。
+    ScrollView {
+      Text(request.snippet.body)
+        .font(.system(size: 12, design: .monospaced))
+        .lineSpacing(3)
+        .textSelection(.enabled)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.vertical, 10)
+        .padding(.horizontal, 12)
+        .fixedSize(horizontal: false, vertical: true)
+        .onGeometryChange(for: CGFloat.self) { geometry in
+          geometry.size.height
+        } action: { height in
+          bodyTextHeight = height
+        }
     }
-    .frame(maxHeight: bodyMaximumHeightWithoutScroll)
+    .frame(height: min(bodyTextHeight, bodyMaximumHeightWithoutScroll))
     .background(.quaternary.opacity(0.4), in: RoundedRectangle(cornerRadius: 6))
   }
 }
