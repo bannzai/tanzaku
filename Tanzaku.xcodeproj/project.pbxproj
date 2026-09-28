@@ -15,6 +15,22 @@
 		7A1000000000000000000003 /* TanzakuKit in Frameworks */ = {isa = PBXBuildFile; productRef = 7A1000000000000000000082 /* TanzakuKit */; };
 		BC546B10F71243F94161BA43 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 819D3AB10EDF53500854ED1E /* Assets.xcassets */; };
 		F3D1C21226DC1199B58783CB /* TanzakuTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 696013EBD8A305FE612B27B7 /* TanzakuTests.swift */; };
+		7B2000000000000000000001 /* AgentDeleteConfirmationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B1000000000000000000001 /* AgentDeleteConfirmationView.swift */; };
+		7B2000000000000000000002 /* AgentSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B1000000000000000000002 /* AgentSettingsView.swift */; };
+		7B2000000000000000000003 /* DeveloperCommands.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B1000000000000000000003 /* DeveloperCommands.swift */; };
+		7B2000000000000000000004 /* MCPClientAccess.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B1000000000000000000004 /* MCPClientAccess.swift */; };
+		7B2000000000000000000005 /* MCPHTTPListener.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B1000000000000000000005 /* MCPHTTPListener.swift */; };
+		7B2000000000000000000006 /* MCPHTTPMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B1000000000000000000006 /* MCPHTTPMessage.swift */; };
+		7B2000000000000000000007 /* MCPServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B1000000000000000000007 /* MCPServer.swift */; };
+		7B2000000000000000000008 /* MCPServerController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B1000000000000000000008 /* MCPServerController.swift */; };
+		7B2000000000000000000009 /* MCPTokenStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B1000000000000000000009 /* MCPTokenStore.swift */; };
+		7B200000000000000000000A /* MCPTools.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B100000000000000000000A /* MCPTools.swift */; };
+		7B200000000000000000000B /* SnippetColor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B100000000000000000000B /* SnippetColor.swift */; };
+		7B200000000000000000000C /* SnippetDeletionAuthentication.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B100000000000000000000C /* SnippetDeletionAuthentication.swift */; };
+		7B200000000000000000000D /* SnippetDisplayTitle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B100000000000000000000D /* SnippetDisplayTitle.swift */; };
+		7B200000000000000000000E /* MCPHTTPMessageTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B100000000000000000000E /* MCPHTTPMessageTests.swift */; };
+		7B200000000000000000000F /* MCPServerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B100000000000000000000F /* MCPServerTests.swift */; };
+		7B2000000000000000000010 /* MCPTokenStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B1000000000000000000010 /* MCPTokenStoreTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -38,6 +54,22 @@
 		AB8FE1D8A6D581E6DF71B10D /* Tanzaku.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Tanzaku.entitlements; sourceTree = "<group>"; };
 		E804D807AB678D0394017B55 /* Tanzaku.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Tanzaku.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		F42397ABB5D473ABA5C9F741 /* TanzakuTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TanzakuTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		7B1000000000000000000001 /* AgentDeleteConfirmationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentDeleteConfirmationView.swift; sourceTree = "<group>"; };
+		7B1000000000000000000002 /* AgentSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentSettingsView.swift; sourceTree = "<group>"; };
+		7B1000000000000000000003 /* DeveloperCommands.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeveloperCommands.swift; sourceTree = "<group>"; };
+		7B1000000000000000000004 /* MCPClientAccess.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MCPClientAccess.swift; sourceTree = "<group>"; };
+		7B1000000000000000000005 /* MCPHTTPListener.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MCPHTTPListener.swift; sourceTree = "<group>"; };
+		7B1000000000000000000006 /* MCPHTTPMessage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MCPHTTPMessage.swift; sourceTree = "<group>"; };
+		7B1000000000000000000007 /* MCPServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MCPServer.swift; sourceTree = "<group>"; };
+		7B1000000000000000000008 /* MCPServerController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MCPServerController.swift; sourceTree = "<group>"; };
+		7B1000000000000000000009 /* MCPTokenStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MCPTokenStore.swift; sourceTree = "<group>"; };
+		7B100000000000000000000A /* MCPTools.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MCPTools.swift; sourceTree = "<group>"; };
+		7B100000000000000000000B /* SnippetColor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnippetColor.swift; sourceTree = "<group>"; };
+		7B100000000000000000000C /* SnippetDeletionAuthentication.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnippetDeletionAuthentication.swift; sourceTree = "<group>"; };
+		7B100000000000000000000D /* SnippetDisplayTitle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnippetDisplayTitle.swift; sourceTree = "<group>"; };
+		7B100000000000000000000E /* MCPHTTPMessageTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MCPHTTPMessageTests.swift; sourceTree = "<group>"; };
+		7B100000000000000000000F /* MCPServerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MCPServerTests.swift; sourceTree = "<group>"; };
+		7B1000000000000000000010 /* MCPTokenStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MCPTokenStoreTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -82,6 +114,19 @@
 			isa = PBXGroup;
 			children = (
 				819D3AB10EDF53500854ED1E /* Assets.xcassets */,
+				7B1000000000000000000001 /* AgentDeleteConfirmationView.swift */,
+				7B1000000000000000000002 /* AgentSettingsView.swift */,
+				7B1000000000000000000003 /* DeveloperCommands.swift */,
+				7B1000000000000000000004 /* MCPClientAccess.swift */,
+				7B1000000000000000000005 /* MCPHTTPListener.swift */,
+				7B1000000000000000000006 /* MCPHTTPMessage.swift */,
+				7B1000000000000000000007 /* MCPServer.swift */,
+				7B1000000000000000000008 /* MCPServerController.swift */,
+				7B1000000000000000000009 /* MCPTokenStore.swift */,
+				7B100000000000000000000A /* MCPTools.swift */,
+				7B100000000000000000000B /* SnippetColor.swift */,
+				7B100000000000000000000C /* SnippetDeletionAuthentication.swift */,
+				7B100000000000000000000D /* SnippetDisplayTitle.swift */,
 				4D7F3E4155C140F2DBB11F25 /* ContentView.swift */,
 				490F39DA27F8967A83114754 /* Localizable.xcstrings */,
 				AB8FE1D8A6D581E6DF71B10D /* Tanzaku.entitlements */,
@@ -104,6 +149,9 @@
 			isa = PBXGroup;
 			children = (
 				696013EBD8A305FE612B27B7 /* TanzakuTests.swift */,
+				7B100000000000000000000E /* MCPHTTPMessageTests.swift */,
+				7B100000000000000000000F /* MCPServerTests.swift */,
+				7B1000000000000000000010 /* MCPTokenStoreTests.swift */,
 			);
 			path = TanzakuTests;
 			sourceTree = "<group>";
@@ -242,6 +290,9 @@
 			buildActionMask = 2147483647;
 			files = (
 				F3D1C21226DC1199B58783CB /* TanzakuTests.swift in Sources */,
+				7B200000000000000000000E /* MCPHTTPMessageTests.swift in Sources */,
+				7B200000000000000000000F /* MCPServerTests.swift in Sources */,
+				7B2000000000000000000010 /* MCPTokenStoreTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -250,6 +301,19 @@
 			buildActionMask = 2147483647;
 			files = (
 				6A24AB34013694067A252965 /* ContentView.swift in Sources */,
+				7B2000000000000000000001 /* AgentDeleteConfirmationView.swift in Sources */,
+				7B2000000000000000000002 /* AgentSettingsView.swift in Sources */,
+				7B2000000000000000000003 /* DeveloperCommands.swift in Sources */,
+				7B2000000000000000000004 /* MCPClientAccess.swift in Sources */,
+				7B2000000000000000000005 /* MCPHTTPListener.swift in Sources */,
+				7B2000000000000000000006 /* MCPHTTPMessage.swift in Sources */,
+				7B2000000000000000000007 /* MCPServer.swift in Sources */,
+				7B2000000000000000000008 /* MCPServerController.swift in Sources */,
+				7B2000000000000000000009 /* MCPTokenStore.swift in Sources */,
+				7B200000000000000000000A /* MCPTools.swift in Sources */,
+				7B200000000000000000000B /* SnippetColor.swift in Sources */,
+				7B200000000000000000000C /* SnippetDeletionAuthentication.swift in Sources */,
+				7B200000000000000000000D /* SnippetDisplayTitle.swift in Sources */,
 				3FDD0285687CAEA6E170EAC6 /* TanzakuApp.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
