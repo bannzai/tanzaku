@@ -41,6 +41,9 @@ struct SnippetEditorView: View {
   @State private var newFolderName = ""
   /// 削除の確認を出しているスニペット。
   @State private var deletingSnippet: Snippet?
+  /// 新規作成の下書きのスニペット。検査を通るとストアに入る。ストアへの保存に失敗した後の再試行でも同じスニペットを使い、
+  /// 失敗した時に入れたスニペットと別のスニペットを作って、キーワードの重複やレコードの重複にしないため。
+  @State private var draftSnippet = Snippet(body: "")
 
   /// 編集画面の入力の初期値をスニペットから決めるため、`@State` の初期値を渡す。
   init(snippet: Snippet?, embedder: SnippetTextEmbedder?, selection: Binding<ManagerDetailSelection?>) {
@@ -260,7 +263,7 @@ struct SnippetEditorView: View {
 
   /// 入力を検査してスニペットに書き込み、保存する。新規のスニペットは保存できたら一覧で選ぶ。
   private func save() {
-    let editingSnippet = snippet ?? Snippet(body: "")
+    let editingSnippet = snippet ?? draftSnippet
     do {
       try applySnippetEdit(
         snippet: editingSnippet,

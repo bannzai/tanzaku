@@ -23,6 +23,8 @@ struct SnippetGroupEditorView: View {
   @State private var errorMessage: String?
   /// 削除の確認を出しているスニペットグループ。
   @State private var deletingSnippetGroup: SnippetGroup?
+  /// 新規作成の下書きのスニペットグループ。保存に失敗した後の再試行で同じグループを使う理由は `SnippetEditorView.draftSnippet` と同じ。
+  @State private var draftSnippetGroup = SnippetGroup(name: "")
 
   /// 編集画面の入力の初期値をスニペットグループから決めるため、`@State` の初期値を渡す。
   init(snippetGroup: SnippetGroup?, selection: Binding<ManagerDetailSelection?>) {
@@ -144,7 +146,7 @@ struct SnippetGroupEditorView: View {
 
   /// 入力を検査してスニペットグループに書き込み、保存する。新規のグループは保存できたら一覧で選ぶ。
   private func save() {
-    let editingSnippetGroup = snippetGroup ?? SnippetGroup(name: "")
+    let editingSnippetGroup = snippetGroup ?? draftSnippetGroup
     do {
       try applySnippetGroupEdit(
         snippetGroup: editingSnippetGroup,
