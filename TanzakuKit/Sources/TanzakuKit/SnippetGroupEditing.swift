@@ -1,9 +1,10 @@
 import Foundation
 import SwiftData
 
-/// スニペットグループのメニューに並ぶスニペットを、メニューに出す順 (`SnippetGroupItem.sortIndex`) で返す。スニペットが消えた項目は飛ばす。
+/// スニペットグループのメニューに並ぶスニペットを、メニューに出す順 (`SnippetGroupItem.sortIndex`) で返す。スニペットが消えた項目と、保存前に消した項目は飛ばす。
 public func snippetGroupSnippets(snippetGroup: SnippetGroup) -> [Snippet] {
   (snippetGroup.items ?? [])
+    .filter { !$0.isDeleted }
     .sorted { $0.sortIndex < $1.sortIndex }
     .compactMap(\.snippet)
 }
@@ -11,11 +12,13 @@ public func snippetGroupSnippets(snippetGroup: SnippetGroup) -> [Snippet] {
 /// スニペットグループのメニューの項目を `snippets` の並びに置き換える。保存は呼び出し側で行う。
 ///
 /// 残るスニペットの項目は作り直さず並び順だけを変え、外したスニペットの項目は消す。同じスニペットが 2 回あれば最初の位置だけを使う。同じ `snippets` で何度呼んでも結果は同じ。
+///
+/// 保存前に消した項目はリレーションに残り得るため、使い回さない。保存の検査に失敗した後に外した項目を足し直して呼ぶと、消える項目を使い回して足し直したものが保存で消えるため。
 public func replaceSnippetGroupItems(snippetGroup: SnippetGroup, snippets: [Snippet], modelContext: ModelContext) {
   var keptSnippetIDs = Set<UUID>()
   let orderedSnippets = snippets.filter { keptSnippetIDs.insert($0.id).inserted }
   var itemsBySnippetID: [UUID: SnippetGroupItem] = [:]
-  for item in snippetGroup.items ?? [] {
+  for item in (snippetGroup.items ?? []).filter({ !$0.isDeleted }) {
     if let snippetID = item.snippet?.id, keptSnippetIDs.contains(snippetID), itemsBySnippetID[snippetID] == nil {
       itemsBySnippetID[snippetID] = item
     } else {

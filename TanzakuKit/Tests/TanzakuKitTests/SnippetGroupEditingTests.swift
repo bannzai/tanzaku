@@ -50,6 +50,23 @@ struct SnippetGroupEditingTests {
     #expect(try modelContext.fetchCount(FetchDescriptor<SnippetGroupItem>()) == 2)
   }
 
+  @Test("保存の前に外した項目を足し直すと、足し直したスニペットは保存の後も残る")
+  func readdedItemBeforeSaveIsKept() throws {
+    let modelContext = ModelContext(try makeTanzakuModelContainer(storeLocation: .inMemory, syncedStoreCloudKitDatabase: .none))
+    let snippets = insertSnippets(bodies: ["deploy", "release"], modelContext: modelContext)
+    let snippetGroup = SnippetGroup(name: "dummy-group")
+    modelContext.insert(snippetGroup)
+    replaceSnippetGroupItems(snippetGroup: snippetGroup, snippets: snippets, modelContext: modelContext)
+    try modelContext.save()
+
+    replaceSnippetGroupItems(snippetGroup: snippetGroup, snippets: [snippets[0]], modelContext: modelContext)
+    replaceSnippetGroupItems(snippetGroup: snippetGroup, snippets: snippets, modelContext: modelContext)
+    try modelContext.save()
+
+    #expect(snippetGroupSnippets(snippetGroup: snippetGroup).map(\.body) == ["deploy", "release"])
+    #expect(try modelContext.fetchCount(FetchDescriptor<SnippetGroupItem>()) == 2)
+  }
+
   @Test("名前の前後の空白を除き、空欄のキーワードは無しにして保存する")
   func savesNormalizedSnippetGroup() throws {
     let modelContext = ModelContext(try makeTanzakuModelContainer(storeLocation: .inMemory, syncedStoreCloudKitDatabase: .none))
