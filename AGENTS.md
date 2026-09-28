@@ -13,7 +13,7 @@
 | --- | --- | --- |
 | ビルドとユニットテスト | GitHub Actions の `.github/workflows/ci.yml` (`macos-26` ランナーで `make build-macos`・`make build-ios`・`make test`)。ブランチを push し、`gh pr checks <PR 番号>` と失敗時の `gh run view <run ID> --log-failed` で結果を見る | GitHub-hosted の macOS ランナーが課金対象になるため、Devin の macOS セッション (`/devin-macos-e2e` skill) で行う |
 | macOS アプリの画面・挙動 | simtunnel (`/macos-simtunnel` skill)。GitHub Actions の macOS ランナーのデスクトップでアプリを動かし、tailnet 経由で操作・撮影する | Devin の macOS セッション (`/devin-macos-e2e` skill) |
-| iOS アプリの画面・挙動 | `/ios-simulator` skill の Phase 1 で経路を決める。iOS のシミュレータの simtunnel の caller workflow (`.github/workflows/simulator-session.yml`) は未導入で、iOS の画面を作る issue で足す | Devin の macOS セッション (`/devin-macos-e2e` skill) |
+| iOS アプリの画面・挙動 | simtunnel (`/ios-simulator` skill)。GitHub Actions の macOS ランナーの iOS Simulator でアプリを動かし、tailnet 経由で操作・撮影する | Devin の macOS セッション (`/devin-macos-e2e` skill) |
 | 公開サイト (`docs/` の LP・法務ドキュメント) の表示 | webtunnel (`/webtunnel` skill)。GitHub Actions の Linux ランナーの Chromium で `docs/` を開く | 同じ (webtunnel は caller リポジトリの visibility を問わない) |
 
 ### Makefile
@@ -32,10 +32,11 @@ CI はランナーに署名 ID が無いため `SIGNING_FLAGS` を ad-hoc 署名
 
 - 検証するブランチを先に push する。セッションは `--ref` のブランチの push 済みの先端をビルドし、`--ref` を省くと `main` をビルドする
 - macOS アプリ: `SIMTUNNEL_REPO=bannzai/tanzaku SIMTUNNEL_WORKFLOW=macos-app-session.yml ~/ghq/github.com/bannzai/simtunnel/local/simtunnel up <セッション名> --ref <ブランチ> --wait` で `.github/workflows/macos-app-session.yml` を起動し、`/macos-simtunnel` skill の `scripts/macos-wda.sh` で操作・撮影する。runner には署名 ID が無いため `DebugUnsigned` 構成 (署名しない Debug) をビルドする
+- iOS アプリ: `SIMTUNNEL_REPO=bannzai/tanzaku ~/ghq/github.com/bannzai/simtunnel/local/simtunnel up <セッション名> --ref <ブランチ> --device <デバイス名> --wait` で `.github/workflows/simulator-session.yml` を起動し、`/ios-simulator` skill の `scripts/ios-wda.sh --session <セッション名>` で操作・撮影する。iPhone は既定の `iPhone 17`、iPad は `--device 'iPad Pro 11-inch (M5)'` を渡す。runner には署名 ID が無いため `DebugUnsigned` 構成をビルドする。ローカル sim-boot に倒してよい条件は `/ios-simulator` skill Phase 1 に従い、倒した理由を完了報告に書く
 - 公開サイト: `WEBTUNNEL_REPO=bannzai/tanzaku ~/ghq/github.com/bannzai/webtunnel/local/webtunnel up <セッション名> --ref <ブランチ> --wait` で `.github/workflows/browser-session.yml` を起動し、`/webtunnel` skill の手順で agent-browser から操作・撮影する
-- セッション名は `tanzaku-<worktree 名>` (macOS アプリは末尾に `-mac`、公開サイトは `-web`)。セッション名は tailnet のホスト名になり、別リポジトリのセッションと衝突させない
+- セッション名は `tanzaku-<worktree 名>` (macOS アプリは末尾に `-mac`、iOS アプリは `-ios`、公開サイトは `-web`)。セッション名は tailnet のホスト名になり、別リポジトリのセッションと衝突させない
 - 確認が終わったら `up` と同じ環境変数で `down <セッション名>` を実行して閉じる。macOS ランナーの並列数は CI と共有する
-- 到達しにくい状態 (課金状態・大量のスニペット・認証の失敗) は Debug ビルドの開発者メニューで作る。ロケールの切り替えのように起動前に効かせる設定は `macos-wda.sh session` の `--arg` (例: `--arg -AppleLanguages --arg '(ja)'`) で渡す
+- 到達しにくい状態 (課金状態・大量のスニペット・認証の失敗) は Debug ビルドの開発者メニューで作る。iOS アプリの開発者メニューは一覧の右上のメニューにあり、見本のスニペットの投入・全削除・ライトとダークの切り替えを持つ。ロケールの切り替えのように起動前に効かせる設定は `macos-wda.sh session` / `ios-wda.sh launch` の `--arg` (例: `--arg -AppleLanguages --arg '(ja)'`) で渡す
 
 ### ローカルで実行してよい場合
 
