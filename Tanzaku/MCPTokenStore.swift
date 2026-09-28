@@ -61,31 +61,44 @@ private func mcpTokenOwner(keychainAccount: String) -> MCPTokenOwner? {
 func keychainMCPTokenStore() -> MCPTokenStore {
   MCPTokenStore(
     loadTokens: {
-      var result: CFTypeRef?
-      let status = SecItemCopyMatching(
+      // macOS のファイルの Keychain は、kSecMatchLimitAll と kSecReturnData を一緒に指定すると errSecParam を返すため、
+      // 項目の一覧 (アカウント名) を読んでから、項目ごとにトークンを読む。
+      var attributesResult: CFTypeRef?
+      let attributesStatus = SecItemCopyMatching(
         [
           kSecClass: kSecClassGenericPassword,
           kSecAttrService: mcpTokenKeychainService,
           kSecMatchLimit: kSecMatchLimitAll,
           kSecReturnAttributes: true,
-          kSecReturnData: true,
         ] as CFDictionary,
-        &result
+        &attributesResult
       )
-      if status == errSecItemNotFound {
+      if attributesStatus == errSecItemNotFound {
         return [:]
       }
-      guard status == errSecSuccess else {
-        throw MCPTokenStoreError(status: status)
+      guard attributesStatus == errSecSuccess else {
+        throw MCPTokenStoreError(status: attributesStatus)
       }
       var tokens: [MCPTokenOwner: String] = [:]
-      for item in result as? [[CFString: Any]] ?? [] {
-        guard let owner = (item[kSecAttrAccount] as? String).flatMap({ mcpTokenOwner(keychainAccount: $0) }),
-          let token = (item[kSecValueData] as? Data).flatMap({ String(data: $0, encoding: .utf8) })
-        else {
+      for item in attributesResult as? [[CFString: Any]] ?? [] {
+        guard let account = item[kSecAttrAccount] as? String, let owner = mcpTokenOwner(keychainAccount: account) else {
           continue
         }
-        tokens[owner] = token
+        var dataResult: CFTypeRef?
+        let dataStatus = SecItemCopyMatching(
+          [
+            kSecClass: kSecClassGenericPassword,
+            kSecAttrService: mcpTokenKeychainService,
+            kSecAttrAccount: account,
+            kSecMatchLimit: kSecMatchLimitOne,
+            kSecReturnData: true,
+          ] as CFDictionary,
+          &dataResult
+        )
+        guard dataStatus == errSecSuccess else {
+          throw MCPTokenStoreError(status: dataStatus)
+        }
+        tokens[owner] = (dataResult as? Data).flatMap { String(data: $0, encoding: .utf8) }
       }
       return tokens
     },
