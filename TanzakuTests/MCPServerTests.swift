@@ -159,6 +159,37 @@ struct MCPServerTests {
     #expect(tokens[.unbound] == nil)
   }
 
+  @Test("クライアントのトークンとして保存するのに失敗したら、同じトークンを持ち主のいないトークンとしても残さない")
+  func bindingFailureDoesNotLeaveTokenWithTwoOwners() async throws {
+    /// Keychain への保存の失敗の代わり。
+    struct DummyTokenStoreError: Error {}
+    var environment = try makeEnvironment(registeredClientName: nil)
+    let tokenStore = environment.tokenStore
+    environment.tokenStore = MCPTokenStore(
+      loadTokens: tokenStore.loadTokens,
+      saveToken: { token, owner in
+        if case .client = owner {
+          throw DummyTokenStoreError()
+        }
+        try tokenStore.saveToken(token, owner)
+      },
+      deleteToken: tokenStore.deleteToken
+    )
+    let request = try makeRequest(
+      message: [
+        "jsonrpc": "2.0", "id": 1, "method": "initialize",
+        "params": ["protocolVersion": "2025-06-18", "clientInfo": ["name": "claude-code"]] as [String: Any],
+      ],
+      token: unboundToken
+    )
+
+    let response = await handleMCPHTTPRequest(request: request, environment: environment)
+
+    #expect(response.statusCode == 500)
+    #expect(try tokenStore.loadTokens().values.contains(unboundToken) == false)
+    #expect(try environment.modelContext.fetchCount(FetchDescriptor<MCPClient>()) == 0)
+  }
+
   @Test("持ち主のいないトークンで、クライアント名を名乗らないリクエストは拒否する")
   func rejectsUnboundTokenWithoutClientInfo() async throws {
     let environment = try makeEnvironment(registeredClientName: nil)

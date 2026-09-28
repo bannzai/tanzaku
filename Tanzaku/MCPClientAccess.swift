@@ -22,11 +22,20 @@ func mcpRequestingClient(
     guard let clientName, let token = tokens[.unbound] else {
       return nil
     }
-    let client = MCPClient(id: UUID(), name: clientName, createdAt: now)
-    modelContext.insert(client)
-    try modelContext.save()
-    try tokenStore.saveToken(token, .client(id: client.id))
+    // 途中で失敗しても同じトークンが 2 つの持ち主に残らないよう、持ち主のいないトークンを先に消してから、クライアントのトークンとして保存する。
+    // 途中で失敗するとトークンはどちらにも残らず、そのリクエストは拒否される (接続し直すには設定の新しいトークンを使う)。
+    // 両方に残ると、クライアントの接続を取り消しても持ち主のいないトークンとして使い続けられるため、この順にする。
+    let clientID = UUID()
     try tokenStore.deleteToken(.unbound)
+    try tokenStore.saveToken(token, .client(id: clientID))
+    let client = MCPClient(id: clientID, name: clientName, createdAt: now)
+    modelContext.insert(client)
+    do {
+      try modelContext.save()
+    } catch {
+      try? tokenStore.deleteToken(.client(id: clientID))
+      throw error
+    }
     return client
   }
 }
