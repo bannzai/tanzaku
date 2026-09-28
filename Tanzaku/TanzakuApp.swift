@@ -26,11 +26,11 @@ struct TanzakuApp: App {
     }
     .modelContainer(modelContainer)
     .environment(mcpServerController)
-    .commands {
-      #if DEBUG
+    #if DEBUG
+      .commands {
         DeveloperCommands(controller: mcpServerController)
-      #endif
-    }
+      }
+    #endif
 
     Settings {
       TabView {

@@ -57,9 +57,9 @@ final class MCPServerController {
   }
 
   /// スニペットと `MCPClient` のストア。
-  @ObservationIgnored let modelContainer: ModelContainer
+  let modelContainer: ModelContainer
   /// アクセストークンの保管場所。
-  @ObservationIgnored let tokenStore: MCPTokenStore
+  let tokenStore: MCPTokenStore
   /// 待ち受けている listener。止めている時は `nil`。
   @ObservationIgnored private var listener: NWListener?
   /// 削除の確認の画面。確認を待つ依頼が無い時は閉じる。

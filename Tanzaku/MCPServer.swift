@@ -66,14 +66,14 @@ func handleMCPHTTPRequest(request: MCPHTTPRequest, environment: MCPServerEnviron
   }
   let params = message["params"] as? [String: Any] ?? [:]
   let modernProtocolVersion = (params["_meta"] as? [String: Any])?["io.modelcontextprotocol/protocolVersion"] as? String
-  if let headerMismatchResponse = mcpProtocolVersionErrorResponse(
+  if let protocolVersionErrorResponse = mcpProtocolVersionErrorResponse(
     request: request,
     id: id,
     method: method,
     params: params,
     modernProtocolVersion: modernProtocolVersion
   ) {
-    return headerMismatchResponse
+    return protocolVersionErrorResponse
   }
 
   let client: MCPClient
