@@ -18,5 +18,5 @@
 
 ## 見直す時
 
-- iOS 版に Jev による意味検索 (ユーザーが自分の API キーを入れた時だけ、検索語とスニペットの本文を TypeSafe の API へ送る) を入れる時は、`OTHER_USER_CONTENT` と `SEARCH_HISTORY` を APP_FUNCTIONALITY・DATA_NOT_LINKED_TO_YOU で足すかを判断し、この文書に根拠を書く。プライバシーポリシーの Jev の記載は Mac 版のランチャーだけを対象にしている
+- iOS 版に Jev による意味検索 (ユーザーが自分の API キーを入れた時だけ、検索語とスニペットの本文を TypeSafe の API へ送る) を入れる時は、`OTHER_USER_CONTENT` と `SEARCH_HISTORY` を APP_FUNCTIONALITY・DATA_NOT_LINKED_TO_YOU で足すかを判断し、この文書に根拠を書く。Jev を入れるかは関門 1 で未決定のため、プライバシーポリシーには記載していない (入れると決まった時に送信の説明を足す)
 - 分析・クラッシュ収集の SDK を入れる時、購入の管理にサーバーや外部サービスを使う時、Mac で買ったライセンスを iOS で有効にするためにライセンスキーを iOS から送る時

@@ -11,7 +11,7 @@ The snippets you save in the Service (titles, bodies, keywords, tags, folders an
 If you use iCloud, your snippets, folders, tags and snippet groups are stored in your own area of iCloud provided by Apple Inc. (the CloudKit private database) so that they sync between your Mac and iOS devices. Only you can access that area, and we cannot view it. Information stored in iCloud is handled under Apple Inc.'s privacy policy ( https://www.apple.com/legal/privacy/ ).
 <!-- source: https://developer.apple.com/documentation/cloudkit/ckcontainer/privateclouddatabase "Only the user can access their private database, by default. They own all of the database's content and can view and modify that content. Data in the private database isn't visible in the developer portal." -->
 
-Searches, including semantic search, run on your device unless you turn on the optional external semantic search described below. The data used for semantic search is created on each device and is not synced.
+Searches, including semantic search, run on your device, and the contents of your snippets are not sent outside it. The data used for semantic search is created on each device and is not synced.
 
 - You are responsible for backing up your snippets. We cannot recover snippets lost by replacing or resetting a device, deleting the Service, or deleting the data from iCloud.
 
@@ -28,10 +28,6 @@ Only when you grant permission, the Mac version monitors keystrokes to detect sn
 So that AI agents you connect (such as Claude Code) can search, add, update and delete snippets, the Mac version of the Service runs a Model Context Protocol (MCP) server on your Mac. The server accepts connections only from the same Mac (127.0.0.1) and only from clients holding a token issued by the Service.
 
 Snippets you hand to a connected AI agent are handled under the terms and privacy policy of that agent's provider. You choose which AI agents to connect and can revoke a connection in the Service's settings.
-
-### Optional external semantic search (sending to an external AI service; off by default)
-
-Only if you turn on TypeSafe's Jev in the Mac version's settings and enter your own API key, the Service sends your search query and the bodies of the snippets being searched to the API of TypeSafe, Inc. ( https://typesafe.ai/ ) when you search in the launcher. Nothing is sent unless you agree to the explanation shown before turning it on, and you can turn it off at any time. What is sent is handled under the terms and privacy policy of TypeSafe, Inc. We do not receive it.
 
 ### Purchasing and checking the license
 
@@ -70,8 +66,7 @@ The Service requires no account, and we do not collect or store your snippets or
 
 We do not provide personal information to third parties (including those outside Japan) without your prior consent, except in the following cases:
 
-- When we entrust all or part of the handling of personal information within the scope necessary to achieve the purposes of use (processor: Lemon Squeezy (United States), for selling the Mac version's license, processing payments, and issuing and checking license keys)
-- When personal information is provided as part of a business succession due to a merger or other reason
+- When we entrust all or part of the handling of personal information within the scope necessary to achieve the purposes of use- When personal information is provided as part of a business succession due to a merger or other reason
 - When cooperation is required with a national or local government body, or a party entrusted by one, in carrying out duties prescribed by law, and obtaining your consent could impede those duties
 - Other cases permitted by the Act on the Protection of Personal Information or other laws
 

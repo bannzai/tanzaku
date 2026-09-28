@@ -7,7 +7,7 @@ These Terms of Use (the "Terms") set out the conditions for providing the Servic
 1. "Service" means the macOS application and the iOS application (including its extensions) named "Tanzaku" provided by the Provider and related software (including the Service after any change to its name or content).
 1. "User Data" means the snippets (titles, bodies, keywords, tags, folders and snippet groups) and other information users save in the Service.
 1. "Paid Features" means the features of the Service that become available by purchasing a license. The license is sold through Lemon Squeezy for the macOS application (the "Mac version") and as an in-app purchase for the iOS application (the "iOS version").
-1. "External Services" means services provided by third parties, such as AI agents users connect to the Service and the external semantic search (TypeSafe's Jev) users turn on in the settings.
+1. "External Services" means services provided by third parties, such as AI agents users connect to the Service.
 
 ## Article 2 (Agreement)
 
@@ -30,7 +30,7 @@ These Terms of Use (the "Terms") set out the conditions for providing the Servic
 
 1. Rights to User Data belong to the user. User Data is stored on the user's devices and, if the user uses iCloud, in the user's iCloud, and is not sent to the Provider.
 1. Users back up their own User Data. The Provider has no obligation to back up or recover User Data.
-1. When users hand User Data to External Services (including connecting AI agents and turning on the external semantic search), the decision and its consequences are the user's responsibility, and the User Data is handled under the terms of that External Service.
+1. When users hand User Data to External Services (including connecting AI agents), the decision and its consequences are the user's responsibility, and the User Data is handled under the terms of that External Service.
 1. Users who include information that should be kept secret (passwords, API keys and the like) in User Data are responsible for managing it.
 
 ## Article 6 (Prohibited conduct)
