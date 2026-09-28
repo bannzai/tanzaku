@@ -69,6 +69,25 @@ struct SnippetEmbeddingUpdateTests {
     )
   }
 
+  @Test("作り直しの埋め込みが失敗しても、古いベクトルを消さない")
+  func keepsOldEmbeddingWhenEmbedderThrows() throws {
+    /// 埋め込みモデルの失敗を表す偽のエラー。
+    struct DummyEmbeddingError: Error {}
+    let modelContext = ModelContext(try makeTanzakuModelContainer(storeLocation: .inMemory, syncedStoreCloudKitDatabase: .none))
+    let snippet = Snippet(body: "echo dummy")
+    modelContext.insert(snippet)
+    try updateSnippetEmbeddings(modelContext: modelContext, embedder: characterCountEmbedder(modelIdentifier: "dummy-model"))
+    try modelContext.save()
+
+    snippet.body = "echo dummy-updated"
+    #expect(throws: DummyEmbeddingError.self) {
+      try updateSnippetEmbeddings(modelContext: modelContext, embedder: SnippetTextEmbedder(modelIdentifier: "dummy-model") { _ in throw DummyEmbeddingError() })
+    }
+    try modelContext.save()
+
+    #expect(try modelContext.fetch(FetchDescriptor<SnippetEmbedding>()).map(\.sourceHash) == [snippetEmbeddingSourceHash(sourceText: "echo dummy")])
+  }
+
   @Test("埋め込みモデルが変わるとベクトルを作り直す")
   func rebuildsEmbeddingWhenModelChanges() throws {
     let modelContext = ModelContext(try makeTanzakuModelContainer(storeLocation: .inMemory, syncedStoreCloudKitDatabase: .none))

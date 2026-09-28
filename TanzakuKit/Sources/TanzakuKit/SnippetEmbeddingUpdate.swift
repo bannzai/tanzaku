@@ -53,6 +53,8 @@ public func updateSnippetEmbeddings(modelContext: ModelContext, embedder: Snippe
     if embeddings.count == 1, embeddings[0].modelIdentifier == embedder.modelIdentifier, embeddings[0].sourceHash == sourceHash {
       continue
     }
+    // 埋め込みが失敗した時に古いベクトルを消したまま呼び出し側が保存しないよう、消す前に新しいベクトルを作る。
+    let vector = snippetEmbeddingVectorData(vector: l2NormalizedVector(vector: try embedder.vector(sourceText)))
     for embedding in embeddings {
       modelContext.delete(embedding)
     }
@@ -61,7 +63,7 @@ public func updateSnippetEmbeddings(modelContext: ModelContext, embedder: Snippe
         snippetID: snippet.id,
         modelIdentifier: embedder.modelIdentifier,
         sourceHash: sourceHash,
-        vector: snippetEmbeddingVectorData(vector: l2NormalizedVector(vector: try embedder.vector(sourceText)))
+        vector: vector
       )
     )
   }
