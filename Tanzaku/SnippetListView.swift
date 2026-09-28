@@ -38,6 +38,9 @@ struct SnippetListView: View {
           }
       }
     }
+    // macOS の List は足した行の高さを 1 行分に潰して描き、測り直さなかった (ローカルの Debug ビルドで新規作成した直後に再現。
+    // 行の中身をそろえる・選ぶ時機をずらすのでは直らなかった)。スニペットの件数が変わったら List を作り直して、すべての行を測り直させる。
+    .id(snippets.count)
     .onDeleteCommand {
       if case .snippet(let snippetID) = selection {
         deletingSnippet = snippets.first { $0.id == snippetID }

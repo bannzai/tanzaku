@@ -21,6 +21,8 @@ struct TanzakuApp: App {
     // デザインの管理ウィンドウの大きさ (`documents/design/Manager.dc.html` の 1280×800)。
     .defaultSize(width: 1280, height: 800)
     .commands {
+      // 管理ウィンドウは 1 つで足りるため「新規ウインドウ」を外し、⌘N を新規スニペット (`ManagerView` のツールバー) に使う。閉じたウインドウは Dock のアイコンで開き直せる。
+      CommandGroup(replacing: .newItem) {}
       #if DEBUG
         if case .success(let modelContainer) = modelContainerResult {
           DebugCommands(modelContainer: modelContainer)

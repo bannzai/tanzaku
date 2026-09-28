@@ -5,9 +5,16 @@ import TanzakuKit
 
 /// Mac アプリのストアのファイルの置き場所。Application Support の `Tanzaku` ディレクトリに、同期するストアと端末内のストアを置く。
 ///
+/// Debug ビルドは `TanzakuDebug` ディレクトリに分ける。Debug ビルドは普段使いの Release ビルド (`make macos`) と同じ bundle ID で同じ Application Support を使うため、
+/// 分けないと動作確認の見本データ (Debug メニューの「Insert Sample Data」) が開発者のスニペットに混ざるため。
 /// ディレクトリが無い時は作る。既にあれば何もしないため、何度呼んでも同じ結果になる。
 func tanzakuStoreLocation() throws -> ModelStoreLocation {
-  let storeDirectoryURL = URL.applicationSupportDirectory.appending(path: "Tanzaku", directoryHint: .isDirectory)
+  #if DEBUG
+    let storeDirectoryName = "TanzakuDebug"
+  #else
+    let storeDirectoryName = "Tanzaku"
+  #endif
+  let storeDirectoryURL = URL.applicationSupportDirectory.appending(path: storeDirectoryName, directoryHint: .isDirectory)
   try FileManager.default.createDirectory(at: storeDirectoryURL, withIntermediateDirectories: true)
   return .files(
     syncedStoreURL: storeDirectoryURL.appending(path: "Synced.store"),
