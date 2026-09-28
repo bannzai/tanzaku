@@ -44,6 +44,7 @@ iOS では、本体アプリ・共有シート・App Intents・カスタムキ�
 | `colorRawValue` | `String?` | `nil` | 色 (朱・藍・松葉・山吹・紫) の raw value。`nil` は色なし |
 | `folder` | `Folder?` | `nil` | 0〜1 個のフォルダ |
 | `tags` | `[Tag]?` | `[]` | 0 個以上のタグ |
+| `groupItems` | `[SnippetGroupItem]?` | `[]` | このスニペットを入れたスニペットグループの項目 (`SnippetGroupItem.snippet` の逆のリレーション)。削除ルールは `.cascade` (スニペットを消すと項目も消える)。CloudKit はリレーションに逆向きを求めるため置く |
 | `createdAt` / `updatedAt` | `Date` | `.now` | |
 | `createdByKind` / `updatedByKind` | `String` | `"user"` | 作成・更新した主体の種類 (`user` / `mcp`)。「AI エージェントが追加」の絞り込みを `#Predicate` で書くため、Codable の複合型にせず平の属性にする |
 | `createdByClientName` / `updatedByClientName` | `String?` | `nil` | 主体が `mcp` の時の MCP クライアント名 |
@@ -84,7 +85,7 @@ iOS では、本体アプリ・共有シート・App Intents・カスタムキ�
 | --- | --- | --- | --- |
 | `id` | `UUID` | `UUID()` | |
 | `group` | `SnippetGroup?` | `nil` | |
-| `snippet` | `Snippet?` | `nil` | スニペットの削除ルールは `.cascade` (スニペットを消すと項目も消える) |
+| `snippet` | `Snippet?` | `nil` | スニペットの削除ルールは `.cascade` (スニペットを消すと項目も消える。`Snippet.groupItems` に置く) |
 | `sortIndex` | `Int` | `0` | メニューでの並び順 |
 
 メニューの項目名はスニペットのタイトル (無ければ本文の 1 行目)。
@@ -97,8 +98,8 @@ iOS では、本体アプリ・共有シート・App Intents・カスタムキ�
 | --- | --- | --- |
 | `snippetID` | `UUID` | 対象の `Snippet.id` |
 | `modelIdentifier` | `String` | ベクトルを作った埋め込みモデルとその版。一致しないベクトルは検索に使わず作り直す |
-| `sourceHash` | `String` | ベクトルの元にしたテキストのハッシュ。スニペットの更新で一致しなくなったら作り直す |
-| `vector` | `Data` | ベクトル |
+| `sourceHash` | `String` | ベクトルの元にしたテキスト (キーワード・タイトル・本文) の SHA-256。スニペットの更新で一致しなくなったら作り直す |
+| `vector` | `Data` | 長さ 1 に正規化した `Float` の配列のバイト列 |
 
 ### MCPClient (端末内)
 

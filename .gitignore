@@ -2,4 +2,6 @@
 xcuserdata/
 *.xcuserstate
 tmp/
+.build/
+.swiftpm/
 .envrc
