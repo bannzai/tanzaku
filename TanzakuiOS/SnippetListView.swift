@@ -97,6 +97,10 @@ struct SnippetListView: View {
     .onChange(of: searchQuery) {
       search()
     }
+    // iPad で検索の入力を残したままサイドバーの絞り込みを変えた時に、新しい絞り込みの中で検索し直す。
+    .onChange(of: filter) {
+      search()
+    }
     .task(id: snippetTextEmbedder?.modelIdentifier) {
       refreshSnippetEmbeddings()
       search()

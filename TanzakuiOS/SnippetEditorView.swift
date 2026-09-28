@@ -133,9 +133,10 @@ struct SnippetEditorView: View {
     }
   }
 
-  /// 検査を通れば保存して閉じる。通らなければ理由を出し、編集を続けさせる。
+  /// 検査を通れば保存して閉じる。通らなければ理由を出し、編集を続けさせる。タグの欄に入力したまま Return を押していない名前も付けてから保存する。
   private func save() {
     do {
+      try addTypedTag()
       try saveEditedSnippet(snippet: snippet, modelContext: modelContext, now: .now)
       dismiss()
     } catch {
@@ -152,16 +153,21 @@ struct SnippetEditorView: View {
     }
   }
 
-  /// 入力した名前のタグを付ける。同じ名前のタグがあればそれを使う。
+  /// タグの欄で Return を押した時に、入力した名前のタグを付ける。
   private func addNewTag() {
     do {
-      if let tag = try findOrInsertTag(name: newTagName, modelContext: modelContext), snippet.tags?.contains(where: { $0.id == tag.id }) != true {
-        snippet.tags = (snippet.tags ?? []) + [tag]
-      }
-      newTagName = ""
+      try addTypedTag()
     } catch {
       errorMessage = String(describing: error)
     }
+  }
+
+  /// タグの欄に入力した名前のタグを付けて欄を空にする。同じ名前のタグがあればそれを使い、欄が空白だけなら何もしない。
+  private func addTypedTag() throws {
+    if let tag = try findOrInsertTag(name: newTagName, modelContext: modelContext), snippet.tags?.contains(where: { $0.id == tag.id }) != true {
+      snippet.tags = (snippet.tags ?? []) + [tag]
+    }
+    newTagName = ""
   }
 }
 
