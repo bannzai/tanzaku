@@ -3,7 +3,8 @@ import SwiftData
 import TanzakuKit
 
 /// 本体アプリ・共有シート・App Intents・カスタムキーボードが同じストアを使うための App Group (`documents/data-model.md`「ストアの分け方」)。
-let tanzakuAppGroupIdentifier = "group.com.bannzai.tanzaku"
+/// エラーの文言 (`CustomStringConvertible.description` は nonisolated) からも読むため nonisolated にする。
+nonisolated let tanzakuAppGroupIdentifier = "group.com.bannzai.tanzaku"
 
 /// iOS アプリのストアを開けなかった理由。`description` は画面にそのまま表示する。
 enum IOSModelContainerError: Error, CustomStringConvertible {
