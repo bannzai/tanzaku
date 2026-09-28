@@ -1,3 +1,4 @@
+import Foundation
 import TanzakuKit
 
 /// ランチャーの本体の欄に何を出すか。
@@ -30,6 +31,17 @@ func launcherSelectedSnippet(searchResult: SnippetSearchResult, selectedSnippetI
     return nil
   }
   return selectableSnippets[selectedSnippetIndex]
+}
+
+/// 入力を変えずに結果を入れ替えた (意味検索の結果が届いた・ベクトルを作り直した) 後の選択の位置。
+///
+/// 選んでいたスニペットが新しい結果にもあれば、その位置を選び続ける。ユーザーが操作していない時に選択が別のスニペットへ移ると、直後の Return で意図しない本文をコピーするため。無ければ先頭を選ぶ。
+func launcherSelectionIndexAfterResultUpdate(searchResult: SnippetSearchResult, selectedSnippetID: UUID?) -> Int? {
+  let selectableSnippets = launcherSelectableSnippets(searchResult: searchResult)
+  if let selectedSnippetID, let index = selectableSnippets.firstIndex(where: { $0.id == selectedSnippetID }) {
+    return index
+  }
+  return launcherMovedSelectionIndex(currentIndex: nil, offset: 0, count: selectableSnippets.count)
 }
 
 /// ↑↓ で選択を動かした後の位置。端で止め、先頭から末尾へ回り込ませない (macOS の一覧の ↑↓ と同じ)。結果が無ければ `nil`。

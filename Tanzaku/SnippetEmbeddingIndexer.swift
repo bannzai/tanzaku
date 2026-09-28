@@ -31,7 +31,10 @@ actor SnippetEmbeddingIndexer {
   }
 
   /// 検索の入力のベクトル。埋め込みモデルが無ければ `nil`。
+  ///
+  /// 入力が変わって取り消された古い入力は、推論する前にやめる。この actor の待ち行列に溜まった古い入力の推論で、新しい入力の意味検索を待たせないため。
   func queryVector(query: String) throws -> [Float]? {
-    try snippetTextEmbedder?.vector(query)
+    try Task.checkCancellation()
+    return try snippetTextEmbedder?.vector(query)
   }
 }

@@ -53,6 +53,28 @@ struct LauncherResultListTests {
     #expect(launcherSelectedSnippet(searchResult: searchResult, selectedSnippetIndex: -1) == nil)
   }
 
+  @Test("入力を変えずに結果を入れ替えた時は、選んでいたスニペットが残っていればその位置を選び、無ければ先頭を選ぶ")
+  func selectionFollowsSnippetAfterResultUpdate() {
+    let keywordMatchedSnippet = makeSnippet(body: "echo dummy keyword", keyword: "env")
+    let selectedSnippet = makeSnippet(body: "echo dummy selected", keyword: "envkey")
+    let semanticSnippet = makeSnippet(body: "echo dummy semantic")
+    let updatedSearchResult = SnippetSearchResult(
+      keywordMatches: [
+        SnippetKeywordMatch(snippet: keywordMatchedSnippet, kind: .keywordExact),
+        SnippetKeywordMatch(snippet: selectedSnippet, kind: .keywordPrefix),
+      ],
+      semanticMatches: [semanticSnippet]
+    )
+
+    #expect(launcherSelectionIndexAfterResultUpdate(searchResult: updatedSearchResult, selectedSnippetID: selectedSnippet.id) == 1)
+    #expect(launcherSelectionIndexAfterResultUpdate(searchResult: updatedSearchResult, selectedSnippetID: UUID()) == 0)
+    #expect(launcherSelectionIndexAfterResultUpdate(searchResult: updatedSearchResult, selectedSnippetID: nil) == 0)
+    #expect(
+      launcherSelectionIndexAfterResultUpdate(searchResult: SnippetSearchResult(keywordMatches: [], semanticMatches: []), selectedSnippetID: selectedSnippet.id)
+        == nil
+    )
+  }
+
   @Test("↑↓ は端で止まり、回り込まない。選んでいなければ先頭、結果が無ければ選ばない")
   func movedSelectionIndexIsClamped() {
     #expect(launcherMovedSelectionIndex(currentIndex: 0, offset: 1, count: 3) == 1)

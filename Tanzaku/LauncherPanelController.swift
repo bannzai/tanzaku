@@ -103,46 +103,53 @@ final class LauncherPanelController: NSObject, NSWindowDelegate {
     close()
   }
 
-  /// 今の入力で検索して結果を入れ替え、先頭を選ぶ。
+  /// 今の入力で検索して結果を入れ替える。
   ///
   /// 文字列の一致はすぐに出し、意味検索は入力のベクトルを `SnippetEmbeddingIndexer` で作ってから足す。入力のベクトルの推論でキー入力を止めないため。
-  private func search() {
+  /// `keepsSelection` が `false` (入力が変わった) なら先頭を選ぶ。`true` (入力を変えずにベクトルを作り直した) なら選んでいたスニペットを選び続け、意味検索の結果が届くまで文字列の一致だけの結果に入れ替えない (選んでいた意味検索の結果が一度消えて選択が移らないようにするため)。
+  private func search(keepsSelection: Bool) {
     let query = state.query
-    applySearchResult(query: query, embedder: nil, keepsSelection: false)
     semanticSearchTask?.cancel()
     guard let snippetEmbeddingIndexer, let snippetEmbeddingModelIdentifier else {
+      applySearchResult(query: query, embedder: nil, selectedSnippetID: keepsSelection ? selectedSnippetID() : nil)
       return
+    }
+    if !keepsSelection {
+      applySearchResult(query: query, embedder: nil, selectedSnippetID: nil)
     }
     semanticSearchTask = Task { [weak self] in
       do {
-        guard let queryVector = try await snippetEmbeddingIndexer.queryVector(query: query), !Task.isCancelled, self?.state.query == query else {
+        guard let queryVector = try await snippetEmbeddingIndexer.queryVector(query: query), !Task.isCancelled, let self, self.state.query == query else {
           return
         }
         // 入力のベクトルは作り終えているため、検索にはそれを返すだけの埋め込みモデルを渡す。
-        self?.applySearchResult(
+        self.applySearchResult(
           query: query,
           embedder: SnippetTextEmbedder(modelIdentifier: snippetEmbeddingModelIdentifier) { _ in queryVector },
-          keepsSelection: true
+          selectedSnippetID: self.selectedSnippetID()
         )
+      } catch is CancellationError {
+        return
       } catch {
         self?.logger.error("Failed to embed the query: \(String(describing: error))")
       }
     }
   }
 
-  /// 検索の結果を入れ替える。`keepsSelection` が `true` なら、意味検索の結果を足す前に ↑↓ で動かした選択を範囲の中で残す。
-  private func applySearchResult(query: String, embedder: SnippetTextEmbedder?, keepsSelection: Bool) {
+  /// 検索の結果を入れ替え、`selectedSnippetID` のスニペットが新しい結果にあれば選び続け、無ければ先頭を選ぶ。
+  private func applySearchResult(query: String, embedder: SnippetTextEmbedder?, selectedSnippetID: UUID?) {
     do {
       state.searchResult = try searchSnippets(query: query, modelContext: modelContainer.mainContext, embedder: embedder)
     } catch {
       logger.error("Failed to search snippets: \(String(describing: error))")
       state.searchResult = SnippetSearchResult(keywordMatches: [], semanticMatches: [])
     }
-    state.selectedSnippetIndex = launcherMovedSelectionIndex(
-      currentIndex: keepsSelection ? state.selectedSnippetIndex : nil,
-      offset: 0,
-      count: launcherSelectableSnippets(searchResult: state.searchResult).count
-    )
+    state.selectedSnippetIndex = launcherSelectionIndexAfterResultUpdate(searchResult: state.searchResult, selectedSnippetID: selectedSnippetID)
+  }
+
+  /// 今選んでいるスニペットの `id`。
+  private func selectedSnippetID() -> UUID? {
+    launcherSelectedSnippet(searchResult: state.searchResult, selectedSnippetIndex: state.selectedSnippetIndex)?.id
   }
 
   /// 意味検索のベクトルを今のスニペットに合わせ、パネルが開いていれば今の入力で検索し直す。管理ウィンドウ・MCP で変わったスニペットを、開くたびに意味検索へ反映するため。
@@ -159,7 +166,7 @@ final class LauncherPanelController: NSObject, NSWindowDelegate {
         self?.logger.error("Failed to update snippet embeddings: \(String(describing: error))")
       }
       if self?.panel?.isVisible == true {
-        self?.search()
+        self?.search(keepsSelection: true)
       }
     }
   }
@@ -244,7 +251,7 @@ final class LauncherPanelController: NSObject, NSWindowDelegate {
       rootView: LauncherView(
         state: state,
         onQueryChange: { [weak self] in
-          self?.search()
+          self?.search(keepsSelection: false)
         },
         onCopySelectedSnippet: { [weak self] in
           self?.outputSelectedSnippet(action: .copy)
