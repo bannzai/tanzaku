@@ -74,7 +74,7 @@ struct SnippetEditingTests {
     #expect(folder?.id == sameFolder?.id)
     #expect(try findOrInsertTag(name: " ", modelContext: modelContext) == nil)
     #expect(try findOrInsertFolder(name: "", modelContext: modelContext) == nil)
-    #expect(try modelContext.fetchCount(FetchDescriptor<Tag>()) == 1)
+    #expect(try modelContext.fetchCount(FetchDescriptor<SchemaV1.Tag>()) == 1)
     #expect(try modelContext.fetchCount(FetchDescriptor<Folder>()) == 1)
   }
 

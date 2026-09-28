@@ -10,7 +10,7 @@ struct SnippetLibraryFilterTests {
   func filtersByEachCondition() throws {
     let modelContext = ModelContext(try makeTanzakuModelContainer(storeLocation: .inMemory, syncedStoreCloudKitDatabase: .none))
     let folder = Folder(name: "開発環境")
-    let tag = Tag(name: "shell")
+    let tag = SchemaV1.Tag(name: "shell")
     let snippetGroup = SnippetGroup(name: "dummy-group")
     let userSnippet = Snippet(body: "echo user")
     let agentSnippet = Snippet(body: "echo agent")
