@@ -5,21 +5,21 @@
 ## 前提
 
 - 保存は SwiftData。バックエンドは持たない
-- 今は macOS アプリだけだが、iOS アプリへの展開を見込み、Mac と iOS の間を iCloud (CloudKit) で同期できる形で最初から定義する。同期を有効にする時期は iOS 版に着手する時に決める (それまでは同期しない)
-- macOS 版は Developer ID で配布する。Developer ID で署名したアプリも Developer ID 用の provisioning profile があれば CloudKit を使える ( https://developer.apple.com/developer-id/ )
+- macOS アプリと iOS アプリで同じモデルを使い、最初の版から iCloud (CloudKit) のプライベートデータベースで同期する
+- macOS 版は Developer ID で配布する。Developer ID で署名したアプリも Developer ID 用の provisioning profile があれば CloudKit を使える ( https://developer.apple.com/developer-id/ )。CI の ad-hoc 署名では iCloud の entitlement を満たす provisioning profile が無いため、CI でのビルドの署名の扱いは同期を実装する issue で決める
 
 ## ストアの分け方
 
 | ストア | 置くモデル | 同期 | 理由 |
 | --- | --- | --- | --- |
-| 同期するストア | `Snippet`・`Folder`・`Tag`・`SnippetGroup`・`SnippetGroupItem` | iOS 版で有効にする (`ModelConfiguration` の `cloudKitDatabase`。それまでは `.none`) | ユーザーのデータで、どの端末でも同じであるべきもの |
+| 同期するストア | `Snippet`・`Folder`・`Tag`・`SnippetGroup`・`SnippetGroupItem` | する (`ModelConfiguration` の `cloudKitDatabase: .private(<コンテナ ID>)`) | ユーザーのデータで、どの端末でも同じであるべきもの |
 | 端末内のストア | `SnippetEmbedding`・`MCPClient` | しない (`cloudKitDatabase: .none`) | 意味検索のベクトルは端末の OS・埋め込みモデルの版で変わり、同期すると別の版のベクトルが混ざる。MCP の接続先はその Mac の localhost サーバーに属し、iOS には無い |
 
 2 つの `ModelConfiguration` を 1 つの `ModelContainer` にまとめる。ストア間はリレーションを張れないため、端末内のストアからは `Snippet.id` (UUID) で参照する。
 
 ## CloudKit と両立させるための制約
 
-同期しない今も、同期するストアのモデルは次を守る (CloudKit の制約: https://developer.apple.com/documentation/coredata/creating-a-core-data-model-for-cloudkit 、 https://developer.apple.com/documentation/swiftdata/syncing-model-data-across-a-persons-devices )。
+同期するストアのモデルは次を守る (CloudKit の制約: https://developer.apple.com/documentation/coredata/creating-a-core-data-model-for-cloudkit 、 https://developer.apple.com/documentation/swiftdata/syncing-model-data-across-a-persons-devices )。
 
 - すべての属性は Optional か既定値を持つ
 - `@Attribute(.unique)` を使わない。一意であるべき値 (キーワード) はアプリのコードで保証する
@@ -113,7 +113,7 @@ MCP サーバーに接続を許可したクライアント。設定画面の一�
 
 ## 保存しないもの
 
-- 購入状態 (ライセンス): 決済の仕組みが決まってから決める。Mac を直販、iOS を App Store の IAP で売る場合、一方で買ったライセンスをもう一方で有効にするかは未決定
+- 購入状態 (ライセンス): SwiftData にも CloudKit にも置かない。Mac は Lemon Squeezy のライセンスキーを Keychain に置き、iOS は StoreKit の購入履歴を正とする。Mac で買ったライセンスを iOS で有効にするか (逆も) は未決定。iOS で認める場合も、同じ機能を IAP で買えるようにする必要がある (Guideline 3.1.3(b) Multiplatform Services)
 - 本文の変更履歴・ゴミ箱: 要件に無い
 
 ## スキーマの版
