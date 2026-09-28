@@ -11,7 +11,7 @@ struct SnippetLibraryFilterTests {
     let modelContext = ModelContext(try makeTanzakuModelContainer(storeLocation: .inMemory, syncedStoreCloudKitDatabase: .none))
     let folder = Folder(name: "dummy-folder")
     modelContext.insert(folder)
-    let tag = Tag(name: "dummy-tag")
+    let tag = SchemaV1.Tag(name: "dummy-tag")
     modelContext.insert(tag)
     let userSnippet = Snippet(body: "echo user")
     modelContext.insert(userSnippet)
