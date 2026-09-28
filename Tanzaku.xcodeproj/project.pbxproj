@@ -10,6 +10,9 @@
 		2A8FAA4DE8F86358E1C083D3 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 490F39DA27F8967A83114754 /* Localizable.xcstrings */; };
 		3FDD0285687CAEA6E170EAC6 /* TanzakuApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A6FB295041B82E946869DF6 /* TanzakuApp.swift */; };
 		6A24AB34013694067A252965 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D7F3E4155C140F2DBB11F25 /* ContentView.swift */; };
+		7A1000000000000000000001 /* TanzakuiOSApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A1000000000000000000011 /* TanzakuiOSApp.swift */; };
+		7A1000000000000000000002 /* TanzakuKit in Frameworks */ = {isa = PBXBuildFile; productRef = 7A1000000000000000000081 /* TanzakuKit */; };
+		7A1000000000000000000003 /* TanzakuKit in Frameworks */ = {isa = PBXBuildFile; productRef = 7A1000000000000000000082 /* TanzakuKit */; };
 		BC546B10F71243F94161BA43 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 819D3AB10EDF53500854ED1E /* Assets.xcassets */; };
 		F3D1C21226DC1199B58783CB /* TanzakuTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 696013EBD8A305FE612B27B7 /* TanzakuTests.swift */; };
 /* End PBXBuildFile section */
@@ -28,6 +31,8 @@
 		490F39DA27F8967A83114754 /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
 		4D7F3E4155C140F2DBB11F25 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		696013EBD8A305FE612B27B7 /* TanzakuTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TanzakuTests.swift; sourceTree = "<group>"; };
+		7A1000000000000000000011 /* TanzakuiOSApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TanzakuiOSApp.swift; sourceTree = "<group>"; };
+		7A1000000000000000000012 /* TanzakuiOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TanzakuiOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		819D3AB10EDF53500854ED1E /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		8A6FB295041B82E946869DF6 /* TanzakuApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TanzakuApp.swift; sourceTree = "<group>"; };
 		AB8FE1D8A6D581E6DF71B10D /* Tanzaku.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Tanzaku.entitlements; sourceTree = "<group>"; };
@@ -35,14 +40,42 @@
 		F42397ABB5D473ABA5C9F741 /* TanzakuTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TanzakuTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFrameworksBuildPhase section */
+		7A1000000000000000000031 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				7A1000000000000000000002 /* TanzakuKit in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		7A1000000000000000000032 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				7A1000000000000000000003 /* TanzakuKit in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
 /* Begin PBXGroup section */
 		794AF1B7E86592B62D074032 /* Products */ = {
 			isa = PBXGroup;
 			children = (
 				E804D807AB678D0394017B55 /* Tanzaku.app */,
 				F42397ABB5D473ABA5C9F741 /* TanzakuTests.xctest */,
+				7A1000000000000000000012 /* TanzakuiOS.app */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		7A1000000000000000000021 /* TanzakuiOS */ = {
+			isa = PBXGroup;
+			children = (
+				7A1000000000000000000011 /* TanzakuiOSApp.swift */,
+			);
+			path = TanzakuiOS;
 			sourceTree = "<group>";
 		};
 		C2232B089B697C8061A78001 /* Tanzaku */ = {
@@ -61,6 +94,7 @@
 			isa = PBXGroup;
 			children = (
 				C2232B089B697C8061A78001 /* Tanzaku */,
+				7A1000000000000000000021 /* TanzakuiOS */,
 				FFDDB424F544A78FD2837B05 /* TanzakuTests */,
 				794AF1B7E86592B62D074032 /* Products */,
 			);
@@ -100,6 +134,7 @@
 			buildConfigurationList = D98626946E2D9212CD95DE94 /* Build configuration list for PBXNativeTarget "Tanzaku" */;
 			buildPhases = (
 				9E6F7559CD7C10ED336ACC0F /* Sources */,
+				7A1000000000000000000031 /* Frameworks */,
 				4AA94B2635BC7EBF852E9001 /* Resources */,
 			);
 			buildRules = (
@@ -108,9 +143,30 @@
 			);
 			name = Tanzaku;
 			packageProductDependencies = (
+				7A1000000000000000000081 /* TanzakuKit */,
 			);
 			productName = Tanzaku;
 			productReference = E804D807AB678D0394017B55 /* Tanzaku.app */;
+			productType = "com.apple.product-type.application";
+		};
+		7A1000000000000000000041 /* TanzakuiOS */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 7A1000000000000000000061 /* Build configuration list for PBXNativeTarget "TanzakuiOS" */;
+			buildPhases = (
+				7A1000000000000000000033 /* Sources */,
+				7A1000000000000000000032 /* Frameworks */,
+				7A1000000000000000000034 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = TanzakuiOS;
+			packageProductDependencies = (
+				7A1000000000000000000082 /* TanzakuKit */,
+			);
+			productName = TanzakuiOS;
+			productReference = 7A1000000000000000000012 /* TanzakuiOS.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -130,6 +186,10 @@
 						DevelopmentTeam = TQPN82UBBY;
 						ProvisioningStyle = Automatic;
 					};
+					7A1000000000000000000041 = {
+						DevelopmentTeam = TQPN82UBBY;
+						ProvisioningStyle = Automatic;
+					};
 				};
 			};
 			buildConfigurationList = CB607143B377DD90E781B675 /* Build configuration list for PBXProject "Tanzaku" */;
@@ -143,12 +203,16 @@
 			);
 			mainGroup = C444FF1BECBC1B8DFA2A39D3;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				7A1000000000000000000071 /* XCLocalSwiftPackageReference "TanzakuKit" */,
+			);
 			preferredProjectObjectVersion = 77;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
 				53454CE5B8EC5CB018DE5C6F /* Tanzaku */,
 				3D161F7F2FCD597949FE21AC /* TanzakuTests */,
+				7A1000000000000000000041 /* TanzakuiOS */,
 			);
 		};
 /* End PBXProject section */
@@ -160,6 +224,13 @@
 			files = (
 				BC546B10F71243F94161BA43 /* Assets.xcassets in Resources */,
 				2A8FAA4DE8F86358E1C083D3 /* Localizable.xcstrings in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		7A1000000000000000000034 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -180,6 +251,14 @@
 			files = (
 				6A24AB34013694067A252965 /* ContentView.swift in Sources */,
 				3FDD0285687CAEA6E170EAC6 /* TanzakuApp.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		7A1000000000000000000033 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				7A1000000000000000000001 /* TanzakuiOSApp.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -519,9 +598,87 @@
 			};
 			name = DebugUnsigned;
 		};
+		7A1000000000000000000051 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = Tanzaku;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.bannzai.tanzaku;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		7A1000000000000000000052 /* DebugUnsigned */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGNING_ALLOWED = NO;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = Tanzaku;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.bannzai.tanzaku;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = DebugUnsigned;
+		};
+		7A1000000000000000000053 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = Tanzaku;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.bannzai.tanzaku;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		7A1000000000000000000061 /* Build configuration list for PBXNativeTarget "TanzakuiOS" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				7A1000000000000000000051 /* Debug */,
+				7A1000000000000000000052 /* DebugUnsigned */,
+				7A1000000000000000000053 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
 		88DE9B26624A8D16BBE74F82 /* Build configuration list for PBXNativeTarget "TanzakuTests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
@@ -553,6 +710,24 @@
 			defaultConfigurationName = Debug;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		7A1000000000000000000071 /* XCLocalSwiftPackageReference "TanzakuKit" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = TanzakuKit;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		7A1000000000000000000081 /* TanzakuKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = TanzakuKit;
+		};
+		7A1000000000000000000082 /* TanzakuKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = TanzakuKit;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 8F0C9A2A7B5BB151CF4B5CA6 /* Project object */;
 }
