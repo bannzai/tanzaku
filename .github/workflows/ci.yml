@@ -1,0 +1,31 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-test:
+    # public リポジトリのため GitHub-hosted の macOS ランナーは無料。ビルドとテストはローカル Mac ではなくここで行う (AGENTS.md「検証方法」)。
+    runs-on: macos-26
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # ランナーには署名 ID が無いため ad-hoc 署名 (Sign to Run Locally) で上書きする。
+      - name: Build the macOS app
+        run: make build-macos SIGNING_FLAGS="CODE_SIGN_STYLE=Manual CODE_SIGN_IDENTITY=- DEVELOPMENT_TEAM="
+
+      - name: Unit tests
+        run: make test SIGNING_FLAGS="CODE_SIGN_STYLE=Manual CODE_SIGN_IDENTITY=- DEVELOPMENT_TEAM="

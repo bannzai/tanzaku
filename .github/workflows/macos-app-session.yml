@@ -1,0 +1,50 @@
+# GitHub Actions の macOS ランナーのデスクトップでアプリを起動し、WebDriverAgentMac を
+# メンテナーの tailnet へ公開する。ローカル Mac でアプリを起動せずに画面を確認するため。
+# 処理の本体は simtunnel の reusable workflow (https://github.com/bannzai/simtunnel 、
+# PROJECT.md「macOS アプリの操作（WebDriverAgentMac）」)。使い方: AGENTS.md「画面の確認」。
+name: macos-app-session
+# local/simtunnel はこの名前で run を探す (session=<name> で始まる必要がある)。
+run-name: "session=${{ inputs.session }} runner=${{ inputs.runner }}"
+
+on:
+  # fork からの pull request に Tailscale の Secrets を渡さないため、手動 dispatch だけにする。
+  workflow_dispatch:
+    # local/simtunnel は session / device / duration_minutes を常に送り、未宣言の input を含む dispatch は拒否される。
+    inputs:
+      session:
+        description: "セッション名。ランナーは simtunnel-<session> として tailnet に参加する (小文字英数字とハイフン)"
+        required: true
+        # tailnet のホスト名になるため、別リポジトリのセッションと衝突しないようリポジトリ名を接頭辞にする (AGENTS.md「画面の確認」)。
+        default: tanzaku-mac
+      device:
+        description: "macOS では使わない。local/simtunnel が送るため宣言している"
+        required: false
+        default: "-"
+      duration_minutes:
+        description: "セッションを維持する分数"
+        required: true
+        default: "60"
+      runner:
+        description: "macOS ランナーのラベル"
+        required: false
+        default: macos-26
+
+jobs:
+  session:
+    # reusable workflow を呼ぶ job だけが OIDC トークンを受け取る。
+    permissions:
+      id-token: write # Tailscale はランナーを OIDC で認証する
+      contents: read
+    # simtunnel にはリリースタグが無いため main の commit で固定する。
+    uses: bannzai/simtunnel/.github/workflows/macos-session.yml@91d3333b22a3040b1739f5483e2fb957110aedac # main 2026-09-18
+    with:
+      session: ${{ inputs.session }}
+      runner: ${{ inputs.runner }}
+      duration_minutes: ${{ inputs.duration_minutes }}
+      build_project: Tanzaku.xcodeproj
+      build_scheme: Tanzaku
+      # ランナーには署名 ID が無く、reusable workflow は追加のビルドフラグを渡さないため、署名しない Debug 構成を使う。
+      build_configuration: DebugUnsigned
+    secrets:
+      TS_OIDC_CLIENT_ID: ${{ secrets.TS_OIDC_CLIENT_ID }}
+      TS_OIDC_AUDIENCE: ${{ secrets.TS_OIDC_AUDIENCE }}

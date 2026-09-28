@@ -1,0 +1,16 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "Tanzaku" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tanzaku"
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.0"
+}

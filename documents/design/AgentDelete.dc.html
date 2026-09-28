@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>AI エージェントによる削除の確認</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="width: 760px; height: 700px; box-sizing: border-box; display: flex; align-items: center; justify-content: center; background: {{t.backdrop}}; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', sans-serif; color: {{t.fg}}">
+<div role="alertdialog" aria-labelledby="del-title" style="width: 540px; display: flex; flex-direction: column; gap: 18px; padding: 28px 28px 24px; box-sizing: border-box; background: {{t.panel}}; border: 1px solid {{t.panelLine}}; border-radius: 12px; box-shadow: {{t.shadow}}">
+
+<div style="display: flex; gap: 14px; align-items: flex-start">
+<svg width="44" height="44" viewBox="0 0 44 44" fill="none" aria-hidden="true"><rect x="0.5" y="0.5" width="43" height="43" rx="10" fill="{{t.iconBg}}" stroke="{{t.line}}"></rect><rect x="16" y="8" width="12" height="28" rx="2" fill="{{t.band.ai}}"></rect><circle cx="22" cy="12.5" r="1.6" fill="{{t.iconBg}}"></circle></svg>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<div id="del-title" style="font-size: 15px; font-weight: 700; line-height: 1.4">Claude Code がスニペットの削除を求めています</div>
+<div style="font-size: 13px; color: {{t.fg2}}; line-height: 1.55">MCP で届いた依頼です。削除する内容を確かめて、Touch ID で確定してください。</div>
+</div>
+</div>
+
+<dl style="margin: 0; display: grid; grid-template-columns: 112px minmax(0, 1fr); row-gap: 8px; column-gap: 12px; font-size: 12px; padding: 12px 14px; border-radius: 8px; background: {{t.inset}}">
+<dt style="color: {{t.fg3}}">依頼元</dt>
+<dd style="margin: 0; display: flex; align-items: center; gap: 6px"><span style="width: 7px; height: 7px; border-radius: 4px; background: {{t.band.matsuba}}"></span>Claude Code (接続済みのクライアント)</dd>
+<dt style="color: {{t.fg3}}">操作</dt>
+<dd style="margin: 0">スニペット 1 件の削除</dd>
+<dt style="color: {{t.fg3}}">エージェントの説明</dt>
+<dd style="margin: 0; line-height: 1.5">「direnv を使わなくなったので、この雛形は不要になりました」</dd>
+<dt style="color: {{t.fg3}}">受信</dt>
+<dd style="margin: 0">今日 14:32</dd>
+</dl>
+
+<div style="display: flex; flex-direction: column; gap: 8px">
+<div style="font-size: 12px; font-weight: 600; color: {{t.fg2}}">削除されるスニペット</div>
+<div style="display: flex; gap: 12px; padding: 14px; border-radius: 8px; border: 1px solid {{t.line}}">
+<div style="width: 4px; border-radius: 2px; flex-shrink: 0; background: {{t.band.matsuba}}"></div>
+<div style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px">
+<div style="display: flex; align-items: baseline; gap: 10px">
+<span style="font-size: 14px; font-weight: 600">.envrc の雛形</span>
+<span style="font-size: 12px; color: {{t.fg3}}">キーワード envrc · タグ shell, direnv · フォルダ 開発環境</span>
+</div>
+<pre style="margin: 0; padding: 10px 12px; border-radius: 6px; background: {{t.code}}; font-family: 'SF Mono', ui-monospace, Menlo, monospace; font-size: 12px; line-height: 1.6; color: {{t.fg}}; white-space: pre-wrap">{{body}}</pre>
+</div>
+</div>
+</div>
+
+<div style="display: flex; align-items: center; gap: 10px">
+<div style="flex-grow: 1; font-size: 12px; color: {{t.fg3}}; line-height: 1.5">確認なしの削除は 設定 › AI エージェント で許可できます</div>
+<button type="button" style="height: 30px; padding: 0 14px; border-radius: 6px; border: 1px solid {{t.fieldLine}}; background: {{t.field}}; color: {{t.fg}}; font-size: 13px; font-family: inherit">キャンセル</button>
+<button type="button" style="display: flex; align-items: center; gap: 8px; height: 30px; padding: 0 14px; border: 0; border-radius: 6px; background: {{t.danger}}; color: #FFFFFF; font-size: 13px; font-weight: 600; font-family: inherit">
+<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" aria-hidden="true"><path d="M3.2 5.2A5.6 5.6 0 0 1 13 5.4"></path><path d="M2.6 8.4c0-2.9 2.4-5 5.4-5s5.2 2.2 5.2 4.8"></path><path d="M5 12.6c.8-1.2 1.2-2.6 1.2-4.2a1.8 1.8 0 0 1 3.6 0c0 1.9-.4 3.6-1.3 5"></path><path d="M8 8.4c0 2-.6 3.8-1.7 5.2"></path><path d="M11.4 9.4c-.1 1.4-.5 2.8-1.1 4"></path></svg>
+Touch ID で削除
+</button>
+</div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"dark":{"editor":"boolean","default":false},"$preview":{"width":760,"height":700}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const LIGHT = {
+      backdrop: '#C9CDD4', panel: '#FFFFFF', panelLine: 'rgba(0,0,0,0.12)', iconBg: '#F1F1F4',
+      shadow: '0 24px 60px rgba(0,0,0,0.22), 0 2px 8px rgba(0,0,0,0.10)',
+      fg: '#1D1D1F', fg2: '#56565B', fg3: '#6E6E73', line: '#E4E4E7', inset: '#F4F4F6',
+      field: '#FFFFFF', fieldLine: '#CFCFD4', code: '#F6F7F9', danger: '#B8321E',
+      band: { shu: '#D2452C', ai: '#2E4F86', matsuba: '#3E7A4B', yamabuki: '#D39A1C', murasaki: '#74509A' }
+    };
+    const DARK = {
+      backdrop: '#0E0E10', panel: '#252527', panelLine: 'rgba(255,255,255,0.12)', iconBg: '#303033',
+      shadow: '0 24px 60px rgba(0,0,0,0.6), 0 2px 8px rgba(0,0,0,0.4)',
+      fg: '#F2F2F4', fg2: '#AEAEB4', fg3: '#9A9AA0', line: '#3A3A3E', inset: '#1D1D1F',
+      field: '#343437', fieldLine: '#4C4C51', code: '#1B1B1D', danger: '#B8321E',
+      band: { shu: '#E4634A', ai: '#6F92CC', matsuba: '#6BAF78', yamabuki: '#E6B84A', murasaki: '#A585CC' }
+    };
+    const t = this.props.dark ? DARK : LIGHT;
+    return {
+      t,
+      body: 'export API_TOKEN=dummy-token\nexport DATABASE_URL=postgres://localhost:5432/app_dev\nexport LOG_LEVEL=debug\n\ndotenv_if_exists .env.local'
+    };
+  }
+}
+</script>
+</body>
+</html>

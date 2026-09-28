@@ -1,0 +1,1 @@
+snippet,text expander,keyboard,AI,semantic search,code,prompt,clipboard,template,copy,iCloud

@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>ランチャー</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="width: 840px; height: 600px; box-sizing: border-box; display: flex; align-items: center; justify-content: center; background: {{t.backdrop}}; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', sans-serif; color: {{t.fg}}">
+<div style="width: 720px; height: 480px; display: flex; flex-direction: column; background: {{t.panel}}; border: 1px solid {{t.panelLine}}; border-radius: 12px; box-shadow: {{t.shadow}}; overflow: hidden">
+
+<div style="height: 56px; flex-shrink: 0; display: flex; align-items: center; gap: 12px; padding: 0 18px; border-bottom: 1px solid {{t.line}}">
+<svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="{{t.fg2}}" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="8.5" cy="8.5" r="5.5"></circle><path d="M12.5 12.5 17 17"></path></svg>
+<input type="text" value="{{query}}" aria-label="スニペットを検索" style="flex-grow: 1; border: 0; outline: none; background: transparent; font-size: 20px; color: {{t.fg}}; font-family: inherit; padding: 0">
+<span style="font-size: 12px; color: {{t.fg3}}">{{countText}}</span>
+</div>
+
+<sc-if value="{{hasResults}}" hint-placeholder-val="{{ true }}">
+<div style="flex-grow: 1; display: flex; min-height: 0">
+<div style="width: 330px; flex-shrink: 0; display: flex; flex-direction: column; padding: 8px; gap: 2px; border-right: 1px solid {{t.line}}; box-sizing: border-box">
+<div style="font-size: 11px; font-weight: 600; color: {{t.fg3}}; padding: 6px 10px 4px">キーワードが一致</div>
+<sc-for list="{{keywordRows}}" as="row" hint-placeholder-count="2">
+<div style="display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 7px; background: {{row.rowBg}}">
+<div style="width: 4px; height: 34px; border-radius: 2px; flex-shrink: 0; background: {{row.band}}"></div>
+<div style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px">
+<div style="font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{row.title}}</div>
+<div style="font-size: 12px; color: {{row.c.fg2}}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-family: 'SF Mono', ui-monospace, Menlo, monospace">{{row.first}}</div>
+</div>
+<span style="flex-shrink: 0; font-size: 12px; color: {{row.c.fg2}}; border: 1px solid {{row.c.line2}}; border-radius: 4px; padding: 1px 6px"><b style="color: {{row.c.accentText}}; font-weight: 700">{{row.head}}</b>{{row.tail}}</span>
+</div>
+</sc-for>
+<div style="font-size: 11px; font-weight: 600; color: {{t.fg3}}; padding: 12px 10px 4px">意味が近い</div>
+<sc-for list="{{semanticRows}}" as="row" hint-placeholder-count="1">
+<div style="display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 7px">
+<div style="width: 4px; height: 34px; border-radius: 2px; flex-shrink: 0; background: {{row.band}}"></div>
+<div style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px">
+<div style="font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{row.title}}</div>
+<div style="font-size: 12px; color: {{row.c.fg2}}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{row.why}}</div>
+</div>
+<span style="flex-shrink: 0; display: flex; align-items: center; gap: 4px; font-size: 12px; color: {{row.c.fg3}}">
+<svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" aria-hidden="true"><path d="M1.5 5.5c1.5-1.6 3-1.6 4.5 0s3 1.6 4.5 0M3.5 9c1.5-1.6 3-1.6 4.5 0s3 1.6 4.5 0"></path></svg>
+{{row.kw}}</span>
+</div>
+</sc-for>
+</div>
+
+<div style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; padding: 16px 18px; gap: 12px; box-sizing: border-box">
+<div style="display: flex; align-items: center; gap: 10px">
+<div style="width: 4px; height: 20px; border-radius: 2px; background: {{sel.band}}"></div>
+<div style="font-size: 15px; font-weight: 600">{{sel.title}}</div>
+</div>
+<div style="display: flex; gap: 14px; font-size: 12px; color: {{t.fg2}}">
+<span>キーワード {{sel.kw}}</span>
+<span>タグ shell, auth</span>
+<span>フォルダ 開発環境</span>
+</div>
+<pre style="margin: 0; flex-grow: 1; padding: 12px 14px; border-radius: 8px; background: {{t.code}}; border: 1px solid {{t.line}}; font-family: 'SF Mono', ui-monospace, Menlo, monospace; font-size: 12px; line-height: 1.6; color: {{t.fg}}; white-space: pre-wrap; overflow: hidden">{{sel.body}}</pre>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{isEmpty}}" hint-placeholder-val="{{ false }}">
+<div style="flex-grow: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: 0 64px; text-align: center">
+<svg width="36" height="36" viewBox="0 0 36 36" fill="none" stroke="{{t.fg3}}" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><rect x="12" y="4" width="12" height="28" rx="2"></rect><path d="M16 11h4M16 16h4"></path></svg>
+<div style="font-size: 15px; font-weight: 600">「{{query}}」に近いスニペットはありません</div>
+<div style="font-size: 13px; color: {{t.fg2}}; line-height: 1.6">キーワード・タイトル・本文の意味から探しました。<br>よく使う内容なら、ここから短冊を 1 枚作っておけます。</div>
+<button type="button" style="margin-top: 6px; display: flex; align-items: center; gap: 10px; height: 32px; padding: 0 14px; border: 0; border-radius: 6px; background: {{t.accent}}; color: #ffffff; font-size: 13px; font-family: inherit">
+<svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M7 2v10M2 7h10"></path></svg>
+「{{query}}」で新しいスニペットを作成
+<span style="font-size: 12px; opacity: 0.85">⌘N</span>
+</button>
+<div style="font-size: 12px; color: {{t.fg3}}">入力した言葉をタイトルにして、管理ウィンドウの編集を開きます</div>
+</div>
+</sc-if>
+
+<div style="height: 40px; flex-shrink: 0; display: flex; align-items: center; gap: 18px; padding: 0 18px; border-top: 1px solid {{t.line}}; background: {{t.footer}}; font-size: 12px; color: {{t.fg2}}">
+<sc-for list="{{hints}}" as="h" hint-placeholder-count="3">
+<span style="display: flex; align-items: center; gap: 6px"><span style="display: inline-flex; align-items: center; justify-content: center; min-width: 20px; height: 20px; padding: 0 5px; box-sizing: border-box; border: 1px solid {{h.c.line2}}; border-radius: 4px; font-size: 11px; color: {{h.c.fg}}; background: {{h.c.panel}}">{{h.key}}</span>{{h.label}}</span>
+</sc-for>
+</div>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"dark":{"editor":"boolean","default":false},"variant":{"editor":"enum","options":["results","empty"],"default":"results"},"$preview":{"width":840,"height":600}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const LIGHT = {
+      backdrop: '#C9CDD4', panel: '#FFFFFF', panelLine: 'rgba(0,0,0,0.12)', footer: '#F6F6F8',
+      shadow: '0 24px 60px rgba(0,0,0,0.22), 0 2px 8px rgba(0,0,0,0.10)',
+      fg: '#1D1D1F', fg2: '#56565B', fg3: '#6E6E73', line: '#E4E4E7', line2: '#C7C7CC',
+      code: '#F5F6F8', sel: '#E3EBF7', accent: '#2A5CA8', accentText: '#1F4F99',
+      band: { shu: '#D2452C', ai: '#2E4F86', matsuba: '#3E7A4B', yamabuki: '#D39A1C', murasaki: '#74509A' }
+    };
+    const DARK = {
+      backdrop: '#0E0E10', panel: '#252527', panelLine: 'rgba(255,255,255,0.12)', footer: '#202022',
+      shadow: '0 24px 60px rgba(0,0,0,0.6), 0 2px 8px rgba(0,0,0,0.4)',
+      fg: '#F2F2F4', fg2: '#AEAEB4', fg3: '#9A9AA0', line: '#37373A', line2: '#4A4A4E',
+      code: '#1B1B1D', sel: '#2C3C57', accent: '#3A6BC0', accentText: '#8DB5F2',
+      band: { shu: '#E4634A', ai: '#6F92CC', matsuba: '#6BAF78', yamabuki: '#E6B84A', murasaki: '#A585CC' }
+    };
+    const t = this.props.dark ? DARK : LIGHT;
+    const b = t.band;
+    const isEmpty = (this.props.variant ?? 'results') === 'empty';
+    const keywordRows = [
+      { title: '環境変数からトークンを取得', first: 'export API_TOKEN="${API_TOKEN:-dummy-token}"', head: 'env', tail: 'key', band: b.shu, rowBg: t.sel },
+      { title: '.envrc の雛形', first: 'export API_TOKEN=dummy-token', head: 'env', tail: 'rc', band: b.matsuba, rowBg: 'transparent' }
+    ].map((r) => ({ ...r, c: t }));
+    const semanticRows = [
+      { title: 'GitHub Actions の secrets 参照', why: '本文の env: で secrets を環境変数に渡している', kw: 'ghsec', band: b.ai }
+    ].map((r) => ({ ...r, c: t }));
+    const hints = (isEmpty
+      ? [{ key: '⌘N', label: '新規作成' }, { key: 'esc', label: '閉じる' }]
+      : [{ key: '↩', label: 'コピー' }, { key: '⌘↩', label: '前面のアプリに貼り付け' }, { key: '↑↓', label: '選択' }, { key: 'esc', label: '閉じる' }]
+    ).map((h) => ({ ...h, c: t }));
+    return {
+      t,
+      query: isEmpty ? 'ステージングの DB につなぐ' : 'env',
+      countText: isEmpty ? '0 件' : '3 件',
+      hasResults: !isEmpty,
+      isEmpty,
+      keywordRows,
+      semanticRows,
+      hints,
+      sel: {
+        title: '環境変数からトークンを取得',
+        kw: 'envkey',
+        band: b.shu,
+        body: '# API_TOKEN が未設定ならダミー値で進める\nexport API_TOKEN="${API_TOKEN:-dummy-token}"\n\ncurl -sS \\\n  -H "Authorization: Bearer ${API_TOKEN}" \\\n  https://api.example.com/v1/me'
+      }
+    };
+  }
+}
+</script>
+</body>
+</html>
