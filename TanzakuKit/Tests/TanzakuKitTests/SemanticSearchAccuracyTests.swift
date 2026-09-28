@@ -7,7 +7,8 @@ import Testing
 
 /// NLContextualEmbedding の日本語のモデルで、言い換えたクエリから目的のスニペットが上位 3 件に入る割合を測る。
 ///
-/// 値の良し悪しでは落とさず、測った値を出力する (PR の説明と、`semanticMatchMinimumSimilarity` の決定に使う)。
+/// 値の良し悪しでは落とさず、今の既定 (`makeContextualSnippetTextEmbedder(language:)` と `semanticMatchMinimumSimilarity`) で測った値を出力する。
+/// 方法どうしの比較は `SemanticSearchMethodComparisonTests` が行う。
 /// 埋め込みモデルの資産は OS がダウンロードするため、ダウンロードできない環境では実行しない。
 struct SemanticSearchAccuracyTests {
   @Test(
