@@ -12,6 +12,14 @@ struct PendingSnippetDeletion {
   var continuation: CheckedContinuation<Bool, Never>
 }
 
+/// ほかのスレッドで読み込んだ埋め込みモデルを、メインアクターへ渡すための入れ物。
+///
+/// `SnippetTextEmbedder` はクロージャを持つため Sendable ではない。読み込んだスレッドはモデルを渡した後に使わず、以降はメインアクターだけが使うため、受け渡しは安全。
+nonisolated struct UncheckedSendableEmbedder: @unchecked Sendable {
+  /// 読み込んだ埋め込みモデル。読み込めなければ `nil`。
+  var embedder: SnippetTextEmbedder?
+}
+
 /// 待ち受けるポート。デザイン (`documents/design/Settings.dc.html`) の値。
 /// 起動のたびに変わると Claude Code に登録した URL が使えなくなるため固定する。
 let mcpServerPort = 47831
@@ -134,7 +142,11 @@ final class MCPServerController {
     guard (try? await requestContextualEmbeddingAssets(language: language)) == true else {
       return
     }
-    embedder = try? makeContextualSnippetTextEmbedder(language: language)
+    // 埋め込みモデルの読み込み (NLContextualEmbedding の load()) はモデルの大きさの分だけ時間が掛かり、
+    // メインスレッドで行うと、その間は画面も MCP のリクエストの処理も止まるため、ほかのスレッドで行う。
+    embedder = await Task.detached(priority: .utility) {
+      UncheckedSendableEmbedder(embedder: try? makeContextualSnippetTextEmbedder(language: language))
+    }.value.embedder
   }
 
   /// 表示するトークンを Keychain から読み直す。無ければ作る。
@@ -205,12 +217,23 @@ final class MCPServerController {
         panel.titlebarAppearsTransparent = true
         panel.isMovableByWindowBackground = true
         panel.level = .floating
-        panel.contentViewController = NSHostingController(rootView: AgentDeleteConfirmationPanelContent(controller: self))
+        // macOS 14 からアプリの前面化 (`NSApp.activate()`) はほかのアプリを使っている間は通らないことがあり、
+        // パネルの既定 (アプリが前面でない時は隠す) のままだと確認の画面が出ず、MCP の依頼が待ち続けるため。
+        panel.hidesOnDeactivate = false
+        let hostingController = NSHostingController(rootView: AgentDeleteConfirmationPanelContent(controller: self))
+        // 依頼ごとに本文の長さで高さが変わるため、SwiftUI の内容の大きさにパネルを合わせる。
+        hostingController.sizingOptions = [.preferredContentSize]
+        panel.contentViewController = hostingController
         deletionConfirmationPanel = panel
         return panel
       }()
     NSApp.activate()
+    if let contentView = panel.contentView {
+      panel.setContentSize(contentView.fittingSize)
+    }
     panel.center()
     panel.makeKeyAndOrderFront(nil)
+    // アプリが前面に出なかった時も、ほかのアプリのウィンドウの上に出す。
+    panel.orderFrontRegardless()
   }
 }

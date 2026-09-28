@@ -13,6 +13,8 @@ struct AgentDeleteConfirmationPanelContent: View {
       }
       // 依頼ごとに認証中の状態を作り直すため。
       .id(pendingDeletion.request.id)
+      // パネルはタイトルバーを隠して内容を上端まで広げているため、タイトルバーの分の余白を空けない。
+      .ignoresSafeArea()
     }
   }
 }

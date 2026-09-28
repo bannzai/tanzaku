@@ -6,8 +6,9 @@ import TanzakuKit
 /// 設定の「AI エージェント」(`documents/design/Settings.dc.html`)。MCP のサーバーの状態・接続のコマンド・アクセストークン・接続済みのクライアント・削除の確認を扱う。
 struct AgentSettingsView: View {
   @Environment(MCPServerController.self) private var controller
-  /// 接続を許可したクライアント。許可した順に並べる。
-  @Query(sort: \MCPClient.createdAt) private var clients: [MCPClient]
+  /// 接続を許可したクライアント。最近使った順に並べ、まだ使っていないものは許可した新しい順に続ける。
+  @Query(sort: [SortDescriptor(\MCPClient.lastUsedAt, order: .reverse), SortDescriptor(\MCPClient.createdAt, order: .reverse)])
+  private var clients: [MCPClient]
   /// トークンの再発行の確認を出しているか。
   @State private var isReissueConfirmationPresented = false
 
@@ -75,10 +76,13 @@ struct AgentSettingsView: View {
         }
         ForEach(clients) { client in
           LabeledContent {
-            Button("Revoke", role: .destructive) {
+            // デザインの「取り消す」は通常のボタンに赤い文字のため、role で背景まで赤くしない。
+            Button {
               controller.revoke(client: client)
+            } label: {
+              Text("Revoke")
+                .foregroundStyle(.red)
             }
-            .foregroundStyle(.red)
           } label: {
             Text(client.name)
             if let lastUsedAt = client.lastUsedAt {
