@@ -26,6 +26,8 @@ struct MCPServerTests {
   let unboundToken = "dummy-token-for-test-unbound"
 
   /// メモリのストアと、偽のトークン・確認を持つ環境。`registeredClientName` を渡すとそのクライアントを接続済みにする。
+  ///
+  /// 既定は、ほとんどのテストが前提にする「接続済みのクライアントが 1 つあり、削除には確認を求め、確認は許可する」状態 (アプリの既定の設定と同じ)。
   func makeEnvironment(
     registeredClientName: String? = "Claude Code",
     requiresDeletionConfirmation: Bool = true,

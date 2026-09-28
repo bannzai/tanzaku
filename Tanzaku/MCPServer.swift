@@ -171,6 +171,8 @@ func decodedMCPHeaderValue(headerValue: String) -> String? {
 
 /// JSON-RPC のメソッドを実行し、`result` を返す。
 func mcpResult(method: String, params: [String: Any], client: MCPClient, environment: MCPServerEnvironment) async throws -> [String: Any] {
+  // serverInfo の version は表示とログのためだけに使われ ( https://modelcontextprotocol.io/specification/2026-07-28/server/discover )、
+  // Info.plist にバージョンが無いのは生成の設定を誤った時だけのため、その時は版が不明なことを示す "0" にする。
   let serverInfo: [String: Any] = ["name": mcpServerName, "version": Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "0"]
   switch method {
   case "initialize":
