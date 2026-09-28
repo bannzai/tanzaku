@@ -74,8 +74,37 @@ struct SnippetLibraryFilterTests {
 
     #expect(
       try filteredSnippets(
-        query: "query", filter: .folder(folderID: folder.id), snippets: [], modelContext: modelContext, embedder: embedder
+        query: "query", filter: .folder(folderID: folder.id), snippets: [keywordMatchedSnippet, semanticMatchedSnippet, otherFolderSnippet],
+        modelContext: modelContext, embedder: embedder
       ).map(\.id) == [keywordMatchedSnippet.id, semanticMatchedSnippet.id]
+    )
+  }
+
+  @Test("意味検索は絞り込みの中から選ぶため、絞り込みの外に意味の近いものが上限より多くあっても、絞り込みの中のものを返す")
+  func semanticMatchesAreChosenWithinFilter() throws {
+    let modelContext = ModelContext(try makeTanzakuModelContainer(storeLocation: .inMemory, syncedStoreCloudKitDatabase: .none))
+    let folder = Folder(name: "dummy-folder")
+    modelContext.insert(folder)
+    let outsideSnippets = (0..<4).map { index in
+      let snippet = Snippet(body: "outside dummy \(index)")
+      modelContext.insert(snippet)
+      return snippet
+    }
+    let insideSnippet = Snippet(body: "inside dummy")
+    modelContext.insert(insideSnippet)
+    insideSnippet.folder = folder
+    var vectorsByText: [String: [Float]] = ["query": [1, 0, 0], "inside dummy": [1, 0.5, 0]]
+    for index in 0..<4 {
+      vectorsByText["outside dummy \(index)"] = [1, 0.1, 0]
+    }
+    let embedder = SnippetTextEmbedder(modelIdentifier: "dummy-model") { [vectorsByText] in vectorsByText[$0] ?? [0, 0, 1] }
+    try updateSnippetEmbeddings(modelContext: modelContext, embedder: embedder)
+
+    #expect(
+      try filteredSnippets(
+        query: "query", filter: .folder(folderID: folder.id), snippets: outsideSnippets + [insideSnippet], modelContext: modelContext,
+        embedder: embedder
+      ).map(\.id) == [insideSnippet.id]
     )
   }
 }

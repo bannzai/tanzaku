@@ -31,10 +31,11 @@ public func snippetMatchesLibraryFilter(snippet: Snippet, filter: SnippetLibrary
   }
 }
 
-/// 管理画面の一覧に出すスニペット。検索欄が空なら `snippets`、入力があれば `searchSnippets(query:modelContext:embedder:)` の結果を、絞り込みに合うものだけにして返す。
+/// 管理画面の一覧に出す、絞り込みに合うスニペット。検索欄が空なら `snippets` の並びのまま、入力があれば検索の結果を返す。
 ///
-/// `snippets` には一覧の既定の並び (更新日時の新しい順) のすべてのスニペットを渡す。画面では `@Query` の結果を渡し、スニペットの追加・更新・削除で一覧を描き直させるため、ここではストアから読み直さない。
-/// 検索の結果は、文字列で一致したものの後に意味検索で見つかったものを続ける。管理画面の一覧は 1 列で、検索の並び (一致の強い順) をそのまま使うため。
+/// `snippets` には一覧の既定の並び (更新日時の新しい順) のすべてのスニペットを渡す。画面では `@Query` の結果を渡し、スニペットの追加・更新・削除で一覧を描き直させるため。
+/// 検索の結果は、文字列で一致したもの (`searchSnippets(query:modelContext:embedder:)` の並び) の後に、意味検索で見つかったものを続ける。管理画面の一覧は 1 列で、検索の並び (一致の強い順) をそのまま使うため。
+/// 意味検索は絞り込みに合うスニペットの中から件数の上限まで選ぶ。全体から選んだ上位を後から絞り込むと、絞り込みの中に意味の近いものがあっても上位に入らず出なくなるため。
 public func filteredSnippets(
   query: String,
   filter: SnippetLibraryFilter,
@@ -42,9 +43,24 @@ public func filteredSnippets(
   modelContext: ModelContext,
   embedder: SnippetTextEmbedder?
 ) throws -> [Snippet] {
+  let librarySnippets = snippets.filter { snippetMatchesLibraryFilter(snippet: $0, filter: filter) }
   guard !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
-    return snippets.filter { snippetMatchesLibraryFilter(snippet: $0, filter: filter) }
+    return librarySnippets
   }
-  let searchResult = try searchSnippets(query: query, modelContext: modelContext, embedder: embedder)
-  return (searchResult.keywordMatches.map(\.snippet) + searchResult.semanticMatches).filter { snippetMatchesLibraryFilter(snippet: $0, filter: filter) }
+  let keywordMatchedSnippets = try searchSnippets(query: query, modelContext: modelContext, embedder: nil).keywordMatches
+    .map(\.snippet)
+    .filter { snippetMatchesLibraryFilter(snippet: $0, filter: filter) }
+  guard let embedder else {
+    return keywordMatchedSnippets
+  }
+  let keywordMatchedSnippetIDs = Set(keywordMatchedSnippets.map(\.id))
+  return keywordMatchedSnippets
+    + (try semanticSnippetMatches(
+      query: query,
+      snippets: librarySnippets.filter { !keywordMatchedSnippetIDs.contains($0.id) },
+      modelContext: modelContext,
+      embedder: embedder,
+      limit: semanticMatchLimit,
+      minimumSimilarity: semanticMatchMinimumSimilarity
+    ))
 }

@@ -17,8 +17,8 @@ struct SnippetGroupEditorView: View {
   @State private var name: String
   /// 入力中のキーワード。
   @State private var keyword: String
-  /// メニューに並べる順のスニペット。
-  @State private var groupSnippets: [Snippet]
+  /// メニューに並べる順のスニペットの識別子。編集中にスニペットが消されても消したモデルを参照しないよう、モデルではなく識別子で持ち、`snippets` から引く。
+  @State private var groupSnippetIDs: [UUID]
   /// 保存に失敗した理由。画面にそのまま出す。
   @State private var errorMessage: String?
   /// 削除の確認を出しているスニペットグループ。
@@ -30,7 +30,7 @@ struct SnippetGroupEditorView: View {
     _selection = selection
     _name = State(initialValue: snippetGroup?.name ?? "")
     _keyword = State(initialValue: snippetGroup?.keyword ?? "")
-    _groupSnippets = State(initialValue: snippetGroup.map { sortedSnippetGroupItems(snippetGroup: $0).compactMap(\.snippet) } ?? [])
+    _groupSnippetIDs = State(initialValue: snippetGroup.map { sortedSnippetGroupItems(snippetGroup: $0).compactMap(\.snippet?.id) } ?? [])
   }
 
   var body: some View {
@@ -77,7 +77,7 @@ struct SnippetGroupEditorView: View {
                   .foregroundStyle(.secondary)
               }
               Button {
-                groupSnippets.removeAll { $0.id == snippet.id }
+                groupSnippetIDs.removeAll { $0 == snippet.id }
               } label: {
                 Image(systemName: "minus.circle")
               }
@@ -86,7 +86,9 @@ struct SnippetGroupEditorView: View {
             }
           }
           .onMove { source, destination in
-            groupSnippets.move(fromOffsets: source, toOffset: destination)
+            // 並べ替えの位置は表示している (消されたスニペットを除いた) 並びの位置のため、表示している並びの識別子で置き換えてから動かす。
+            groupSnippetIDs = groupSnippets.map(\.id)
+            groupSnippetIDs.move(fromOffsets: source, toOffset: destination)
           }
         }
         .listStyle(.bordered(alternatesRowBackgrounds: true))
@@ -120,19 +122,24 @@ struct SnippetGroupEditorView: View {
     .snippetGroupDeleteConfirmation(deletingSnippetGroup: $deletingSnippetGroup, selection: $selection)
   }
 
+  /// メニューに並べる順のスニペット。消されたスニペットは `snippets` に無いため除かれる。
+  private var groupSnippets: [Snippet] {
+    groupSnippetIDs.compactMap { snippetID in snippets.first { $0.id == snippetID } }
+  }
+
   /// グループにまだ入れていないスニペットを選んで末尾に足すメニュー。
   private var addSnippetMenu: some View {
     Menu("Add Snippet") {
-      ForEach(snippets.filter { snippet in !groupSnippets.contains { $0.id == snippet.id } }, id: \.id) { snippet in
+      ForEach(snippets.filter { !groupSnippetIDs.contains($0.id) }, id: \.id) { snippet in
         Button {
-          groupSnippets.append(snippet)
+          groupSnippetIDs.append(snippet.id)
         } label: {
           Text(verbatim: snippetDisplayTitle(snippet: snippet))
         }
       }
     }
     .fixedSize()
-    .disabled(snippets.count == groupSnippets.count)
+    .disabled(snippets.allSatisfy { groupSnippetIDs.contains($0.id) })
   }
 
   /// 入力を検査してスニペットグループに書き込み、保存する。新規のグループは保存できたら一覧で選ぶ。

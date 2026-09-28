@@ -27,8 +27,8 @@ struct SnippetEditorView: View {
   @State private var language: SnippetLanguage?
   /// 選んでいる色。`nil` は色なし。
   @State private var color: SnippetColor?
-  /// 選んでいるフォルダ。
-  @State private var folder: Folder?
+  /// 選んでいるフォルダの識別子。サイドバーでフォルダを消しても消したモデルを参照しないよう、モデルではなく識別子で持ち、`folders` から引く。
+  @State private var folderID: UUID?
   /// 付けるタグの名前。
   @State private var tagNames: [String]
   /// タグの欄に入力中の、まだタグにしていない名前。
@@ -52,7 +52,7 @@ struct SnippetEditorView: View {
     _keyword = State(initialValue: snippet?.keyword ?? "")
     _language = State(initialValue: snippet?.language.flatMap(SnippetLanguage.init(rawValue:)))
     _color = State(initialValue: snippet?.color)
-    _folder = State(initialValue: snippet?.folder)
+    _folderID = State(initialValue: snippet?.folder?.id)
     _tagNames = State(initialValue: (snippet?.tags ?? []).map(\.name).sorted())
   }
 
@@ -141,6 +141,17 @@ struct SnippetEditorView: View {
       Button("Cancel", role: .cancel) {}
     }
     .snippetDeleteConfirmation(deletingSnippet: $deletingSnippet, embedder: embedder, selection: $selection)
+    // 編集中にサイドバーでタグを消すと、スニペットからそのタグが外れる。入力に残したまま保存すると同じ名前のタグを作り直してしまうため、入力からも外す。
+    // 入力で足したばかりのタグはスニペットにまだ付いていないため、スニペットから外れた名前だけを外す。
+    .onChange(of: (snippet?.tags ?? []).map(\.name).sorted()) { oldTagNames, newTagNames in
+      let removedTagNames = Set(oldTagNames).subtracting(newTagNames)
+      tagNames.removeAll { removedTagNames.contains($0) }
+    }
+  }
+
+  /// 選んでいるフォルダ。消されたフォルダは `folders` に無いため「なし」になる。
+  private var selectedFolder: Folder? {
+    folders.first { $0.id == folderID }
   }
 
   /// 入力欄の左に置く項目名。デザインと同じく右にそろえる。
@@ -191,13 +202,13 @@ struct SnippetEditorView: View {
   private var folderMenu: some View {
     Menu {
       Button("None") {
-        folder = nil
+        folderID = nil
       }
       if !folders.isEmpty {
         Divider()
         ForEach(folders) { folder in
           Button {
-            self.folder = folder
+            folderID = folder.id
           } label: {
             Text(verbatim: folder.name)
           }
@@ -209,7 +220,7 @@ struct SnippetEditorView: View {
         isCreatingFolder = true
       }
     } label: {
-      if let folder {
+      if let folder = selectedFolder {
         Text(verbatim: folder.name)
       } else {
         Text("None")
@@ -258,7 +269,7 @@ struct SnippetEditorView: View {
         keyword: keyword,
         language: language,
         color: color,
-        folder: folder,
+        folder: selectedFolder,
         tagNames: tagNames + [newTagName],
         modelContext: modelContext,
         now: .now
@@ -285,13 +296,13 @@ struct SnippetEditorView: View {
       return
     }
     if let existingFolder = folders.first(where: { $0.name == folderName }) {
-      folder = existingFolder
+      folderID = existingFolder.id
       return
     }
     let newFolder = Folder(name: folderName)
     modelContext.insert(newFolder)
     try? modelContext.save()
-    folder = newFolder
+    folderID = newFolder.id
   }
 }
 
