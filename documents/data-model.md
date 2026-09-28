@@ -15,6 +15,8 @@
 | 同期するストア | `Snippet`・`Folder`・`Tag`・`SnippetGroup`・`SnippetGroupItem` | する (`ModelConfiguration` の `cloudKitDatabase: .private(<コンテナ ID>)`) | ユーザーのデータで、どの端末でも同じであるべきもの |
 | 端末内のストア | `SnippetEmbedding`・`MCPClient` | しない (`cloudKitDatabase: .none`) | 意味検索のベクトルは端末の OS・埋め込みモデルの版で変わり、同期すると別の版のベクトルが混ざる。MCP の接続先はその Mac の localhost サーバーに属し、iOS には無い |
 
+iOS では、本体アプリ・共有シート・App Intents・カスタムキーボードが同じストアを使うため、ストアのファイルを App Group (`group.com.bannzai.tanzaku`) の共有コンテナに置く。後から場所を移すと既存ユーザーのデータの移行が要るため、最初の版から共有コンテナに置く。カスタムキーボードはフルアクセスが無い時に共有コンテナへ書き込めない (読めるかは実装の issue で実機で確かめる)。キーボードからはストアへ書き込まない。
+
 2 つの `ModelConfiguration` を 1 つの `ModelContainer` にまとめる。ストア間はリレーションを張れないため、端末内のストアからは `Snippet.id` (UUID) で参照する。
 
 ## CloudKit と両立させるための制約
