@@ -22,20 +22,21 @@ public func applySnippetEdit(
   try validateSnippetBody(body: body)
   let optionalKeyword = keyword.isEmpty ? nil : keyword
   try validateKeywordIsUnique(keyword: optionalKeyword, ownerID: snippet.id, modelContext: modelContext)
-  if snippet.modelContext == nil {
-    snippet.createdAt = now
-    modelContext.insert(snippet)
-  }
   snippet.body = body
   snippet.title = title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : title
   snippet.keyword = optionalKeyword
   snippet.language = language?.rawValue
   snippet.colorRawValue = color?.rawValue
-  snippet.folder = folder
-  snippet.tags = try resolvedTags(tagNames: tagNames, modelContext: modelContext)
   snippet.updatedAt = now
   snippet.updatedByKind = "user"
   snippet.updatedByClientName = nil
+  // 画面の `@Query` が中身の入ったスニペットとして受け取れるよう、属性を入れてからストアに入れる。リレーションは両方がストアに入っている必要があるため、その後に張る。
+  if snippet.modelContext == nil {
+    snippet.createdAt = now
+    modelContext.insert(snippet)
+  }
+  snippet.folder = folder
+  snippet.tags = try resolvedTags(tagNames: tagNames, modelContext: modelContext)
 }
 
 /// タグの名前から、同じ名前の既存のタグか、新しく作ったタグを返す。前後の空白を除き、空の名前と重複した名前は除く。

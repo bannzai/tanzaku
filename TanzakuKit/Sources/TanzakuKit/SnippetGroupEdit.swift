@@ -16,12 +16,14 @@ public func applySnippetGroupEdit(
 ) throws {
   let optionalKeyword = keyword.isEmpty ? nil : keyword
   try validateKeywordIsUnique(keyword: optionalKeyword, ownerID: snippetGroup.id, modelContext: modelContext)
+  snippetGroup.name = name
+  snippetGroup.keyword = optionalKeyword
+  snippetGroup.updatedAt = now
+  // 属性を入れてからストアに入れ、リレーション (項目) はその後に張る (理由は `applySnippetEdit` と同じ)。
   if snippetGroup.modelContext == nil {
     snippetGroup.createdAt = now
     modelContext.insert(snippetGroup)
   }
-  snippetGroup.name = name
-  snippetGroup.keyword = optionalKeyword
   var unusedItemsBySnippetID = Dictionary(
     (snippetGroup.items ?? []).compactMap { item in item.snippet.map { ($0.id, item) } },
     uniquingKeysWith: { first, _ in first }
@@ -43,7 +45,6 @@ public func applySnippetGroupEdit(
     modelContext.delete(item)
   }
   snippetGroup.items = items
-  snippetGroup.updatedAt = now
 }
 
 /// スニペットグループの項目をメニューに並べる順で返す。SwiftData の配列リレーションは順序を保証しないため、`sortIndex` で並べる。
