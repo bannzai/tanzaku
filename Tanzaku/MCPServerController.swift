@@ -109,7 +109,8 @@ final class MCPServerController {
       listener = try startMCPHTTPListener(
         port: mcpServerPort,
         handler: { [weak self] request in
-          guard let self else {
+          // 止める前に受け付けた接続から、止めた後にリクエストが届くことがあるため、止めた後は処理しない。
+          guard let self, isServerEnabled, listener != nil else {
             return MCPHTTPResponse(statusCode: 503, headers: [:], body: Data())
           }
           let response = await handleMCPHTTPRequest(request: request, environment: serverEnvironment)
@@ -137,15 +138,28 @@ final class MCPServerController {
   }
 
   /// 意味検索の埋め込みモデルの資産を用意し、使えるようになったら MCP の検索と保存で使う。
+  ///
+  /// モデルの準備が済む前に保存したスニペットにはベクトルが無いため、準備が済んだ時にすべてのスニペットのベクトルを今のスニペットに合わせる。
   func prepareEmbedder() async {
     let language = snippetEmbeddingLanguage(preferredLanguages: Locale.preferredLanguages)
     guard (try? await requestContextualEmbeddingAssets(language: language)) == true else {
       return
     }
-    // 埋め込みモデルの読み込み (NLContextualEmbedding の load()) はモデルの大きさの分だけ時間が掛かり、
-    // メインスレッドで行うと、その間は画面も MCP のリクエストの処理も止まるため、ほかのスレッドで行う。
+    // 埋め込みモデルの読み込み (NLContextualEmbedding の load()) とベクトルの作成はスニペットの数と長さの分だけ時間が掛かり、
+    // メインスレッドで行うと、その間は画面も MCP のリクエストの処理も止まるため、ほかのスレッドで専用のコンテキストを使って行う。
+    let modelContainer = modelContainer
     embedder = await Task.detached(priority: .utility) {
-      UncheckedSendableEmbedder(embedder: try? makeContextualSnippetTextEmbedder(language: language))
+      let embedder = try? makeContextualSnippetTextEmbedder(language: language)
+      if let embedder {
+        let modelContext = ModelContext(modelContainer)
+        do {
+          try updateSnippetEmbeddings(modelContext: modelContext, embedder: embedder)
+          try modelContext.save()
+        } catch {
+          mcpServerLogger.error("Could not update snippet embeddings: \(error.localizedDescription, privacy: .public)")
+        }
+      }
+      return UncheckedSendableEmbedder(embedder: embedder)
     }.value.embedder
   }
 

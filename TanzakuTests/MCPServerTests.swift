@@ -272,6 +272,27 @@ struct MCPServerTests {
     #expect(((result["structuredContent"] as? [String: Any])?["snippet"] as? [String: Any])?["id"] as? String == snippet.id.uuidString)
   }
 
+  @Test("意味検索のベクトルを作れなくても、追加したスニペットは保存したままにする")
+  func createSnippetKeepsSnippetWhenEmbeddingFails() async throws {
+    /// 偽の埋め込みモデルが投げる失敗。
+    struct DummyEmbeddingError: Error {}
+    var environment = try makeEnvironment()
+    environment.embedder = {
+      SnippetTextEmbedder(modelIdentifier: "dummy-model") { _ in
+        throw DummyEmbeddingError()
+      }
+    }
+
+    let result = try toolResult(
+      response: await handleMCPHTTPRequest(request: try makeToolCallRequest(name: "create_snippet", arguments: ["body": "echo dummy"]), environment: environment)
+    )
+
+    #expect(result["isError"] as? Bool == false)
+    environment.modelContext.rollback()
+    #expect(try fetchSnippets(environment: environment).map(\.body) == ["echo dummy"])
+    #expect(try environment.modelContext.fetchCount(FetchDescriptor<SnippetEmbedding>()) == 0)
+  }
+
   @Test("追加のツールは、空の本文と使われているキーワードをツールのエラーで返し、保存しない")
   func createSnippetValidates() async throws {
     let environment = try makeEnvironment()

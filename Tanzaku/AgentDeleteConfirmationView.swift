@@ -31,10 +31,10 @@ struct AgentDeleteConfirmationView: View {
   /// 認証の画面を出している間は、ボタンを押せなくする。
   @State private var isAuthenticating = false
 
-  /// スクロールなしで本文を並べる最大の行数。これより長い本文はスクロールで全文を見せ、確認の画面が画面の外まで伸びないようにする。
+  /// スクロールなしで本文を並べる最大の高さ。これより高い本文 (改行が多いものも、折り返しで長くなるものも) はスクロールで全文を見せ、確認の画面が画面の外まで伸びないようにする。
   ///
-  /// 12 行はデザインの見本 (5 行の `.envrc`) の 2 倍を超える。12 行の本文 (1 行 約 20pt) を入れても確認の画面が約 600pt に収まり、13 インチの MacBook の画面 (高さ 800pt 前後) でもはみ出さないため。
-  private let bodyLineCountWithoutScroll = 12
+  /// 240pt は 12 行ほど (1 行 約 20pt) で、デザインの見本 (5 行の `.envrc`) の 2 倍を超える。本文を 240pt にしても確認の画面が約 600pt に収まり、13 インチの MacBook の画面 (高さ 800pt 前後) でもはみ出さないため。
+  private let bodyMaximumHeightWithoutScroll: CGFloat = 240
 
   var body: some View {
     VStack(alignment: .leading, spacing: 18) {
@@ -149,16 +149,14 @@ struct AgentDeleteConfirmationView: View {
       .frame(maxWidth: .infinity, alignment: .leading)
       .padding(.vertical, 10)
       .padding(.horizontal, 12)
-    Group {
-      if request.snippet.body.split(separator: "\n", omittingEmptySubsequences: false).count <= bodyLineCountWithoutScroll {
+    // 折り返した後の高さで比べるため、行数ではなく、高さの上限に収まるかで本文そのものとスクロールを選ぶ。
+    ViewThatFits(in: .vertical) {
+      bodyText
+      ScrollView {
         bodyText
-      } else {
-        ScrollView {
-          bodyText
-        }
-        .frame(height: 240)
       }
     }
+    .frame(maxHeight: bodyMaximumHeightWithoutScroll)
     .background(.quaternary.opacity(0.4), in: RoundedRectangle(cornerRadius: 6))
   }
 }

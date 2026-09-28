@@ -15,7 +15,8 @@ enum MCPServerState: Equatable {
 }
 
 /// MCP のサーバーのログ。リクエストのメソッド・パス・ステータスコードだけを書き、本文とトークンは書かない (`.claude/rules/snippet-content-handling.md`)。
-let mcpServerLogger = Logger(subsystem: "com.bannzai.tanzaku", category: "MCP")
+/// 埋め込みモデルの準備などメインアクターの外からも書くため、メインアクターに隔離しない (`Logger` は Sendable)。
+nonisolated let mcpServerLogger = Logger(subsystem: "com.bannzai.tanzaku", category: "MCP")
 
 /// 1 回に受け取る最大のバイト数。MCP のリクエストは数 KB で、大きな本文は複数回に分けて受け取る。
 private let mcpHTTPReceiveChunkByteCount = 65_536
