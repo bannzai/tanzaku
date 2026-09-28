@@ -52,6 +52,7 @@ public func makeContextualSnippetTextEmbedder(language: NLLanguage) throws -> Sn
       }
       tokenCount += 1
     }
+    // トークンが無い文章 (空文字) は 0 で割らずに 0 のベクトルにするため、割る数の下限を 1 にする。0 のベクトルは検索で比べない (`semanticSnippetMatches`)。
     return sum.map { Float($0 / Double(max(tokenCount, 1))) }
   }
 }
