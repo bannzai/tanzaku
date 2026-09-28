@@ -30,7 +30,9 @@ public struct SnippetSearchResult {
 /// 意味検索の結果に出す最大の件数。ランチャーの意味検索の欄は文字列の一致の欄の下に置く補助の欄のため (`documents/design/Main.dc.html`)、精度のテストで測る「上位 3 件」と同じ件数にとどめる。
 let semanticMatchLimit = 3
 
-/// 意味検索の結果に出す最低のコサイン類似度。関係の無いスニペットまで並べないため、精度のテスト (`SemanticSearchAccuracyTests`) で測った、言い換えたクエリと目的のスニペットの類似度と、関係の無いクエリの類似度の間に置く。
+/// 意味検索の結果に出すコサイン類似度の下限 (この値ちょうどは出さない)。意味の向きが直交・逆向きのものだけを落とす。
+///
+/// 精度のテスト (`SemanticSearchAccuracyTests`) の 2026-09-28 の CI での実測では、言い換えたクエリと目的のスニペットの類似度が 0.46〜0.86、関係の無いクエリの最も近いスニペットの類似度が 0.51〜0.91 で重なり、0 より上の値では関係の無いものだけを落とせなかったため 0 にしている。
 let semanticMatchMinimumSimilarity: Float = 0
 
 /// Mac のランチャー・管理画面、iOS の本体・キーボード・App Intents で共通に使うスニペットの検索。
@@ -85,7 +87,8 @@ func snippetKeywordMatchKind(snippet: Snippet, normalizedQuery: String) -> Snipp
   return normalizedQuery.split(whereSeparator: \.isWhitespace).allSatisfy { normalizedTitleAndBody.contains($0) } ? .titleOrBody : nil
 }
 
-/// `snippets` のうち、クエリと意味が近いものを近い順に最大 `limit` 件返す。コサイン類似度が `minimumSimilarity` 未満のものは返さない。
+/// `snippets` のうち、クエリと意味が近いものを近い順に最大 `limit` 件返す。コサイン類似度が `minimumSimilarity` 以下のものは返さない。
+/// クエリからトークンを取れずベクトルが 0 になった時は、どのスニペットとも比べられないため何も返さない。
 func semanticSnippetMatches(
   query: String,
   snippets: [Snippet],
@@ -101,6 +104,9 @@ func semanticSnippetMatches(
     uniquingKeysWith: { first, _ in first }
   )
   let queryVector = l2NormalizedVector(vector: try embedder.vector(query))
+  guard queryVector.contains(where: { $0 != 0 }) else {
+    return []
+  }
   return
     snippets
     .compactMap { snippet -> (snippet: Snippet, similarity: Float)? in
@@ -111,7 +117,7 @@ func semanticSnippetMatches(
       }
       return (snippet, zip(queryVector, snippetEmbeddingVector(data: embedding.vector)).reduce(0) { $0 + $1.0 * $1.1 })
     }
-    .filter { $0.similarity >= minimumSimilarity }
+    .filter { $0.similarity > minimumSimilarity }
     .sorted { $0.similarity > $1.similarity }
     .prefix(limit)
     .map(\.snippet)

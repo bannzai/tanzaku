@@ -133,6 +133,21 @@ struct SnippetSearchTests {
     #expect(!result.semanticMatches.map(\.id).contains(updatedSnippet.id))
   }
 
+  @Test("クエリのベクトルが 0 の時と、クエリと直交するスニペットは意味検索の結果に出さない")
+  func zeroQueryVectorAndOrthogonalSnippetsAreExcluded() throws {
+    let modelContext = ModelContext(try makeTanzakuModelContainer(storeLocation: .inMemory, syncedStoreCloudKitDatabase: .none))
+    let orthogonalSnippet = insertSnippet(modelContext: modelContext, body: "orthogonal dummy")
+    let embedder = lookupEmbedder(vectorsByText: [
+      "zero query": [0, 0, 0],
+      "query": [1, 0, 0],
+      "orthogonal dummy": [0, 1, 0],
+    ])
+    try updateSnippetEmbeddings(modelContext: modelContext, embedder: embedder)
+
+    #expect(try searchSnippets(query: "zero query", modelContext: modelContext, embedder: embedder).semanticMatches.isEmpty)
+    #expect(!(try searchSnippets(query: "query", modelContext: modelContext, embedder: embedder).semanticMatches.map(\.id).contains(orthogonalSnippet.id)))
+  }
+
   @Test("意味検索の結果は最大 3 件で、最低の類似度に届かないものは返さない")
   func semanticMatchesAreLimited() throws {
     let modelContext = ModelContext(try makeTanzakuModelContainer(storeLocation: .inMemory, syncedStoreCloudKitDatabase: .none))
