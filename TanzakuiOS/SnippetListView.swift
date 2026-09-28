@@ -15,6 +15,8 @@ struct SnippetListView: View {
 
   /// すべてのスニペット。更新日時の新しい順 (`documents/design/Manager.dc.html` の一覧)。
   @Query(sort: \Snippet.updatedAt, order: .reverse) private var snippets: [Snippet]
+  /// スニペットグループ。項目を変えた時に検索し直すために見る。
+  @Query private var snippetGroups: [SnippetGroup]
   /// 保存・削除・検索に使う。
   @Environment(\.modelContext) private var modelContext
   /// 意味検索の埋め込みモデル。
@@ -110,6 +112,10 @@ struct SnippetListView: View {
       refreshSnippetEmbeddings()
       search()
     }
+    // スニペットグループの項目を変えると、スニペットの更新日時は変わらずにグループの絞り込みの中身が変わるため、グループの保存でも検索し直す。
+    .onChange(of: snippetGroups.map(\.updatedAt)) {
+      search()
+    }
     .navigationTitle(navigationTitle)
     .toolbar {
       ToolbarItem(placement: .primaryAction) {
@@ -137,8 +143,6 @@ struct SnippetListView: View {
       onDismiss: {
         // 取り消した編集を捨てる。保存した後なら捨てるものは無い。
         modelContext.rollback()
-        // 編集画面を出している間に埋め込みモデルの用意が済んだ時は、ベクトルの作り直しを見送っているため、ここで合わせる。
-        refreshSnippetEmbeddings()
       }
     ) { snippet in
       SnippetEditorView(snippet: snippet, isNewSnippet: isEditingNewSnippet)
@@ -228,19 +232,18 @@ struct SnippetListView: View {
     }
   }
 
-  /// 意味検索のベクトルを今のスニペットに合わせる。変わっていないベクトルは作り直さない。
+  /// 意味検索のベクトルを、保存済みのスニペットに合わせる。変わっていないベクトルは作り直さない。
   ///
-  /// 保存していない変更がある間 (編集画面を出している間) は作り直さない。ベクトルの保存が、検査を通っていない編集まで一緒に保存するため。
-  /// 編集を保存するか取り消すと一覧のスニペットが変わり、`onChange` からもう一度呼ばれる。
+  /// 画面の `modelContext` とは別の `ModelContext` で読み書きする。編集画面を出している間も、ベクトルの保存が検査を通っていない編集を一緒に保存せず、見送らずに作り直せるため。
   private func refreshSnippetEmbeddings() {
-    guard let snippetTextEmbedder, !modelContext.hasChanges else {
+    guard let snippetTextEmbedder else {
       return
     }
+    let embeddingModelContext = ModelContext(modelContext.container)
     do {
-      try updateSnippetEmbeddings(modelContext: modelContext, embedder: snippetTextEmbedder)
-      try modelContext.save()
+      try updateSnippetEmbeddings(modelContext: embeddingModelContext, embedder: snippetTextEmbedder)
+      try embeddingModelContext.save()
     } catch {
-      modelContext.rollback()
       snippetListLogger.error("Failed to update snippet embeddings: \(String(describing: error))")
     }
   }
