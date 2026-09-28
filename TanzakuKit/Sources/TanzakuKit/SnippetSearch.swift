@@ -51,12 +51,20 @@ let semanticMatchMinimumSimilarity: Float = 0
 ///
 /// `embedder` が `nil` の時 (埋め込みモデルの資産のダウンロードが済んでいない時) は、意味検索なしで文字列の一致だけを返す。
 /// 意味検索は、`embedder` と `modelIdentifier` が一致し、今のスニペットから作ったベクトル (`sourceHash` が一致するもの) だけを使う。ベクトルの作成・作り直しは `updateSnippetEmbeddings(modelContext:embedder:)` が行う。
-public func searchSnippets(query: String, modelContext: ModelContext, embedder: SnippetTextEmbedder?) throws -> SnippetSearchResult {
+/// `libraryFilter` に当てはまるスニペットだけを候補にしてから順位を付け、意味検索の件数を絞る。一覧の絞り込みの中で検索した時に、絞り込みの外のスニペットが意味検索の枠を埋めないため。
+/// 既定の `.allSnippets` は、絞り込みを持たないランチャー・キーボード・App Intents の検索のため。
+public func searchSnippets(
+  query: String,
+  modelContext: ModelContext,
+  embedder: SnippetTextEmbedder?,
+  libraryFilter: SnippetLibraryFilter = .allSnippets
+) throws -> SnippetSearchResult {
   let normalizedQuery = normalizedSnippetSearchText(text: query.trimmingCharacters(in: .whitespacesAndNewlines))
   guard !normalizedQuery.isEmpty else {
     return SnippetSearchResult(keywordMatches: [], semanticMatches: [])
   }
   let snippets = try modelContext.fetch(FetchDescriptor<Snippet>(sortBy: [SortDescriptor(\.updatedAt, order: .reverse)]))
+    .filter { isSnippetInLibraryFilter(snippet: $0, filter: libraryFilter) }
   let keywordMatches = snippets.compactMap { snippet in
     snippetKeywordMatchKind(snippet: snippet, normalizedQuery: normalizedQuery).map { SnippetKeywordMatch(snippet: snippet, kind: $0) }
   }

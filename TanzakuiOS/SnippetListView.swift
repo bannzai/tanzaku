@@ -41,18 +41,16 @@ struct SnippetListView: View {
           snippetRow(snippet: snippet)
         }
       } else {
-        let keywordMatchedSnippets = searchResult.keywordMatches.map(\.snippet).filter { isSnippetInLibraryFilter(snippet: $0, filter: filter) }
-        let semanticMatchedSnippets = searchResult.semanticMatches.filter { isSnippetInLibraryFilter(snippet: $0, filter: filter) }
-        if !keywordMatchedSnippets.isEmpty {
+        if !searchResult.keywordMatches.isEmpty {
           Section("Keyword Matches") {
-            ForEach(keywordMatchedSnippets) { snippet in
+            ForEach(searchResult.keywordMatches.map(\.snippet)) { snippet in
               snippetRow(snippet: snippet)
             }
           }
         }
-        if !semanticMatchedSnippets.isEmpty {
+        if !searchResult.semanticMatches.isEmpty {
           Section {
-            ForEach(semanticMatchedSnippets) { snippet in
+            ForEach(searchResult.semanticMatches) { snippet in
               snippetRow(snippet: snippet)
             }
           } header: {
@@ -66,7 +64,7 @@ struct SnippetListView: View {
     .overlay {
       if trimmedSearchQuery.isEmpty, filteredLibrarySnippets(snippets: snippets, filter: filter).isEmpty {
         ContentUnavailableView("No Snippets", systemImage: "rectangle.portrait", description: Text("Tap + to add a snippet"))
-      } else if !trimmedSearchQuery.isEmpty, !hasSearchResultInFilter {
+      } else if !trimmedSearchQuery.isEmpty, searchResult.keywordMatches.isEmpty, searchResult.semanticMatches.isEmpty {
         ContentUnavailableView.search(text: trimmedSearchQuery)
       }
     }
@@ -103,6 +101,11 @@ struct SnippetListView: View {
       refreshSnippetEmbeddings()
       search()
     }
+    // 保存・削除 (この一覧・iPad の詳細の列・開発者メニューのどこからでも) で更新日時か件数が変わった時に、ベクトルと検索の結果を合わせる。
+    .onChange(of: snippets.map(\.updatedAt)) {
+      refreshSnippetEmbeddings()
+      search()
+    }
     .navigationTitle(navigationTitle)
     .toolbar {
       ToolbarItem(placement: .primaryAction) {
@@ -128,10 +131,10 @@ struct SnippetListView: View {
     .sheet(
       item: $editingSnippet,
       onDismiss: {
-        // 取り消した編集を、次のベクトルの保存で一緒に保存しないよう先に捨てる。保存した後なら捨てるものは無い。
+        // 取り消した編集を捨てる。保存した後なら捨てるものは無い。
         modelContext.rollback()
+        // 編集画面を出している間に埋め込みモデルの用意が済んだ時は、ベクトルの作り直しを見送っているため、ここで合わせる。
         refreshSnippetEmbeddings()
-        search()
       }
     ) { snippet in
       SnippetEditorView(snippet: snippet, isNewSnippet: isEditingNewSnippet)
@@ -192,11 +195,6 @@ struct SnippetListView: View {
     searchQuery.trimmingCharacters(in: .whitespacesAndNewlines)
   }
 
-  /// 検索の結果に、今の絞り込みに当てはまるスニペットがあるか。
-  private var hasSearchResultInFilter: Bool {
-    (searchResult.keywordMatches.map(\.snippet) + searchResult.semanticMatches).contains { isSnippetInLibraryFilter(snippet: $0, filter: filter) }
-  }
-
   /// 画面の題。絞り込みの名前にする。
   private var navigationTitle: Text {
     switch filter {
@@ -219,7 +217,7 @@ struct SnippetListView: View {
       return
     }
     do {
-      searchResult = try searchSnippets(query: searchQuery, modelContext: modelContext, embedder: snippetTextEmbedder)
+      searchResult = try searchSnippets(query: searchQuery, modelContext: modelContext, embedder: snippetTextEmbedder, libraryFilter: filter)
     } catch {
       snippetListLogger.error("Failed to search snippets: \(String(describing: error))")
       searchResult = SnippetSearchResult(keywordMatches: [], semanticMatches: [])
@@ -227,8 +225,11 @@ struct SnippetListView: View {
   }
 
   /// 意味検索のベクトルを今のスニペットに合わせる。変わっていないベクトルは作り直さない。
+  ///
+  /// 保存していない変更がある間 (編集画面を出している間) は作り直さない。ベクトルの保存が、検査を通っていない編集まで一緒に保存するため。
+  /// 編集を保存するか取り消すと一覧のスニペットが変わり、`onChange` からもう一度呼ばれる。
   private func refreshSnippetEmbeddings() {
-    guard let snippetTextEmbedder else {
+    guard let snippetTextEmbedder, !modelContext.hasChanges else {
       return
     }
     do {

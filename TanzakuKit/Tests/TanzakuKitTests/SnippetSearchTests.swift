@@ -172,4 +172,29 @@ struct SnippetSearchTests {
     )
     #expect(try searchSnippets(query: "query", modelContext: modelContext, embedder: embedder).semanticMatches.count <= semanticMatchLimit)
   }
+
+  @Test("一覧の絞り込みを渡すと、絞り込みの中のスニペットだけから一致と意味検索の上位を選ぶ")
+  func libraryFilterLimitsCandidatesBeforeRanking() throws {
+    let modelContext = ModelContext(try makeTanzakuModelContainer(storeLocation: .inMemory, syncedStoreCloudKitDatabase: .none))
+    let folder = Folder(name: "dummy-folder")
+    modelContext.insert(folder)
+    for index in 0..<3 {
+      _ = insertSnippet(modelContext: modelContext, body: "dummy outside \(index)")
+    }
+    let insideSnippet = insertSnippet(modelContext: modelContext, body: "dummy inside")
+    insideSnippet.folder = folder
+    let embedder = lookupEmbedder(vectorsByText: [
+      "query": [1, 0, 0],
+      "dummy outside 0": [1, 0, 0],
+      "dummy outside 1": [1, 0.1, 0],
+      "dummy outside 2": [1, 0.2, 0],
+      "dummy inside": [1, 1, 0],
+    ])
+    try updateSnippetEmbeddings(modelContext: modelContext, embedder: embedder)
+
+    #expect(!(try searchSnippets(query: "query", modelContext: modelContext, embedder: embedder).semanticMatches.map(\.id).contains(insideSnippet.id)))
+    let result = try searchSnippets(query: "query", modelContext: modelContext, embedder: embedder, libraryFilter: .folder(folder))
+    #expect(result.semanticMatches.map(\.id) == [insideSnippet.id])
+    #expect(try searchSnippets(query: "dummy", modelContext: modelContext, embedder: nil, libraryFilter: .folder(folder)).keywordMatches.map(\.snippet.id) == [insideSnippet.id])
+  }
 }
