@@ -1,5 +1,5 @@
 ---
-status: evaluating        # evaluating | building | launched | pivoting | retiring | retired
+status: building          # evaluating | building | launched | pivoting | retiring | retired
 decision_date:            # 次の判定日 (YYYY-MM-DD)。公開後に設定する
 cycle_days: 14            # 判定の周期 (7 または 14)
 veto_wait_hours: 12       # 公開後の無人ループの拒否権の待ち時間 (既定 12)
@@ -41,6 +41,7 @@ macOS の画面デザインは `documents/design/` (Claude の Design キャン�
 - 短冊のモチーフは、スニペットごとの幅 4px の色の帯 (朱・藍・松葉・山吹・紫) と、藍の短冊 1 枚のアイコンにとどめる
 - 使わないもの: クリーム色・オフホワイトの背景、見出しの一部だけの斜体、番号付きのラベル、等幅フォントのラベル、錠剤型のボタン、ガラス・ネオン・グラデーションの装飾
 - 購入画面は Mac App Store の前提で描いたため、文言 (支払い先・購入の復元) は実装時に Lemon Squeezy のライセンスキーの有効化に合わせて置き換える
+- iOS 版は専用のデザインを作らず、macOS のデザイン (情報の並び・色の帯・文言・使わないもの) を参考に、iOS 標準のコンポーネント (`NavigationSplitView` / `NavigationStack`・`List`・`Form`・`.searchable`・`.swipeActions`・`ShareLink`・sheet) をなるべくそのまま組み合わせる
 
 ## 決めたこと
 
@@ -70,6 +71,10 @@ macOS の画面デザインは `documents/design/` (Claude の Design キャン�
 | 2026-09-28 | 立ち上げ | iOS のカスタムキーボードは Guideline 4.4.1 に合わせ、文字の入力キー・次のキーボードへの切り替えを持ち、フルアクセスを許可しなくても文字入力はできるようにする。スニペットの挿入は `textDocumentProxy.insertText` で行い、フルアクセス無しでスニペットを読めるかは実機で確かめる (読めなければスニペットの挿入だけフルアクセスの許可を求める)。入力した内容は保存も送信もしない | agent |
 | 2026-09-28 | 立ち上げ | Spotlight の索引にはスニペットのタイトルとキーワードだけを入れ、本文は入れない。本文には秘匿情報が入り得るため (`.claude/rules/snippet-content-handling.md`) | agent |
 | 2026-09-28 | 立ち上げ | Mac 版の配布物は GitHub Releases に置き、Sparkle の appcast は GitHub Pages (`docs/`) に置く。リポジトリが public で、ダウンロード数を `gh api` で取れるため | agent |
+| 2026-09-28 | 関門 1 | 作る。実装に着手する (関門 1 の issue へのコメントではなく対話で返答) | bannzai |
+| 2026-09-28 | 関門 2 | iOS 版は macOS のデザインを参考に、iOS 標準のコンポーネントをなるべく組み合わせて作る | bannzai |
+| 2026-09-28 | 立ち上げ | 対応 OS は macOS 14 以上・iOS 17 以上。SwiftData と NLContextualEmbedding の両方が使える最低の版のため | agent |
+| 2026-09-28 | 立ち上げ | データモデル・検索・同期の設定は、リポジトリ内のローカル Swift Package `TanzakuKit` に置き、Mac アプリ・iOS アプリ・iOS の拡張 (共有シート・キーボード・App Intents) から使う。拡張からも同じコードを使うため | agent |
 
 ## agent に任せること
 
