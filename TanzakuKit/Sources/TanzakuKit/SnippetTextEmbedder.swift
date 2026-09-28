@@ -21,7 +21,16 @@ public struct SnippetTextEmbedder {
 /// スニペットとクエリを同じモデルに通すため、端末で 1 つの言語に決める。ユーザーが普段書く言語は端末の優先言語と一致しやすいため、それを使う。
 public func snippetEmbeddingLanguage(preferredLanguages: [String]) -> NLLanguage {
   // 優先言語が無い環境は無いが、あればアプリの開発言語 (英語) にそろえる。
-  NLLanguage(rawValue: preferredLanguages.first.flatMap { Locale(identifier: $0).language.languageCode?.identifier } ?? "en")
+  guard let preferredLanguage = preferredLanguages.first else {
+    return .english
+  }
+  let language = Locale.Language(identifier: preferredLanguage)
+  // NLLanguage の中国語は書記体系ごとに別の値 (zh-Hans / zh-Hant) で、言語コードの `zh` だけではモデルが見つからない。
+  // `zh-TW` のように書記体系を書かない指定もあるため、推定した書記体系 (maximalIdentifier) で選ぶ。
+  if language.languageCode == .chinese {
+    return Locale.Language(identifier: language.maximalIdentifier).script == .hanTraditional ? .traditionalChinese : .simplifiedChinese
+  }
+  return NLLanguage(rawValue: language.languageCode?.identifier ?? "en")
 }
 
 /// 端末に NLContextualEmbedding の資産があれば、それを使う埋め込みモデルを作る。資産のダウンロードが済んでいない時と、言語に対応するモデルが無い時は `nil` を返し、呼び出し側は意味検索なしで検索する。

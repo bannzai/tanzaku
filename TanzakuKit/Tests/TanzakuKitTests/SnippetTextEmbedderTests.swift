@@ -6,11 +6,15 @@ import Testing
 /// 意味検索に使う言語の選び方と、NLContextualEmbedding の埋め込みを確かめる。
 struct SnippetTextEmbedderTests {
   @Test(
-    "端末の優先言語の言語コードを使い、無ければ英語にする",
+    "端末の優先言語の言語コードを使い、中国語は書記体系で分け、無ければ英語にする",
     arguments: [
       (["ja-JP", "en-US"], "ja"),
       (["en-US"], "en"),
       (["fr"], "fr"),
+      (["zh-Hans-CN"], "zh-Hans"),
+      (["zh-Hant-TW"], "zh-Hant"),
+      (["zh-TW"], "zh-Hant"),
+      (["zh-CN"], "zh-Hans"),
       ([], "en"),
     ] as [([String], String)]
   )
