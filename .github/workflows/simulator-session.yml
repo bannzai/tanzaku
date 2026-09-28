@@ -19,10 +19,12 @@ on:
       device:
         description: "Simulator のデバイス名 (iPad は例えば iPad Pro 11-inch (M5))"
         required: true
+        # simtunnel の session.yml の既定と同じデバイスにそろえる。
         default: iPhone 17
       duration_minutes:
         description: "セッションを維持する分数"
         required: true
+        # simtunnel の既定と同じ。1 回の画面の確認 (ライト・ダークの撮影) に足り、macOS ランナーを CI と共有するため長くしない。
         default: "60"
 
 jobs:
