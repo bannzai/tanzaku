@@ -120,7 +120,7 @@ let mcpToolDefinitions: [[String: Any]] = [
 /// ツールを実行し、`tools/call` の結果を返す。
 ///
 /// 知らないツール名は JSON-RPC のエラー (`MCPProtocolError`) にし、引数の誤り・見つからないスニペット・保存前の検査の失敗はツールの結果 (`isError: true`) にする。
-/// 失敗したツールの変更は取り消す。`mainContext` は画面と共有しており、残すと次の保存 (次のリクエストの最後のアクセスの記録など) で失敗した操作まで保存されるため。
+/// 失敗したツールの変更は取り消す。残すと同じコンテキストの次の保存 (最後のアクセスの記録など) で、失敗した操作まで保存されるため。
 func callMCPTool(name: String, arguments: [String: Any], client: MCPClient, environment: MCPServerEnvironment) async throws -> [String: Any] {
   do {
     return try await mcpToolResult(name: name, arguments: arguments, client: client, environment: environment)
@@ -327,9 +327,12 @@ func updateSnippetTool(arguments: [String: Any], client: MCPClient, environment:
 ///
 /// 設定で確認を求めている時は、依頼元のクライアント名・理由・スニペットを確認に出し、許可された時だけ消す。
 /// 確認を待つ間に同じスニペットが消えていることがあるため、許可の後にスニペットを読み直す。
+/// 確認を待つ間にスニペットが更新されていたら、ユーザーが確かめた内容と違うものを消さないよう、消さずにツールのエラーを返す。
 func deleteSnippetTool(arguments: [String: Any], client: MCPClient, environment: MCPServerEnvironment) async throws -> [String: Any] {
   let snippet = try fetchSnippetArgument(arguments: arguments, modelContext: environment.modelContext)
   let reason = try mcpRequiredStringArgument(arguments: arguments, name: "reason")
+  let confirmedUpdatedAt = snippet.updatedAt
+  let confirmedBody = snippet.body
   if environment.requiresDeletionConfirmation() {
     let isApproved = await environment.confirmSnippetDeletion(
       SnippetDeletionRequest(clientName: client.name, reason: reason, snippet: snippet, receivedAt: environment.now())
@@ -338,28 +341,24 @@ func deleteSnippetTool(arguments: [String: Any], client: MCPClient, environment:
       throw MCPToolError(description: "The user did not approve deleting the snippet. It was not deleted.")
     }
   }
-  let approvedSnippet = try fetchSnippetArgument(arguments: arguments, modelContext: environment.modelContext)
+  // 確認を待つ間にほかのコンテキストで保存された更新を読むため、読み込み済みのモデルを持たない新しいコンテキストで読み直す。
+  let deletionModelContext = ModelContext(environment.modelContext.container)
+  let approvedSnippet = try fetchSnippetArgument(arguments: arguments, modelContext: deletionModelContext)
+  guard approvedSnippet.updatedAt == confirmedUpdatedAt, approvedSnippet.body == confirmedBody else {
+    throw MCPToolError(description: "The snippet was changed while waiting for the user's confirmation. It was not deleted. Call delete_snippet again if it should still be deleted.")
+  }
   // 削除して保存した後のモデルの属性は読めないため、先に識別子を取っておく。
   let deletedSnippetID = approvedSnippet.id.uuidString
-  environment.modelContext.delete(approvedSnippet)
-  try saveSnippetChanges(environment: environment)
+  deletionModelContext.delete(approvedSnippet)
+  try deletionModelContext.save()
+  environment.snippetsDidChange()
   return ["deletedSnippetID": deletedSnippetID]
 }
 
-/// スニペットの変更を保存し、埋め込みモデルがあれば意味検索のベクトルを今のスニペットに合わせる (`documents/PROJECT.md`「検索」)。
+/// スニペットの変更を保存し、意味検索のベクトルの作り直しを頼む (`documents/PROJECT.md`「検索」)。
 ///
-/// ベクトルは本文から作り直せる派生データのため、作れなくてもスニペットの変更は保存したままにする。
-/// 作れなかったベクトルは、次の保存か埋め込みモデルの準備が済んだ時 (`MCPServerController.prepareEmbedder()`) に作り直す。
+/// ベクトルの作成は本文の長さの分だけ時間が掛かるため、ここでは作らず、ほかのスレッドで作り直してもらう (`MCPServerController.requestSnippetEmbeddingRefresh()`)。
 func saveSnippetChanges(environment: MCPServerEnvironment) throws {
   try environment.modelContext.save()
-  guard let embedder = environment.embedder() else {
-    return
-  }
-  do {
-    try updateSnippetEmbeddings(modelContext: environment.modelContext, embedder: embedder)
-    try environment.modelContext.save()
-  } catch {
-    environment.modelContext.rollback()
-    mcpServerLogger.error("Could not update snippet embeddings: \(error.localizedDescription, privacy: .public)")
-  }
+  environment.snippetsDidChange()
 }

@@ -14,7 +14,8 @@ struct PendingSnippetDeletion {
 
 /// ほかのスレッドで読み込んだ埋め込みモデルを、メインアクターへ渡すための入れ物。
 ///
-/// `SnippetTextEmbedder` はクロージャを持つため Sendable ではない。読み込んだスレッドはモデルを渡した後に使わず、以降はメインアクターだけが使うため、受け渡しは安全。
+/// `SnippetTextEmbedder` はクロージャを持つため Sendable ではない。検索のクエリ用のモデルは読み込んだ後はメインアクターだけが使い、
+/// ベクトルの作り直し用のモデルは一度に 1 つの作り直し (`requestSnippetEmbeddingRefresh()`) だけが使うため、同じモデルを同時に使うことはない。
 nonisolated struct UncheckedSendableEmbedder: @unchecked Sendable {
   /// 読み込んだ埋め込みモデル。読み込めなければ `nil`。
   var embedder: SnippetTextEmbedder?
@@ -72,6 +73,12 @@ final class MCPServerController {
   @ObservationIgnored private var listener: NWListener?
   /// 削除の確認の画面。確認を待つ依頼が無い時は閉じる。
   @ObservationIgnored private var deletionConfirmationPanel: NSPanel?
+  /// ベクトルの作り直しだけに使う埋め込みモデル。資産のダウンロードが済むまでは `nil`。
+  @ObservationIgnored private var snippetEmbeddingRefreshEmbedder: UncheckedSendableEmbedder?
+  /// ベクトルを作り直している途中か。
+  @ObservationIgnored private var isRefreshingSnippetEmbeddings = false
+  /// 作り直しを頼まれてから、まだ作り直していないか。
+  @ObservationIgnored private var needsSnippetEmbeddingRefresh = false
 
   /// 保存した設定を読み、設定で動かしていればサーバーを起動する。
   init(modelContainer: ModelContainer, tokenStore: MCPTokenStore) {
@@ -87,13 +94,16 @@ final class MCPServerController {
     }
   }
 
-  /// 設定と MCP のリクエストの処理が使う環境。
+  /// MCP のリクエストの処理が使う環境。
+  ///
+  /// リクエストごとに新しいコンテキストを使う。失敗したツールの変更を取り消す (`rollback()`) 時に、画面が `mainContext` に持つ保存前の編集まで消さないため。
   var serverEnvironment: MCPServerEnvironment {
     MCPServerEnvironment(
-      modelContext: modelContainer.mainContext,
+      modelContext: ModelContext(modelContainer),
       tokenStore: tokenStore,
       port: mcpServerPort,
       embedder: { [weak self] in self?.embedder },
+      snippetsDidChange: { [weak self] in self?.requestSnippetEmbeddingRefresh() },
       requiresDeletionConfirmation: { [weak self] in self?.requiresDeletionConfirmation ?? true },
       confirmSnippetDeletion: { [weak self] request in await self?.confirmSnippetDeletion(request: request) ?? false },
       now: { Date.now }
@@ -137,30 +147,58 @@ final class MCPServerController {
     state = .stopped
   }
 
-  /// 意味検索の埋め込みモデルの資産を用意し、使えるようになったら MCP の検索と保存で使う。
+  /// 意味検索の埋め込みモデルの資産を用意し、使えるようになったら MCP の検索とベクトルの作り直しで使う。
   ///
-  /// モデルの準備が済む前に保存したスニペットにはベクトルが無いため、準備が済んだ時にすべてのスニペットのベクトルを今のスニペットに合わせる。
+  /// モデルの準備が済む前に保存したスニペットにはベクトルが無いため、準備が済んだらすべてのスニペットのベクトルを作り直す。
   func prepareEmbedder() async {
     let language = snippetEmbeddingLanguage(preferredLanguages: Locale.preferredLanguages)
     guard (try? await requestContextualEmbeddingAssets(language: language)) == true else {
       return
     }
-    // 埋め込みモデルの読み込み (NLContextualEmbedding の load()) とベクトルの作成はスニペットの数と長さの分だけ時間が掛かり、
-    // メインスレッドで行うと、その間は画面も MCP のリクエストの処理も止まるため、ほかのスレッドで専用のコンテキストを使って行う。
+    // 埋め込みモデルの読み込み (NLContextualEmbedding の load()) はモデルの大きさの分だけ時間が掛かり、
+    // メインスレッドで行うと、その間は画面も MCP のリクエストの処理も止まるため、ほかのスレッドで行う。
+    // 検索のクエリ (メインアクター) とベクトルの作り直し (ほかのスレッド) が同じモデルを同時に使わないよう、別々に読み込む。
+    let embedders = await Task.detached(priority: .utility) {
+      (
+        query: UncheckedSendableEmbedder(embedder: try? makeContextualSnippetTextEmbedder(language: language)),
+        refresh: UncheckedSendableEmbedder(embedder: try? makeContextualSnippetTextEmbedder(language: language))
+      )
+    }.value
+    embedder = embedders.query.embedder
+    snippetEmbeddingRefreshEmbedder = embedders.refresh
+    requestSnippetEmbeddingRefresh()
+  }
+
+  /// すべてのスニペットの意味検索のベクトルを、今のスニペットに合わせて作り直すよう頼む。
+  ///
+  /// ベクトルの作成はスニペットの数と長さの分だけ時間が掛かるため、ほかのスレッドで専用のコンテキストを使って行う。
+  /// 作り直している間に頼まれたら、その間の変更を取りこぼさないよう、終わった後にもう一度作り直す。
+  /// 埋め込みモデルの準備が済む前に頼まれた分は、準備が済んだ時の作り直し (`prepareEmbedder()`) に含まれる。
+  func requestSnippetEmbeddingRefresh() {
+    needsSnippetEmbeddingRefresh = true
+    guard !isRefreshingSnippetEmbeddings, let snippetEmbeddingRefreshEmbedder, snippetEmbeddingRefreshEmbedder.embedder != nil else {
+      return
+    }
+    isRefreshingSnippetEmbeddings = true
     let modelContainer = modelContainer
-    embedder = await Task.detached(priority: .utility) {
-      let embedder = try? makeContextualSnippetTextEmbedder(language: language)
-      if let embedder {
-        let modelContext = ModelContext(modelContainer)
-        do {
-          try updateSnippetEmbeddings(modelContext: modelContext, embedder: embedder)
-          try modelContext.save()
-        } catch {
-          mcpServerLogger.error("Could not update snippet embeddings: \(error.localizedDescription, privacy: .public)")
-        }
+    Task {
+      while needsSnippetEmbeddingRefresh {
+        needsSnippetEmbeddingRefresh = false
+        await Task.detached(priority: .utility) {
+          guard let embedder = snippetEmbeddingRefreshEmbedder.embedder else {
+            return
+          }
+          let modelContext = ModelContext(modelContainer)
+          do {
+            try updateSnippetEmbeddings(modelContext: modelContext, embedder: embedder)
+            try modelContext.save()
+          } catch {
+            mcpServerLogger.error("Could not update snippet embeddings: \(error.localizedDescription, privacy: .public)")
+          }
+        }.value
       }
-      return UncheckedSendableEmbedder(embedder: embedder)
-    }.value.embedder
+      isRefreshingSnippetEmbeddings = false
+    }
   }
 
   /// 表示するトークンを Keychain から読み直す。無ければ作る。

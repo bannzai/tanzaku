@@ -22,8 +22,10 @@ struct MCPServerEnvironment {
   var tokenStore: MCPTokenStore
   /// 待ち受けるポート。`Origin` の検査に使う。
   var port: Int
-  /// 意味検索の埋め込みモデル。資産のダウンロードが済むまでは `nil`。
+  /// 検索のクエリに使う意味検索の埋め込みモデル。資産のダウンロードが済むまでは `nil`。
   var embedder: @MainActor () -> SnippetTextEmbedder?
+  /// スニペットの追加・更新・削除を保存した後に呼ぶ。意味検索のベクトルを作り直す。
+  var snippetsDidChange: @MainActor () -> Void
   /// 削除の前に確認を求めるか (設定の「削除に Touch ID を求める」)。
   var requiresDeletionConfirmation: @MainActor () -> Bool
   /// 削除の確認を出し、ユーザーが認証して許可した時だけ `true` を返す。

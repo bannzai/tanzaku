@@ -11,11 +11,19 @@ final class RecordingSnippetDeletionConfirmation {
   var isApproved: Bool
   /// 確認に届いた依頼。
   var requests: [SnippetDeletionRequest] = []
+  /// 確認を待つ間に起きること (ほかのリクエストによる更新など) を再現する処理。
+  var whileConfirming: (SnippetDeletionRequest) -> Void = { _ in }
 
   /// 確認に返す答えを受け取る。
   init(isApproved: Bool) {
     self.isApproved = isApproved
   }
+}
+
+/// スニペットの変更の保存の後に、ベクトルの作り直しを頼まれた回数を数える。
+final class SnippetChangeCounter {
+  /// 頼まれた回数。
+  var count = 0
 }
 
 /// `handleMCPHTTPRequest(request:environment:)` を、HTTP のリクエストを組み立てて呼び、認証とツールの入出力を確かめる。
@@ -28,10 +36,12 @@ struct MCPServerTests {
   /// メモリのストアと、偽のトークン・確認を持つ環境。`registeredClientName` を渡すとそのクライアントを接続済みにする。
   ///
   /// 既定は、ほとんどのテストが前提にする「接続済みのクライアントが 1 つあり、削除には確認を求め、確認は許可する」状態 (アプリの既定の設定と同じ)。
+  /// ベクトルの作り直しを頼んだ回数を見ないテストは、どこからも読まない新しいカウンターで足りるため、既定はそれにする。
   func makeEnvironment(
     registeredClientName: String? = "Claude Code",
     requiresDeletionConfirmation: Bool = true,
-    confirmation: RecordingSnippetDeletionConfirmation = RecordingSnippetDeletionConfirmation(isApproved: true)
+    confirmation: RecordingSnippetDeletionConfirmation = RecordingSnippetDeletionConfirmation(isApproved: true),
+    snippetChangeCounter: SnippetChangeCounter = SnippetChangeCounter()
   ) throws -> MCPServerEnvironment {
     let modelContext = ModelContext(try makeTanzakuModelContainer(storeLocation: .inMemory, syncedStoreCloudKitDatabase: .none))
     var tokens: [MCPTokenOwner: String] = [.unbound: unboundToken]
@@ -46,9 +56,13 @@ struct MCPServerTests {
       tokenStore: inMemoryMCPTokenStore(initialTokens: tokens),
       port: mcpServerPort,
       embedder: { nil },
+      snippetsDidChange: {
+        snippetChangeCounter.count += 1
+      },
       requiresDeletionConfirmation: { requiresDeletionConfirmation },
       confirmSnippetDeletion: { request in
         confirmation.requests.append(request)
+        confirmation.whileConfirming(request)
         return confirmation.isApproved
       },
       now: { Date(timeIntervalSince1970: 1000) }
@@ -272,25 +286,30 @@ struct MCPServerTests {
     #expect(((result["structuredContent"] as? [String: Any])?["snippet"] as? [String: Any])?["id"] as? String == snippet.id.uuidString)
   }
 
-  @Test("意味検索のベクトルを作れなくても、追加したスニペットは保存したままにする")
-  func createSnippetKeepsSnippetWhenEmbeddingFails() async throws {
-    /// 偽の埋め込みモデルが投げる失敗。
-    struct DummyEmbeddingError: Error {}
-    var environment = try makeEnvironment()
-    environment.embedder = {
-      SnippetTextEmbedder(modelIdentifier: "dummy-model") { _ in
-        throw DummyEmbeddingError()
-      }
-    }
+  @Test("追加・更新・削除を保存した後に意味検索のベクトルの作り直しを頼み、検索と取得では頼まない")
+  func requestsEmbeddingRefreshAfterChanges() async throws {
+    let snippetChangeCounter = SnippetChangeCounter()
+    let environment = try makeEnvironment(requiresDeletionConfirmation: false, snippetChangeCounter: snippetChangeCounter)
 
-    let result = try toolResult(
+    let createResult = try toolResult(
       response: await handleMCPHTTPRequest(request: try makeToolCallRequest(name: "create_snippet", arguments: ["body": "echo dummy"]), environment: environment)
     )
+    let snippetID = try #require(((createResult["structuredContent"] as? [String: Any])?["snippet"] as? [String: Any])?["id"] as? String)
+    _ = await handleMCPHTTPRequest(request: try makeToolCallRequest(name: "search_snippets", arguments: ["query": "dummy"]), environment: environment)
+    _ = await handleMCPHTTPRequest(request: try makeToolCallRequest(name: "get_snippet", arguments: ["id": snippetID]), environment: environment)
+    #expect(snippetChangeCounter.count == 1)
 
-    #expect(result["isError"] as? Bool == false)
-    environment.modelContext.rollback()
-    #expect(try fetchSnippets(environment: environment).map(\.body) == ["echo dummy"])
-    #expect(try environment.modelContext.fetchCount(FetchDescriptor<SnippetEmbedding>()) == 0)
+    _ = await handleMCPHTTPRequest(
+      request: try makeToolCallRequest(name: "update_snippet", arguments: ["id": snippetID, "body": "echo dummy updated"]),
+      environment: environment
+    )
+    _ = await handleMCPHTTPRequest(
+      request: try makeToolCallRequest(name: "delete_snippet", arguments: ["id": snippetID, "reason": "No longer used"]),
+      environment: environment
+    )
+
+    #expect(snippetChangeCounter.count == 3)
+    #expect(try fetchSnippets(environment: environment).isEmpty)
   }
 
   @Test("追加のツールは、空の本文と使われているキーワードをツールのエラーで返し、保存しない")
@@ -403,6 +422,31 @@ struct MCPServerTests {
     #expect(result["isError"] as? Bool == true)
     #expect(try fetchSnippets(environment: environment).map(\.id) == [snippet.id])
     #expect(confirmation.requests.count == 1)
+  }
+
+  @Test("削除のツールは、確認を待つ間にスニペットが更新されたら、許可されても消さずにツールのエラーを返す")
+  func deleteSnippetRejectsChangeDuringConfirmation() async throws {
+    let confirmation = RecordingSnippetDeletionConfirmation(isApproved: true)
+    let environment = try makeEnvironment(confirmation: confirmation)
+    let snippet = try insertSnippet(environment: environment, body: "echo dummy")
+    confirmation.whileConfirming = { request in
+      // ほかのリクエストが同じスニペットを更新して保存したことにする。
+      let otherModelContext = ModelContext(environment.modelContext.container)
+      let otherSnippet = try? otherModelContext.fetch(FetchDescriptor<Snippet>()).first { $0.id == request.snippet.id }
+      otherSnippet?.body = "echo dummy updated"
+      otherSnippet?.updatedAt = Date(timeIntervalSince1970: 2000)
+      try? otherModelContext.save()
+    }
+
+    let result = try toolResult(
+      response: await handleMCPHTTPRequest(
+        request: try makeToolCallRequest(name: "delete_snippet", arguments: ["id": snippet.id.uuidString, "reason": "No longer used"]),
+        environment: environment
+      )
+    )
+
+    #expect(result["isError"] as? Bool == true)
+    #expect(try fetchSnippets(environment: environment).map(\.id) == [snippet.id])
   }
 
   @Test("削除のツールは、設定で確認を切っていれば確認を出さずに消す")
