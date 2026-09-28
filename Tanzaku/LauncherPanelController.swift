@@ -21,7 +21,13 @@ final class LauncherPanelController: NSObject, NSWindowDelegate {
   /// 結果なしの画面から新規作成に進んだ時に、入力した言葉を渡して管理ウィンドウの編集を開く。
   private let openNewSnippetEditor: (String) -> Void
   /// 意味検索の埋め込みモデル。埋め込みモデルの資産のダウンロードが済むまでは `nil` で、その間は文字列の一致だけで検索する。
-  var snippetTextEmbedder: SnippetTextEmbedder?
+  ///
+  /// 用意できた時にランチャーが開いていても意味検索の結果が出るよう、入った時にベクトルを作って検索し直す。
+  var snippetTextEmbedder: SnippetTextEmbedder? {
+    didSet {
+      refreshSnippetEmbeddingsAndSearch()
+    }
+  }
   /// 画面の状態。
   private let state = LauncherState()
   /// ランチャーのパネル。初めて開く時に作る。
@@ -58,7 +64,6 @@ final class LauncherPanelController: NSObject, NSWindowDelegate {
   func show() {
     let frontmostApplication = NSWorkspace.shared.frontmostApplication
     previousApplication = frontmostApplication?.processIdentifier == ProcessInfo.processInfo.processIdentifier ? nil : frontmostApplication
-    refreshSnippetEmbeddings()
     state.query = ""
     state.searchResult = SnippetSearchResult(keywordMatches: [], semanticMatches: [])
     state.selectedSnippetIndex = nil
@@ -69,6 +74,10 @@ final class LauncherPanelController: NSObject, NSWindowDelegate {
       panel.setFrameOrigin(NSPoint(x: visibleFrame.midX - panel.frame.width / 2, y: visibleFrame.midY - panel.frame.height / 2))
     }
     panel.makeKeyAndOrderFront(nil)
+    // ベクトルの作成はパネルを描いた後に回し、ショートカットを押してからパネルが出るまでを待たせない。
+    DispatchQueue.main.async { [weak self] in
+      self?.refreshSnippetEmbeddingsAndSearch()
+    }
   }
 
   /// パネルを閉じる。閉じていれば何もしない。
@@ -96,8 +105,10 @@ final class LauncherPanelController: NSObject, NSWindowDelegate {
     )
   }
 
-  /// 意味検索のベクトルを今のスニペットに合わせる。管理ウィンドウ・MCP で変わったスニペットを、開くたびに意味検索へ反映するため。変わっていないベクトルは作り直さない。
-  private func refreshSnippetEmbeddings() {
+  /// 意味検索のベクトルを今のスニペットに合わせ、パネルが開いていれば今の入力で検索し直す。管理ウィンドウ・MCP で変わったスニペットを、開くたびに意味検索へ反映するため。
+  ///
+  /// 変わっていないベクトルは作り直さないため、推論が走るのは追加・更新されたスニペットだけになる。推論はメインスレッドで行う: 埋め込みモデルは NLContextualEmbedding を捕まえた Sendable でない閉包で、別のスレッドへ渡せないため。
+  private func refreshSnippetEmbeddingsAndSearch() {
     guard let snippetTextEmbedder else {
       return
     }
@@ -106,6 +117,9 @@ final class LauncherPanelController: NSObject, NSWindowDelegate {
       try modelContainer.mainContext.save()
     } catch {
       logger.error("Failed to update snippet embeddings: \(String(describing: error))")
+    }
+    if panel?.isVisible == true {
+      search()
     }
   }
 
