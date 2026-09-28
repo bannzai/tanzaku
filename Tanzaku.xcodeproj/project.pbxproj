@@ -15,6 +15,16 @@
 		7A1000000000000000000003 /* TanzakuKit in Frameworks */ = {isa = PBXBuildFile; productRef = 7A1000000000000000000082 /* TanzakuKit */; };
 		BC546B10F71243F94161BA43 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 819D3AB10EDF53500854ED1E /* Assets.xcassets */; };
 		F3D1C21226DC1199B58783CB /* TanzakuTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 696013EBD8A305FE612B27B7 /* TanzakuTests.swift */; };
+		7A2000000000000000000001 /* IOSModelContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A2000000000000000001001 /* IOSModelContainer.swift */; };
+		7A2000000000000000000002 /* SnippetBandColor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A2000000000000000001002 /* SnippetBandColor.swift */; };
+		7A2000000000000000000003 /* SnippetPasteboard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A2000000000000000001003 /* SnippetPasteboard.swift */; };
+		7A2000000000000000000004 /* SnippetLibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A2000000000000000001004 /* SnippetLibraryView.swift */; };
+		7A2000000000000000000005 /* SnippetListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A2000000000000000001005 /* SnippetListView.swift */; };
+		7A2000000000000000000006 /* SnippetDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A2000000000000000001006 /* SnippetDetailView.swift */; };
+		7A2000000000000000000007 /* SnippetEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A2000000000000000001007 /* SnippetEditorView.swift */; };
+		7A2000000000000000000008 /* SnippetGroupEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A2000000000000000001008 /* SnippetGroupEditorView.swift */; };
+		7A2000000000000000000009 /* DeveloperMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A2000000000000000001009 /* DeveloperMenu.swift */; };
+		7A2000000000000000000010 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 7A2000000000000000001010 /* Localizable.xcstrings */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -38,6 +48,17 @@
 		AB8FE1D8A6D581E6DF71B10D /* Tanzaku.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Tanzaku.entitlements; sourceTree = "<group>"; };
 		E804D807AB678D0394017B55 /* Tanzaku.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Tanzaku.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		F42397ABB5D473ABA5C9F741 /* TanzakuTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TanzakuTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		7A2000000000000000001001 /* IOSModelContainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IOSModelContainer.swift; sourceTree = "<group>"; };
+		7A2000000000000000001002 /* SnippetBandColor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnippetBandColor.swift; sourceTree = "<group>"; };
+		7A2000000000000000001003 /* SnippetPasteboard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnippetPasteboard.swift; sourceTree = "<group>"; };
+		7A2000000000000000001004 /* SnippetLibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnippetLibraryView.swift; sourceTree = "<group>"; };
+		7A2000000000000000001005 /* SnippetListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnippetListView.swift; sourceTree = "<group>"; };
+		7A2000000000000000001006 /* SnippetDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnippetDetailView.swift; sourceTree = "<group>"; };
+		7A2000000000000000001007 /* SnippetEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnippetEditorView.swift; sourceTree = "<group>"; };
+		7A2000000000000000001008 /* SnippetGroupEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnippetGroupEditorView.swift; sourceTree = "<group>"; };
+		7A2000000000000000001009 /* DeveloperMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeveloperMenu.swift; sourceTree = "<group>"; };
+		7A2000000000000000001010 /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
+		7A2000000000000000001011 /* TanzakuiOS.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = TanzakuiOS.entitlements; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -74,6 +95,17 @@
 			isa = PBXGroup;
 			children = (
 				7A1000000000000000000011 /* TanzakuiOSApp.swift */,
+				7A2000000000000000001001 /* IOSModelContainer.swift */,
+				7A2000000000000000001002 /* SnippetBandColor.swift */,
+				7A2000000000000000001003 /* SnippetPasteboard.swift */,
+				7A2000000000000000001004 /* SnippetLibraryView.swift */,
+				7A2000000000000000001005 /* SnippetListView.swift */,
+				7A2000000000000000001006 /* SnippetDetailView.swift */,
+				7A2000000000000000001007 /* SnippetEditorView.swift */,
+				7A2000000000000000001008 /* SnippetGroupEditorView.swift */,
+				7A2000000000000000001009 /* DeveloperMenu.swift */,
+				7A2000000000000000001010 /* Localizable.xcstrings */,
+				7A2000000000000000001011 /* TanzakuiOS.entitlements */,
 			);
 			path = TanzakuiOS;
 			sourceTree = "<group>";
@@ -231,6 +263,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				7A2000000000000000000010 /* Localizable.xcstrings in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -259,6 +292,15 @@
 			buildActionMask = 2147483647;
 			files = (
 				7A1000000000000000000001 /* TanzakuiOSApp.swift in Sources */,
+				7A2000000000000000000001 /* IOSModelContainer.swift in Sources */,
+				7A2000000000000000000002 /* SnippetBandColor.swift in Sources */,
+				7A2000000000000000000003 /* SnippetPasteboard.swift in Sources */,
+				7A2000000000000000000004 /* SnippetLibraryView.swift in Sources */,
+				7A2000000000000000000005 /* SnippetListView.swift in Sources */,
+				7A2000000000000000000006 /* SnippetDetailView.swift in Sources */,
+				7A2000000000000000000007 /* SnippetEditorView.swift in Sources */,
+				7A2000000000000000000008 /* SnippetGroupEditorView.swift in Sources */,
+				7A2000000000000000000009 /* DeveloperMenu.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -601,6 +643,7 @@
 		7A1000000000000000000051 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = TanzakuiOS/TanzakuiOS.entitlements;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = Tanzaku;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -623,6 +666,7 @@
 		7A1000000000000000000052 /* DebugUnsigned */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = TanzakuiOS/TanzakuiOS.entitlements;
 				CODE_SIGNING_ALLOWED = NO;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = Tanzaku;
@@ -646,6 +690,7 @@
 		7A1000000000000000000053 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = TanzakuiOS/TanzakuiOS.entitlements;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = Tanzaku;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
