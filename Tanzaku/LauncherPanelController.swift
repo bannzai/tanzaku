@@ -20,14 +20,12 @@ final class LauncherPanelController: NSObject, NSWindowDelegate {
   let modelContainer: ModelContainer
   /// 結果なしの画面から新規作成に進んだ時に、入力した言葉を渡して管理ウィンドウの編集を開く。
   private let openNewSnippetEditor: (String) -> Void
-  /// 意味検索の埋め込みモデル。埋め込みモデルの資産のダウンロードが済むまでは `nil` で、その間は文字列の一致だけで検索する。
-  ///
-  /// 用意できた時にランチャーが開いていても意味検索の結果が出るよう、入った時にベクトルを作って検索し直す。
-  var snippetTextEmbedder: SnippetTextEmbedder? {
-    didSet {
-      refreshSnippetEmbeddingsAndSearch()
-    }
-  }
+  /// 意味検索のベクトルを作る actor。`loadSnippetEmbeddingModel()` で埋め込みモデルを用意できるまでは `nil` で、その間は文字列の一致だけで検索する。
+  private var snippetEmbeddingIndexer: SnippetEmbeddingIndexer?
+  /// 用意できた埋め込みモデルの `modelIdentifier`。検索の入力のベクトルを作ったモデルと、保存したベクトルのモデルを揃えるのに使う。
+  private var snippetEmbeddingModelIdentifier: String?
+  /// 実行中の意味検索。入力が変わったら古い入力の意味検索を取り消す。
+  private var semanticSearchTask: Task<Void, Never>?
   /// 画面の状態。
   private let state = LauncherState()
   /// ランチャーのパネル。初めて開く時に作る。
@@ -74,9 +72,24 @@ final class LauncherPanelController: NSObject, NSWindowDelegate {
       panel.setFrameOrigin(NSPoint(x: visibleFrame.midX - panel.frame.width / 2, y: visibleFrame.midY - panel.frame.height / 2))
     }
     panel.makeKeyAndOrderFront(nil)
-    // ベクトルの作成はパネルを描いた後に回し、ショートカットを押してからパネルが出るまでを待たせない。
-    DispatchQueue.main.async { [weak self] in
-      self?.refreshSnippetEmbeddingsAndSearch()
+    refreshSnippetEmbeddingsAndSearch()
+  }
+
+  /// 意味検索の埋め込みモデルを用意する。用意できたらベクトルを作り、ランチャーが開いていれば今の入力で検索し直す。アプリの起動時に 1 回呼ぶ。
+  func loadSnippetEmbeddingModel() async {
+    // @ModelActor の actor はメインスレッドで作ると ModelContext の処理がメインスレッドで動くと報告されている (このアプリでは確かめていない) ため、確実にメインスレッドの外で作る。
+    let snippetEmbeddingIndexer = await Task.detached { [modelContainer] in
+      SnippetEmbeddingIndexer(modelContainer: modelContainer)
+    }.value
+    do {
+      guard let modelIdentifier = try await snippetEmbeddingIndexer.loadSnippetTextEmbedder(preferredLanguages: Locale.preferredLanguages) else {
+        return
+      }
+      self.snippetEmbeddingIndexer = snippetEmbeddingIndexer
+      snippetEmbeddingModelIdentifier = modelIdentifier
+      refreshSnippetEmbeddingsAndSearch()
+    } catch {
+      logger.error("Failed to load the embedding model: \(String(describing: error), privacy: .public)")
     }
   }
 
@@ -90,16 +103,43 @@ final class LauncherPanelController: NSObject, NSWindowDelegate {
     close()
   }
 
-  /// 検索して結果を入れ替え、先頭を選ぶ。
+  /// 今の入力で検索して結果を入れ替え、先頭を選ぶ。
+  ///
+  /// 文字列の一致はすぐに出し、意味検索は入力のベクトルを `SnippetEmbeddingIndexer` で作ってから足す。入力のベクトルの推論でキー入力を止めないため。
   private func search() {
+    let query = state.query
+    applySearchResult(query: query, embedder: nil, keepsSelection: false)
+    semanticSearchTask?.cancel()
+    guard let snippetEmbeddingIndexer, let snippetEmbeddingModelIdentifier else {
+      return
+    }
+    semanticSearchTask = Task { [weak self] in
+      do {
+        guard let queryVector = try await snippetEmbeddingIndexer.queryVector(query: query), !Task.isCancelled, self?.state.query == query else {
+          return
+        }
+        // 入力のベクトルは作り終えているため、検索にはそれを返すだけの埋め込みモデルを渡す。
+        self?.applySearchResult(
+          query: query,
+          embedder: SnippetTextEmbedder(modelIdentifier: snippetEmbeddingModelIdentifier) { _ in queryVector },
+          keepsSelection: true
+        )
+      } catch {
+        self?.logger.error("Failed to embed the query: \(String(describing: error))")
+      }
+    }
+  }
+
+  /// 検索の結果を入れ替える。`keepsSelection` が `true` なら、意味検索の結果を足す前に ↑↓ で動かした選択を範囲の中で残す。
+  private func applySearchResult(query: String, embedder: SnippetTextEmbedder?, keepsSelection: Bool) {
     do {
-      state.searchResult = try searchSnippets(query: state.query, modelContext: modelContainer.mainContext, embedder: snippetTextEmbedder)
+      state.searchResult = try searchSnippets(query: query, modelContext: modelContainer.mainContext, embedder: embedder)
     } catch {
       logger.error("Failed to search snippets: \(String(describing: error))")
       state.searchResult = SnippetSearchResult(keywordMatches: [], semanticMatches: [])
     }
     state.selectedSnippetIndex = launcherMovedSelectionIndex(
-      currentIndex: nil,
+      currentIndex: keepsSelection ? state.selectedSnippetIndex : nil,
       offset: 0,
       count: launcherSelectableSnippets(searchResult: state.searchResult).count
     )
@@ -107,19 +147,20 @@ final class LauncherPanelController: NSObject, NSWindowDelegate {
 
   /// 意味検索のベクトルを今のスニペットに合わせ、パネルが開いていれば今の入力で検索し直す。管理ウィンドウ・MCP で変わったスニペットを、開くたびに意味検索へ反映するため。
   ///
-  /// 変わっていないベクトルは作り直さないため、推論が走るのは追加・更新されたスニペットだけになる。推論はメインスレッドで行う: 埋め込みモデルは NLContextualEmbedding を捕まえた Sendable でない閉包で、別のスレッドへ渡せないため。
+  /// ベクトルは `SnippetEmbeddingIndexer` がメインスレッドの外で作る。変わっていないベクトルは作り直さないため、推論が走るのは追加・更新されたスニペットだけになる。
   private func refreshSnippetEmbeddingsAndSearch() {
-    guard let snippetTextEmbedder else {
+    guard let snippetEmbeddingIndexer else {
       return
     }
-    do {
-      try updateSnippetEmbeddings(modelContext: modelContainer.mainContext, embedder: snippetTextEmbedder)
-      try modelContainer.mainContext.save()
-    } catch {
-      logger.error("Failed to update snippet embeddings: \(String(describing: error))")
-    }
-    if panel?.isVisible == true {
-      search()
+    Task { [weak self] in
+      do {
+        try await snippetEmbeddingIndexer.updateEmbeddings()
+      } catch {
+        self?.logger.error("Failed to update snippet embeddings: \(String(describing: error))")
+      }
+      if self?.panel?.isVisible == true {
+        self?.search()
+      }
     }
   }
 
