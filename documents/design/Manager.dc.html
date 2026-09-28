@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>管理ウィンドウ</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="width: 1280px; height: 800px; box-sizing: border-box; display: flex; background: {{t.window}}; border: 1px solid {{t.frame}}; border-radius: 10px; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', sans-serif; color: {{t.fg}}">
+
+<nav aria-label="ライブラリ" style="width: 230px; flex-shrink: 0; display: flex; flex-direction: column; background: {{t.sidebar}}; border-right: 1px solid {{t.line}}; box-sizing: border-box">
+<div style="height: 52px; flex-shrink: 0; display: flex; align-items: center; gap: 8px; padding: 0 18px">
+<span style="width: 12px; height: 12px; border-radius: 6px; background: #FF5F57"></span>
+<span style="width: 12px; height: 12px; border-radius: 6px; background: #FEBC2E"></span>
+<span style="width: 12px; height: 12px; border-radius: 6px; background: #28C840"></span>
+</div>
+<div style="flex-grow: 1; display: flex; flex-direction: column; gap: 2px; padding: 4px 10px">
+<sc-for list="{{sidebar}}" as="s" hint-placeholder-count="10">
+<sc-if value="{{s.isHeader}}" hint-placeholder-val="{{ false }}">
+<div style="font-size: 11px; font-weight: 600; color: {{s.c.fg3}}; padding: 14px 8px 4px">{{s.label}}</div>
+</sc-if>
+<sc-if value="{{s.isItem}}" hint-placeholder-val="{{ true }}">
+<div style="display: flex; align-items: center; gap: 8px; height: 28px; padding: 0 8px; border-radius: 6px; font-size: 13px; background: {{s.bg}}">
+<span style="width: 16px; display: flex; justify-content: center; color: {{s.c.accentText}}">
+<sc-if value="{{s.isTag}}" hint-placeholder-val="{{ false }}"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" aria-hidden="true"><path d="M1.5 7.2V2.5a1 1 0 0 1 1-1h4.7l5.3 5.3-5.7 5.7z"></path><circle cx="4.6" cy="4.6" r="0.9"></circle></svg></sc-if>
+<sc-if value="{{s.isFolder}}" hint-placeholder-val="{{ true }}"><svg width="15" height="14" viewBox="0 0 15 14" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" aria-hidden="true"><path d="M1.5 3a1 1 0 0 1 1-1h3.2l1.4 1.6h5.4a1 1 0 0 1 1 1V11a1 1 0 0 1-1 1h-10a1 1 0 0 1-1-1z"></path></svg></sc-if>
+<sc-if value="{{s.isLibrary}}" hint-placeholder-val="{{ false }}"><svg width="12" height="15" viewBox="0 0 12 15" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><rect x="2.5" y="1" width="7" height="13" rx="1.2"></rect><path d="M6 1v3"></path></svg></sc-if>
+</span>
+<span style="flex-grow: 1">{{s.label}}</span>
+<span style="font-size: 12px; color: {{s.c.fg3}}">{{s.count}}</span>
+</div>
+</sc-if>
+</sc-for>
+</div>
+<div style="padding: 14px 18px 18px; display: flex; flex-direction: column; gap: 8px; border-top: 1px solid {{t.line}}">
+<div style="display: flex; justify-content: space-between; font-size: 12px; color: {{t.fg2}}"><span>無料版</span><span>5 / 20 件</span></div>
+<div style="height: 4px; border-radius: 2px; background: {{t.line}}"><div style="width: 25%; height: 4px; border-radius: 2px; background: {{t.accent}}"></div></div>
+<a href="Purchase.dc.html" style="font-size: 12px; color: {{t.accentText}}; text-decoration: none">ライセンスを購入…</a>
+</div>
+</nav>
+
+<div style="flex-grow: 1; display: flex; flex-direction: column; min-width: 0">
+<div style="height: 52px; flex-shrink: 0; display: flex; align-items: center; gap: 12px; padding: 0 16px 0 20px; border-bottom: 1px solid {{t.line}}">
+<div style="display: flex; flex-direction: column">
+<span style="font-size: 14px; font-weight: 700">すべてのスニペット</span>
+<span style="font-size: 11px; color: {{t.fg3}}">5 件</span>
+</div>
+<div style="flex-grow: 1"></div>
+<label style="display: flex; align-items: center; gap: 6px; width: 240px; height: 28px; padding: 0 8px; box-sizing: border-box; border-radius: 6px; background: {{t.field}}; border: 1px solid {{t.fieldLine}}">
+<svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="{{t.fg3}}" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="8.5" cy="8.5" r="5.5"></circle><path d="M12.5 12.5 17 17"></path></svg>
+<input type="text" placeholder="キーワード・意味で検索" aria-label="スニペットを検索" style="flex-grow: 1; min-width: 0; border: 0; outline: none; background: transparent; font-size: 13px; color: {{t.fg}}; font-family: inherit">
+</label>
+<button type="button" aria-label="新規スニペット" style="width: 32px; height: 28px; display: flex; align-items: center; justify-content: center; border: 0; border-radius: 6px; background: transparent; color: {{t.fg2}}">
+<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M8 2.5v11M2.5 8h11"></path></svg>
+</button>
+</div>
+
+<div style="flex-grow: 1; display: flex; min-height: 0">
+<div role="list" aria-label="スニペット" style="width: 340px; flex-shrink: 0; display: flex; flex-direction: column; gap: 2px; padding: 8px; border-right: 1px solid {{t.line}}; box-sizing: border-box">
+<sc-for list="{{snippets}}" as="s" hint-placeholder-count="5">
+<div role="listitem" style="display: flex; gap: 10px; padding: 10px 10px; border-radius: 7px; background: {{s.bg}}">
+<div style="width: 4px; height: 40px; border-radius: 2px; flex-shrink: 0; background: {{s.band}}"></div>
+<div style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px">
+<div style="display: flex; align-items: baseline; gap: 8px">
+<span style="flex-grow: 1; font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{s.title}}</span>
+<span style="font-size: 11px; color: {{s.c.fg3}}">{{s.date}}</span>
+</div>
+<div style="font-size: 12px; color: {{s.c.fg2}}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{s.first}}</div>
+<div style="font-size: 11px; color: {{s.c.fg3}}">{{s.kw}}</div>
+</div>
+</div>
+</sc-for>
+</div>
+
+<div style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 16px; padding: 24px 32px; box-sizing: border-box">
+<div style="display: grid; grid-template-columns: 84px minmax(0, 1fr); column-gap: 14px; row-gap: 12px; align-items: center; font-size: 13px">
+<label for="f-title" style="text-align: right; color: {{t.fg2}}">タイトル</label>
+<input id="f-title" type="text" value="GitHub Actions の secrets 参照" style="height: 28px; padding: 0 8px; box-sizing: border-box; border-radius: 6px; border: 1px solid {{t.fieldLine}}; background: {{t.field}}; color: {{t.fg}}; font-size: 13px; font-family: inherit">
+
+<label for="f-kw" style="text-align: right; color: {{t.fg2}}">キーワード</label>
+<div style="display: flex; align-items: center; gap: 10px">
+<input id="f-kw" type="text" value="ghsec" style="width: 160px; height: 28px; padding: 0 8px; box-sizing: border-box; border-radius: 6px; border: 1px solid {{t.fieldLine}}; background: {{t.field}}; color: {{t.fg}}; font-size: 13px; font-family: inherit">
+</div>
+
+<span style="text-align: right; color: {{t.fg2}}">タグ</span>
+<div style="display: flex; align-items: center; gap: 6px; min-height: 28px; padding: 0 6px; box-sizing: border-box; border-radius: 6px; border: 1px solid {{t.fieldLine}}; background: {{t.field}}">
+<span style="font-size: 12px; padding: 2px 7px; border-radius: 4px; background: {{t.token}}">github-actions</span>
+<span style="font-size: 12px; padding: 2px 7px; border-radius: 4px; background: {{t.token}}">ci</span>
+<input type="text" placeholder="タグを追加" aria-label="タグを追加" style="flex-grow: 1; min-width: 0; border: 0; outline: none; background: transparent; font-size: 13px; color: {{t.fg}}; font-family: inherit">
+</div>
+
+<span style="text-align: right; color: {{t.fg2}}">フォルダ</span>
+<div>
+<button type="button" style="display: inline-flex; align-items: center; gap: 8px; height: 26px; padding: 0 8px 0 10px; border-radius: 6px; border: 1px solid {{t.fieldLine}}; background: {{t.field}}; color: {{t.fg}}; font-size: 13px; font-family: inherit">GitHub
+<svg width="9" height="12" viewBox="0 0 9 12" fill="none" stroke="{{t.fg2}}" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1.5 4.5 4.5 1.5 7.5 4.5M1.5 7.5 4.5 10.5 7.5 7.5"></path></svg></button>
+</div>
+
+<span style="text-align: right; color: {{t.fg2}}">色</span>
+<div role="radiogroup" aria-label="短冊の色" style="display: flex; align-items: center; gap: 10px">
+<sc-for list="{{colors}}" as="k" hint-placeholder-count="5">
+<button type="button" role="radio" aria-checked="{{k.checked}}" aria-label="{{k.label}}" style="width: 22px; height: 30px; padding: 3px; box-sizing: border-box; border-radius: 5px; border: 2px solid {{k.ring}}; background: transparent">
+<span style="display: block; width: 100%; height: 100%; border-radius: 2px; background: {{k.color}}"></span>
+</button>
+</sc-for>
+<span style="font-size: 12px; color: {{t.fg2}}">藍</span>
+</div>
+</div>
+
+<div style="flex-grow: 1; display: flex; flex-direction: column; gap: 8px; min-height: 0">
+<div style="display: flex; align-items: center; gap: 12px">
+<span style="font-size: 13px; color: {{t.fg2}}">本文</span>
+<button type="button" style="display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 8px; border-radius: 6px; border: 1px solid {{t.fieldLine}}; background: {{t.field}}; color: {{t.fg}}; font-size: 12px; font-family: inherit">YAML
+<svg width="9" height="12" viewBox="0 0 9 12" fill="none" stroke="{{t.fg2}}" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1.5 4.5 4.5 1.5 7.5 4.5M1.5 7.5 4.5 10.5 7.5 7.5"></path></svg></button>
+<div style="flex-grow: 1"></div>
+<button type="button" style="height: 24px; padding: 0 10px; border-radius: 6px; border: 1px solid {{t.fieldLine}}; background: {{t.field}}; color: {{t.fg}}; font-size: 12px; font-family: inherit">コピー</button>
+</div>
+<pre aria-label="本文" style="margin: 0; flex-grow: 1; padding: 14px 16px; border-radius: 8px; border: 1px solid {{t.fieldLine}}; background: {{t.code}}; font-family: 'SF Mono', ui-monospace, Menlo, monospace; font-size: 13px; line-height: 1.7; color: {{t.fg}}; white-space: pre-wrap; overflow: hidden">{{body}}</pre>
+</div>
+
+<div style="display: flex; gap: 16px; font-size: 12px; color: {{t.fg3}}">
+<span>作成 9月20日</span>
+<span>更新 9月27日 (Claude Code が MCP で変更)</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"dark":{"editor":"boolean","default":false},"$preview":{"width":1280,"height":800}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const LIGHT = {
+      window: '#FFFFFF', frame: 'rgba(0,0,0,0.18)', sidebar: '#F1F1F4', sideSel: '#DCDCE1',
+      fg: '#1D1D1F', fg2: '#56565B', fg3: '#6E6E73', line: '#E4E4E7',
+      field: '#FFFFFF', fieldLine: '#CFCFD4', code: '#F6F7F9', token: '#E8ECF3',
+      segment: '#E8E8EC', segmentOn: '#FFFFFF', sel: '#E3EBF7', accent: '#2A5CA8', accentText: '#1F4F99',
+      band: { shu: '#D2452C', ai: '#2E4F86', matsuba: '#3E7A4B', yamabuki: '#D39A1C', murasaki: '#74509A' }
+    };
+    const DARK = {
+      window: '#1F1F21', frame: 'rgba(255,255,255,0.14)', sidebar: '#28282B', sideSel: '#3A3A3E',
+      fg: '#F2F2F4', fg2: '#AEAEB4', fg3: '#9A9AA0', line: '#36363A',
+      field: '#2B2B2E', fieldLine: '#46464B', code: '#19191B', token: '#34405A',
+      segment: '#2E2E31', segmentOn: '#55555A', sel: '#2C3C57', accent: '#3A6BC0', accentText: '#8DB5F2',
+      band: { shu: '#E4634A', ai: '#6F92CC', matsuba: '#6BAF78', yamabuki: '#E6B84A', murasaki: '#A585CC' }
+    };
+    const t = this.props.dark ? DARK : LIGHT;
+    const b = t.band;
+    const head = (label) => ({ label, isHeader: true, isItem: false, c: t });
+    const item = (label, count, kind, on) => ({
+      label, count, isHeader: false, isItem: true,
+      isLibrary: kind === 'library', isFolder: kind === 'folder', isTag: kind === 'tag',
+      bg: on ? t.sideSel : 'transparent', c: t
+    });
+    const sidebar = [
+      head('ライブラリ'),
+      item('すべてのスニペット', '5', 'library', true),
+      item('最近使ったもの', '', 'library', false),
+      item('AI エージェントが追加', '1', 'library', false),
+      head('フォルダ'),
+      item('開発環境', '2', 'folder', false),
+      item('GitHub', '1', 'folder', false),
+      item('文面', '1', 'folder', false),
+      item('AI プロンプト', '1', 'folder', false),
+      head('タグ'),
+      item('shell', '2', 'tag', false),
+      item('github-actions', '1', 'tag', false),
+      item('review', '1', 'tag', false),
+      item('claude', '1', 'tag', false)
+    ];
+    const snippets = [
+      { title: '環境変数からトークンを取得', first: 'export API_TOKEN="${API_TOKEN:-dummy-token}"', kw: 'envkey', date: '9月26日', band: b.shu },
+      { title: '.envrc の雛形', first: 'export API_TOKEN=dummy-token', kw: 'envrc', date: '9月24日', band: b.matsuba },
+      { title: 'GitHub Actions の secrets 参照', first: 'env:', kw: 'ghsec', date: '9月27日', band: b.ai, on: true },
+      { title: 'PR レビュー依頼の文面', first: 'レビューをお願いします。変更の目的は次のとおりです。', kw: 'prrev', date: '9月22日', band: b.yamabuki },
+      { title: 'Claude に渡す調査の指示', first: '次の件を調査して、結論から報告してください。', kw: 'research', date: '9月21日', band: b.murasaki }
+    ].map((s) => ({ ...s, bg: s.on ? t.sel : 'transparent', c: t }));
+    const colors = [
+      { label: '朱', color: b.shu }, { label: '藍', color: b.ai, on: true }, { label: '松葉', color: b.matsuba },
+      { label: '山吹', color: b.yamabuki }, { label: '紫', color: b.murasaki }
+    ].map((k) => ({ ...k, checked: k.on ? 'true' : 'false', ring: k.on ? t.accent : 'transparent' }));
+    return {
+      t,
+      sidebar,
+      snippets,
+      colors,
+      body: 'jobs:\n  deploy:\n    runs-on: ubuntu-latest\n    env:\n      API_TOKEN: ${{ secrets.API_TOKEN }}\n      DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }}\n    steps:\n      - uses: actions/checkout@v4\n      - run: ./scripts/deploy.sh'
+    };
+  }
+}
+</script>
+</body>
+</html>

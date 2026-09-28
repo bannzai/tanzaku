@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>設定</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="width: 720px; height: {{rootH}}; box-sizing: border-box; display: flex; flex-direction: column; background: {{t.window}}; border: 1px solid {{t.frame}}; border-radius: 10px; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', sans-serif; color: {{t.fg}}">
+
+<div style="flex-shrink: 0; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 10px 16px 8px; background: {{t.toolbar}}; border-bottom: 1px solid {{t.line}}; position: relative">
+<div style="position: absolute; left: 16px; top: 16px; display: flex; gap: 8px">
+<span style="width: 12px; height: 12px; border-radius: 6px; background: #FF5F57"></span>
+<span style="width: 12px; height: 12px; border-radius: 6px; background: {{t.lightOff}}"></span>
+<span style="width: 12px; height: 12px; border-radius: 6px; background: {{t.lightOff}}"></span>
+</div>
+<div style="font-size: 13px; font-weight: 700; height: 16px">{{tabTitle}}</div>
+<div role="tablist" aria-label="設定の項目" style="display: flex; gap: 4px">
+<button type="button" role="tab" aria-selected="{{generalSelected}}" style="width: 88px; height: 50px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; border: 0; border-radius: 7px; background: {{generalBg}}; color: {{generalFg}}; font-size: 11px; font-family: inherit">
+<svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="10" cy="10" r="2.6"></circle><path d="M10 2.5v2.2M10 15.3v2.2M2.5 10h2.2M15.3 10h2.2M4.7 4.7l1.5 1.5M13.8 13.8l1.5 1.5M4.7 15.3l1.5-1.5M13.8 6.2l1.5-1.5" stroke-linecap="round"></path></svg>
+一般</button>
+<button type="button" role="tab" aria-selected="{{agentSelected}}" style="width: 104px; height: 50px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; border: 0; border-radius: 7px; background: {{agentBg}}; color: {{agentFg}}; font-size: 11px; font-family: inherit">
+<svg width="22" height="20" viewBox="0 0 22 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="16" height="11" rx="3"></rect><path d="M11 5V2.5M8 10.5h.01M14 10.5h.01M1 9.5v3M21 9.5v3"></path></svg>
+AI エージェント</button>
+</div>
+</div>
+
+<div style="flex-grow: 1; display: flex; flex-direction: column; gap: 18px; padding: 22px 28px; box-sizing: border-box">
+
+<sc-if value="{{isAgent}}" hint-placeholder-val="{{ true }}">
+<div style="display: flex; flex-direction: column; gap: 18px">
+<div style="border-radius: 9px; background: {{t.group}}; border: 1px solid {{t.groupLine}}">
+<div style="display: flex; align-items: center; gap: 16px; padding: 12px 16px">
+<div style="flex-grow: 1; display: flex; flex-direction: column; gap: 3px">
+<span style="font-size: 13px">MCP サーバー</span>
+<span style="font-size: 12px; color: {{t.fg2}}; line-height: 1.5">AI エージェントがスニペットを検索・追加・整理できます。この Mac の中 (127.0.0.1) だけで待ち受けます。</span>
+</div>
+<button type="button" role="switch" aria-checked="true" aria-label="MCP サーバー" style="width: 38px; height: 22px; flex-shrink: 0; padding: 2px; box-sizing: border-box; border: 0; border-radius: 11px; background: {{t.accent}}; display: flex; justify-content: flex-end"><span style="width: 18px; height: 18px; border-radius: 9px; background: #FFFFFF; box-shadow: 0 1px 2px rgba(0,0,0,0.25)"></span></button>
+</div>
+<div style="height: 1px; margin-left: 16px; background: {{t.groupLine}}"></div>
+<div style="display: flex; align-items: center; gap: 16px; padding: 10px 16px; font-size: 13px">
+<span style="flex-grow: 1">状態</span>
+<span style="display: flex; align-items: center; gap: 6px; color: {{t.fg2}}"><span style="width: 8px; height: 8px; border-radius: 4px; background: {{t.band.matsuba}}"></span>稼働中 · ポート 47831</span>
+</div>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 6px">
+<div style="font-size: 12px; font-weight: 600; color: {{t.fg2}}; padding-left: 4px">接続</div>
+<div style="border-radius: 9px; background: {{t.group}}; border: 1px solid {{t.groupLine}}">
+<div style="display: flex; flex-direction: column; gap: 8px; padding: 12px 16px">
+<span style="font-size: 13px">Claude Code に追加するコマンド</span>
+<div style="display: flex; align-items: center; gap: 10px">
+<code style="flex-grow: 1; min-width: 0; padding: 8px 10px; border-radius: 6px; background: {{t.code}}; border: 1px solid {{t.groupLine}}; font-family: 'SF Mono', ui-monospace, Menlo, monospace; font-size: 12px; color: {{t.fg}}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">claude mcp add --transport http tanzaku http://127.0.0.1:47831/mcp</code>
+<button type="button" style="height: 26px; padding: 0 12px; flex-shrink: 0; border-radius: 6px; border: 1px solid {{t.fieldLine}}; background: {{t.field}}; color: {{t.fg}}; font-size: 12px; font-family: inherit">コピー</button>
+</div>
+</div>
+<div style="height: 1px; margin-left: 16px; background: {{t.groupLine}}"></div>
+<div style="display: flex; align-items: center; gap: 10px; padding: 10px 16px">
+<div style="flex-grow: 1; display: flex; flex-direction: column; gap: 3px">
+<span style="font-size: 13px">アクセストークン</span>
+<span style="font-size: 12px; color: {{t.fg2}}; font-family: 'SF Mono', ui-monospace, Menlo, monospace">dummy-token-••••••••</span>
+</div>
+<button type="button" style="height: 26px; padding: 0 12px; border-radius: 6px; border: 1px solid {{t.fieldLine}}; background: {{t.field}}; color: {{t.fg}}; font-size: 12px; font-family: inherit">コピー</button>
+<button type="button" style="height: 26px; padding: 0 12px; border-radius: 6px; border: 1px solid {{t.fieldLine}}; background: {{t.field}}; color: {{t.fg}}; font-size: 12px; font-family: inherit">再発行…</button>
+</div>
+</div>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 6px">
+<div style="font-size: 12px; font-weight: 600; color: {{t.fg2}}; padding-left: 4px">接続済みのクライアント</div>
+<div style="border-radius: 9px; background: {{t.group}}; border: 1px solid {{t.groupLine}}">
+<sc-for list="{{clients}}" as="c" hint-placeholder-count="3">
+<div style="display: flex; align-items: center; gap: 12px; padding: 10px 16px; border-top: {{c.divider}}">
+<div style="flex-grow: 1; display: flex; flex-direction: column; gap: 3px">
+<span style="font-size: 13px">{{c.label}}</span>
+<span style="font-size: 12px; color: {{c.t.fg2}}">{{c.sub}}</span>
+</div>
+<button type="button" style="height: 26px; padding: 0 12px; border-radius: 6px; border: 1px solid {{c.t.fieldLine}}; background: {{c.t.field}}; color: {{c.t.danger}}; font-size: 12px; font-family: inherit">取り消す</button>
+</div>
+</sc-for>
+</div>
+</div>
+
+<div style="border-radius: 9px; background: {{t.group}}; border: 1px solid {{t.groupLine}}">
+<div style="display: flex; align-items: center; gap: 16px; padding: 12px 16px">
+<div style="flex-grow: 1; display: flex; flex-direction: column; gap: 3px">
+<span style="font-size: 13px">削除に Touch ID を求める</span>
+<span style="font-size: 12px; color: {{t.fg2}}; line-height: 1.5">AI エージェントからの削除は、Touch ID で確認するまで実行しません。</span>
+</div>
+<button type="button" role="switch" aria-checked="true" aria-label="削除に Touch ID を求める" style="width: 38px; height: 22px; flex-shrink: 0; padding: 2px; box-sizing: border-box; border: 0; border-radius: 11px; background: {{t.accent}}; display: flex; justify-content: flex-end"><span style="width: 18px; height: 18px; border-radius: 9px; background: #FFFFFF; box-shadow: 0 1px 2px rgba(0,0,0,0.25)"></span></button>
+</div>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{isGeneral}}" hint-placeholder-val="{{ false }}">
+<div style="display: flex; flex-direction: column; gap: 18px">
+<div style="border-radius: 9px; background: {{t.group}}; border: 1px solid {{t.groupLine}}">
+<div style="display: flex; align-items: center; gap: 16px; padding: 12px 16px">
+<div style="flex-grow: 1; display: flex; flex-direction: column; gap: 3px">
+<span style="font-size: 13px">ランチャーを開くショートカット</span>
+<span style="font-size: 12px; color: {{t.fg2}}">どのアプリを使っていても、画面の中央に開きます</span>
+</div>
+<div style="display: flex; align-items: center; gap: 6px; height: 28px; padding: 0 6px 0 8px; border-radius: 6px; border: 1px solid {{t.fieldLine}}; background: {{t.field}}">
+<span style="display: inline-flex; align-items: center; justify-content: center; min-width: 22px; height: 20px; padding: 0 6px; box-sizing: border-box; border: 1px solid {{t.groupLine}}; border-radius: 4px; font-size: 12px">⌥</span>
+<span style="display: inline-flex; align-items: center; justify-content: center; height: 20px; padding: 0 8px; box-sizing: border-box; border: 1px solid {{t.groupLine}}; border-radius: 4px; font-size: 12px">Space</span>
+<button type="button" aria-label="ショートカットを消去" style="width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; border: 0; background: transparent; color: {{t.fg3}}"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M3 3l6 6M9 3 3 9"></path></svg></button>
+</div>
+</div>
+</div>
+
+<div style="border-radius: 9px; background: {{t.group}}; border: 1px solid {{t.groupLine}}">
+<div style="display: flex; align-items: center; gap: 16px; padding: 12px 16px">
+<div style="flex-grow: 1; display: flex; flex-direction: column; gap: 3px">
+<span style="font-size: 13px">前面のアプリに直接貼り付ける</span>
+<span style="font-size: 12px; color: {{t.fg2}}; line-height: 1.5">⌘Return で、ランチャーを開く前に使っていたアプリへ貼り付けます。</span>
+</div>
+<button type="button" role="switch" aria-checked="true" aria-label="前面のアプリに直接貼り付ける" style="width: 38px; height: 22px; flex-shrink: 0; padding: 2px; box-sizing: border-box; border: 0; border-radius: 11px; background: {{t.accent}}; display: flex; justify-content: flex-end"><span style="width: 18px; height: 18px; border-radius: 9px; background: #FFFFFF; box-shadow: 0 1px 2px rgba(0,0,0,0.25)"></span></button>
+</div>
+<div style="height: 1px; margin-left: 16px; background: {{t.groupLine}}"></div>
+<div style="display: flex; align-items: center; gap: 12px; padding: 12px 16px">
+<svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="{{t.warn}}" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0" aria-hidden="true"><path d="M9 2.2 16.2 15H1.8z"></path><path d="M9 7v3.6M9 12.8h.01"></path></svg>
+<span style="flex-grow: 1; font-size: 12px; line-height: 1.5; color: {{t.fg}}">アクセシビリティの許可がまだありません。許可するまでは、⌘Return でもコピーだけを行います。</span>
+<button type="button" style="height: 26px; padding: 0 12px; flex-shrink: 0; border-radius: 6px; border: 1px solid {{t.fieldLine}}; background: {{t.field}}; color: {{t.fg}}; font-size: 12px; font-family: inherit">システム設定を開く</button>
+</div>
+</div>
+
+<div style="border-radius: 9px; background: {{t.group}}; border: 1px solid {{t.groupLine}}">
+<div style="display: flex; align-items: center; gap: 16px; padding: 12px 16px">
+<span style="flex-grow: 1; font-size: 13px">ログイン時に起動</span>
+<button type="button" role="switch" aria-checked="true" aria-label="ログイン時に起動" style="width: 38px; height: 22px; flex-shrink: 0; padding: 2px; box-sizing: border-box; border: 0; border-radius: 11px; background: {{t.accent}}; display: flex; justify-content: flex-end"><span style="width: 18px; height: 18px; border-radius: 9px; background: #FFFFFF; box-shadow: 0 1px 2px rgba(0,0,0,0.25)"></span></button>
+</div>
+</div>
+</div>
+</sc-if>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"dark":{"editor":"boolean","default":false},"tab":{"editor":"enum","options":["agent","general"],"default":"agent"},"$preview":{"width":720,"height":820}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const LIGHT = {
+      window: '#ECECEE', frame: 'rgba(0,0,0,0.18)', toolbar: '#E6E6E9', lightOff: '#C8C8CC',
+      group: '#FFFFFF', groupLine: '#DCDCE0', fg: '#1D1D1F', fg2: '#56565B', fg3: '#6E6E73', line: '#D6D6DA',
+      field: '#FFFFFF', fieldLine: '#C9C9CE', code: '#F4F5F7', accent: '#2A5CA8', tabOn: '#D4D4D9', tabOnFg: '#1D1D1F',
+      danger: '#B8321E', warn: '#A86B00',
+      band: { shu: '#D2452C', ai: '#2E4F86', matsuba: '#3E7A4B', yamabuki: '#D39A1C', murasaki: '#74509A' }
+    };
+    const DARK = {
+      window: '#1E1E20', frame: 'rgba(255,255,255,0.14)', toolbar: '#2A2A2D', lightOff: '#4A4A4E',
+      group: '#2A2A2D', groupLine: '#3C3C40', fg: '#F2F2F4', fg2: '#AEAEB4', fg3: '#9A9AA0', line: '#39393D',
+      field: '#3A3A3E', fieldLine: '#505055', code: '#1A1A1C', accent: '#3A6BC0', tabOn: '#404045', tabOnFg: '#F2F2F4',
+      danger: '#F07A66', warn: '#E6B84A',
+      band: { shu: '#E4634A', ai: '#6F92CC', matsuba: '#6BAF78', yamabuki: '#E6B84A', murasaki: '#A585CC' }
+    };
+    const t = this.props.dark ? DARK : LIGHT;
+    const isAgent = (this.props.tab ?? 'agent') === 'agent';
+    const clients = [
+      { label: 'Claude Code', sub: '最後のアクセス 2 分前' },
+      { label: 'Claude Desktop', sub: '最後のアクセス 昨日' },
+      { label: 'Codex CLI', sub: '最後のアクセス 9月21日' }
+    ].map((c, i) => ({ ...c, t, divider: i === 0 ? '0' : '1px solid ' + t.groupLine }));
+    return {
+      t,
+      rootH: isAgent ? '820px' : '620px',
+      isAgent,
+      isGeneral: !isAgent,
+      tabTitle: isAgent ? 'AI エージェント' : '一般',
+      agentSelected: isAgent ? 'true' : 'false',
+      generalSelected: isAgent ? 'false' : 'true',
+      agentBg: isAgent ? t.tabOn : 'transparent',
+      generalBg: isAgent ? 'transparent' : t.tabOn,
+      agentFg: isAgent ? t.tabOnFg : t.fg2,
+      generalFg: isAgent ? t.fg2 : t.tabOnFg,
+      clients
+    };
+  }
+}
+</script>
+</body>
+</html>
