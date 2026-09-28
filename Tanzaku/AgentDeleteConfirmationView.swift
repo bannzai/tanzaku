@@ -29,7 +29,9 @@ struct AgentDeleteConfirmationView: View {
   /// 認証の画面を出している間は、ボタンを押せなくする。
   @State private var isAuthenticating = false
 
-  /// 本文を折り返さずに並べる最大の行数。これより長い本文はスクロールで全文を見せ、画面が画面の外まで伸びないようにする。
+  /// スクロールなしで本文を並べる最大の行数。これより長い本文はスクロールで全文を見せ、確認の画面が画面の外まで伸びないようにする。
+  ///
+  /// 12 行はデザインの見本 (5 行の `.envrc`) の 2 倍を超える。12 行の本文 (1 行 約 20pt) を入れても確認の画面が約 600pt に収まり、13 インチの MacBook の画面 (高さ 800pt 前後) でもはみ出さないため。
   private let bodyLineCountWithoutScroll = 12
 
   var body: some View {

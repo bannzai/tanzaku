@@ -154,7 +154,7 @@ func mcpProtocolVersionErrorResponse(
   guard request.headers["mcp-method"] == method else {
     return mcpJSONRPCErrorResponse(statusCode: 400, id: id, code: -32020, message: "Header mismatch: Mcp-Method")
   }
-  if method == "tools/call", request.headers["mcp-name"].map({ decodedMCPHeaderValue(headerValue: $0) }) != params["name"] as? String {
+  if method == "tools/call", request.headers["mcp-name"].flatMap({ decodedMCPHeaderValue(headerValue: $0) }) != params["name"] as? String {
     return mcpJSONRPCErrorResponse(statusCode: 400, id: id, code: -32020, message: "Header mismatch: Mcp-Name")
   }
   return nil
