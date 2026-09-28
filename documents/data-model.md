@@ -40,8 +40,8 @@ iOS では、本体アプリ・共有シート・App Intents・カスタムキ�
 | `body` | `String` | `""` | 出力する本文。必須 (空の本文では保存させない。アプリのコードで検査する) |
 | `title` | `String?` | `nil` | 無ければ一覧・ランチャーで本文の 1 行目を表示する |
 | `keyword` | `String?` | `nil` | キーワード展開・ランチャーで一致させる略語。`SnippetGroup.keyword` と同じ名前空間で一意 |
-| `language` | `String?` | `nil` | シンタックスハイライトの言語。`nil` はプレーンテキスト |
-| `colorRawValue` | `String?` | `nil` | 色 (朱・藍・松葉・山吹・紫) の raw value。`nil` は色なし |
+| `language` | `String?` | `nil` | シンタックスハイライトの言語 (`SnippetLanguage` の raw value)。`nil` はプレーンテキスト |
+| `colorRawValue` | `String?` | `nil` | 色 (朱・藍・松葉・山吹・紫) の raw value (`SnippetColor` の raw value)。`nil` は色なし |
 | `folder` | `Folder?` | `nil` | 0〜1 個のフォルダ |
 | `tags` | `[Tag]?` | `[]` | 0 個以上のタグ |
 | `groupItems` | `[SnippetGroupItem]?` | `[]` | このスニペットを入れたスニペットグループの項目 (`SnippetGroupItem.snippet` の逆のリレーション)。削除ルールは `.cascade` (スニペットを消すと項目も消える)。CloudKit はリレーションに逆向きを求めるため置く |
