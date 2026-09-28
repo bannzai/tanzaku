@@ -48,8 +48,10 @@ jobs:
       preview: ${{ inputs.preview }}
       setup_script: ${{ inputs.setup_script }}
       software_webgl: ${{ inputs.software_webgl }}
-      # docs/ は GitHub Pages で配信する静的ファイルのため、ビルドせずに配信する。127.0.0.1 に束縛しないと webtunnel の loopback 検証で失敗する。
-      start_command: python3 -m http.server "$PORT" --bind 127.0.0.1 --directory docs
+      # docs/ は GitHub Pages が Jekyll で配信する。法務ドキュメントの Markdown の HTML 化と拡張子なしの URL (/Terms-ja) を本番と同じに確かめるため、Jekyll で配信する。
+      setup_command: sudo gem install jekyll --no-document
+      # 127.0.0.1 に束縛しないと webtunnel の loopback 検証で失敗する。
+      start_command: jekyll serve --source docs --destination "$RUNNER_TEMP/_site" --host 127.0.0.1 --port "$PORT"
       port: "8000"
     secrets:
       TS_OIDC_CLIENT_ID: ${{ secrets.TS_OIDC_CLIENT_ID }}
