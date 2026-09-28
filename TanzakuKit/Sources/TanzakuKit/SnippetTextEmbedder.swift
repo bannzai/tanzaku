@@ -45,25 +45,31 @@ public func makeContextualSnippetTextEmbedder(language: NLLanguage) throws -> Sn
   try embedding.load()
   return SnippetTextEmbedder(modelIdentifier: "\(embedding.modelIdentifier)@\(embedding.revision)") { text in
     meanTokenVector(
-      tokenVectors: try contextualTokenVectorsByChunk(embedding: embedding, language: language, text: text).flatMap { $0 },
+      tokenVectors: try contextualTokenVectorsByChunk(embedding: embedding, language: language, text: text).flatMap { $0 }.map(\.vector),
       dimension: embedding.dimension
     )
   }
 }
 
-/// 文章を `maximumSequenceLength` に収まる長さに区切り、区切りごとにトークンのベクトルを返す。`embedding` は読み込み (`load()`) 済みのもの。
-func contextualTokenVectorsByChunk(embedding: NLContextualEmbedding, language: NLLanguage, text: String) throws -> [[[Double]]] {
+/// 文章を `maximumSequenceLength` に収まる長さに区切り、区切りごとにトークンのベクトルと、そのトークンが表す区切りの中の文字の範囲を返す。`embedding` は読み込み (`load()`) 済みのもの。
+///
+/// 範囲が空のトークンは、文字に対応しない特別なトークン (区切りの先頭に付く) を表す。
+func contextualTokenVectorsByChunk(
+  embedding: NLContextualEmbedding,
+  language: NLLanguage,
+  text: String
+) throws -> [[(vector: [Double], range: Range<String.Index>)]] {
   // 漢字かなのモデルは 1 文字がおよそ 1 トークンで、ラテン文字のモデルは 1 トークンが複数の文字になる。
   // 文字数を上限の半分にすれば、1 文字が 2 トークンに分かれる文字や先頭・末尾の特別なトークンがあっても上限に収まるため。
   let chunkCharacterCount = max(embedding.maximumSequenceLength / 2, 1)
-  var tokenVectorsByChunk: [[[Double]]] = []
+  var tokenVectorsByChunk: [[(vector: [Double], range: Range<String.Index>)]] = []
   var chunkStartIndex = text.startIndex
   while chunkStartIndex < text.endIndex {
     let chunkEndIndex = text.index(chunkStartIndex, offsetBy: chunkCharacterCount, limitedBy: text.endIndex) ?? text.endIndex
     let chunk = String(text[chunkStartIndex..<chunkEndIndex])
-    var tokenVectors: [[Double]] = []
-    try embedding.embeddingResult(for: chunk, language: language).enumerateTokenVectors(in: chunk.startIndex..<chunk.endIndex) { tokenVector, _ in
-      tokenVectors.append(tokenVector)
+    var tokenVectors: [(vector: [Double], range: Range<String.Index>)] = []
+    try embedding.embeddingResult(for: chunk, language: language).enumerateTokenVectors(in: chunk.startIndex..<chunk.endIndex) { tokenVector, tokenRange in
+      tokenVectors.append((vector: tokenVector, range: tokenRange))
       return true
     }
     tokenVectorsByChunk.append(tokenVectors)

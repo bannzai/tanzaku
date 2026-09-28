@@ -35,13 +35,13 @@ struct SemanticSearchMethodComparisonTests {
     var embedders = [
       SnippetTextEmbedder(modelIdentifier: "\(contextualModelIdentifier)/mean") { text in
         meanTokenVector(
-          tokenVectors: try contextualTokenVectorsByChunk(embedding: contextualEmbedding, language: .japanese, text: text).flatMap { $0 },
+          tokenVectors: try contextualTokenVectorsByChunk(embedding: contextualEmbedding, language: .japanese, text: text).flatMap { $0 }.map(\.vector),
           dimension: contextualEmbedding.dimension
         )
       },
       SnippetTextEmbedder(modelIdentifier: "\(contextualModelIdentifier)/max") { text in
         maxTokenVector(
-          tokenVectors: try contextualTokenVectorsByChunk(embedding: contextualEmbedding, language: .japanese, text: text).flatMap { $0 },
+          tokenVectors: try contextualTokenVectorsByChunk(embedding: contextualEmbedding, language: .japanese, text: text).flatMap { $0 }.map(\.vector),
           dimension: contextualEmbedding.dimension
         )
       },
@@ -50,7 +50,16 @@ struct SemanticSearchMethodComparisonTests {
           tokenVectors: try contextualTokenVectorsByChunk(embedding: contextualEmbedding, language: .japanese, text: text).flatMap { chunkTokenVectors in
             // トークンが 2 つ以下の区切りは、先頭と末尾を除くと何も残らないためそのまま使う。
             chunkTokenVectors.count > 2 ? Array(chunkTokenVectors.dropFirst().dropLast()) : chunkTokenVectors
-          },
+          }.map(\.vector),
+          dimension: contextualEmbedding.dimension
+        )
+      },
+      // `printContextualTokenDiagnostics` の実測で、文字に対応しない特別なトークンは区切りの先頭にだけ付き、末尾のトークンは本文の文字だった。
+      // 先頭と末尾を除くと本文の末尾のトークンも落ちるため、特別なトークンだけを除く方法も比べる。
+      SnippetTextEmbedder(modelIdentifier: "\(contextualModelIdentifier)/mean-without-special-tokens") { text in
+        meanTokenVector(
+          tokenVectors: try contextualTokenVectorsByChunk(embedding: contextualEmbedding, language: .japanese, text: text).flatMap { $0 }
+            .filter { !$0.range.isEmpty }.map(\.vector),
           dimension: contextualEmbedding.dimension
         )
       },
@@ -89,10 +98,8 @@ struct SemanticSearchMethodComparisonTests {
           embeddingName: embedder.modelIdentifier,
           ruleName: rule.name,
           parameter: rule.parameter,
-          topThreeHitCount: paraphrasedSimilarities.indices.filter { rule.matchIndices(paraphrasedSimilarities[$0]).contains($0) }.count,
-          queryCount: paraphrasedSimilarities.count,
-          unrelatedZeroResultCount: unrelatedSimilarities.filter { rule.matchIndices($0).isEmpty }.count,
-          unrelatedQueryCount: unrelatedSimilarities.count
+          paraphrasedQueryHits: paraphrasedSimilarities.indices.map { rule.matchIndices(paraphrasedSimilarities[$0]).contains($0) },
+          unrelatedQueryZeroResults: unrelatedSimilarities.map { rule.matchIndices($0).isEmpty }
         )
         rows.append(row)
         print("[SemanticSearchComparison] \(row.description)")
@@ -113,36 +120,50 @@ struct SemanticSearchComparisonRow: CustomStringConvertible {
   var ruleName: String
   /// 類似度の扱いのしきい値。
   var parameter: Float
-  /// 言い換えたクエリで、目的のスニペットが結果 (最大 3 件) に入った数。
-  var topThreeHitCount: Int
-  /// 言い換えたクエリの数。
-  var queryCount: Int
-  /// 関係の無いクエリで、意味検索の結果が 0 件になった数。
-  var unrelatedZeroResultCount: Int
-  /// 関係の無いクエリの数。
-  var unrelatedQueryCount: Int
+  /// `semanticSearchFixtureSnippets` と同じ順で、言い換えたクエリの目的のスニペットが結果 (最大 3 件) に入ったか。
+  var paraphrasedQueryHits: [Bool]
+  /// `semanticSearchFixtureUnrelatedQueries` と同じ順で、関係の無いクエリの意味検索の結果が 0 件になったか。
+  var unrelatedQueryZeroResults: [Bool]
 
   /// 上位 3 件の割合。
   var topThreeHitRate: Double {
-    Double(topThreeHitCount) / Double(queryCount)
+    Double(paraphrasedQueryHits.filter { $0 }.count) / Double(paraphrasedQueryHits.count)
   }
 
   /// 関係の無いクエリで 0 件になる割合。
   var unrelatedZeroResultRate: Double {
-    Double(unrelatedZeroResultCount) / Double(unrelatedQueryCount)
+    Double(unrelatedQueryZeroResults.filter { $0 }.count) / Double(unrelatedQueryZeroResults.count)
   }
 
   /// `[SemanticSearchComparison]` の後に続く出力の 1 行。CI のログから表を作るため、項目を `名前=値` の形で並べる。
+  ///
+  /// `ja` と `en` は、クエリが日本語 (ひらがな・カタカナ・漢字を含む) か英語かで分けた件数。漢字かなのモデルが英語の文章を見分けられるかを確かめるため。
   var description: String {
-    [
+    let isJapaneseParaphrasedQuery = semanticSearchFixtureSnippets.map { containsJapaneseCharacters(text: $0.paraphrasedQuery) }
+    let isJapaneseUnrelatedQuery = semanticSearchFixtureUnrelatedQueries.map { containsJapaneseCharacters(text: $0) }
+    let countText: ([Bool], [Bool], Bool) -> String = { results, isJapanese, japanese in
+      let selectedResults = results.indices.filter { isJapanese[$0] == japanese }.map { results[$0] }
+      return "\(selectedResults.filter { $0 }.count)/\(selectedResults.count)"
+    }
+    return [
       "embedding=\(embeddingName)",
       "rule=\(ruleName)",
       String(format: "parameter=%.2f", parameter),
-      "top3=\(topThreeHitCount)/\(queryCount)" + String(format: "(%.3f)", topThreeHitRate),
-      "unrelatedZero=\(unrelatedZeroResultCount)/\(unrelatedQueryCount)" + String(format: "(%.3f)", unrelatedZeroResultRate),
+      "top3=\(paraphrasedQueryHits.filter { $0 }.count)/\(paraphrasedQueryHits.count)" + String(format: "(%.3f)", topThreeHitRate),
+      "unrelatedZero=\(unrelatedQueryZeroResults.filter { $0 }.count)/\(unrelatedQueryZeroResults.count)"
+        + String(format: "(%.3f)", unrelatedZeroResultRate),
       String(format: "score=%.3f", topThreeHitRate + unrelatedZeroResultRate),
+      "top3Ja=\(countText(paraphrasedQueryHits, isJapaneseParaphrasedQuery, true))",
+      "top3En=\(countText(paraphrasedQueryHits, isJapaneseParaphrasedQuery, false))",
+      "unrelatedZeroJa=\(countText(unrelatedQueryZeroResults, isJapaneseUnrelatedQuery, true))",
+      "unrelatedZeroEn=\(countText(unrelatedQueryZeroResults, isJapaneseUnrelatedQuery, false))",
     ].joined(separator: " ")
   }
+}
+
+/// 文字列がひらがな・カタカナ・漢字を含むか。
+func containsJapaneseCharacters(text: String) -> Bool {
+  text.unicodeScalars.contains { $0.properties.isIdeographic || (0x3040...0x30FF).contains($0.value) }
 }
 
 /// 既定にする方法の選び方。上位 3 件の割合と関係の無いクエリで 0 件になる割合の和が大きい方を良いとし、同じなら上位 3 件の割合が高い方を良いとする。
@@ -265,10 +286,8 @@ func printKeywordOnlyRow(snippets: [Snippet], paraphrasedQueries: [String], unre
     embeddingName: "keyword-only",
     ruleName: "keyword-only",
     parameter: 0,
-    topThreeHitCount: paraphrasedQueries.indices.filter { matchedIndices(paraphrasedQueries[$0]).prefix(3).contains($0) }.count,
-    queryCount: paraphrasedQueries.count,
-    unrelatedZeroResultCount: unrelatedQueries.filter { matchedIndices($0).isEmpty }.count,
-    unrelatedQueryCount: unrelatedQueries.count
+    paraphrasedQueryHits: paraphrasedQueries.indices.map { matchedIndices(paraphrasedQueries[$0]).prefix(3).contains($0) },
+    unrelatedQueryZeroResults: unrelatedQueries.map { matchedIndices($0).isEmpty }
   )
   print("[SemanticSearchComparison] \(row.description)")
 }
