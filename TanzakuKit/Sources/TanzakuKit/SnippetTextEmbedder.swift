@@ -43,27 +43,44 @@ public func makeContextualSnippetTextEmbedder(language: NLLanguage) throws -> Sn
     return nil
   }
   try embedding.load()
+  return SnippetTextEmbedder(modelIdentifier: "\(embedding.modelIdentifier)@\(embedding.revision)") { text in
+    meanTokenVector(
+      tokenVectors: try contextualTokenVectorsByChunk(embedding: embedding, language: language, text: text).flatMap { $0 },
+      dimension: embedding.dimension
+    )
+  }
+}
+
+/// 文章を `maximumSequenceLength` に収まる長さに区切り、区切りごとにトークンのベクトルを返す。`embedding` は読み込み (`load()`) 済みのもの。
+func contextualTokenVectorsByChunk(embedding: NLContextualEmbedding, language: NLLanguage, text: String) throws -> [[[Double]]] {
   // 漢字かなのモデルは 1 文字がおよそ 1 トークンで、ラテン文字のモデルは 1 トークンが複数の文字になる。
   // 文字数を上限の半分にすれば、1 文字が 2 トークンに分かれる文字や先頭・末尾の特別なトークンがあっても上限に収まるため。
   let chunkCharacterCount = max(embedding.maximumSequenceLength / 2, 1)
-  return SnippetTextEmbedder(modelIdentifier: "\(embedding.modelIdentifier)@\(embedding.revision)") { text in
-    var sum = [Double](repeating: 0, count: embedding.dimension)
-    var tokenCount = 0
-    var chunkStartIndex = text.startIndex
-    while chunkStartIndex < text.endIndex {
-      let chunkEndIndex = text.index(chunkStartIndex, offsetBy: chunkCharacterCount, limitedBy: text.endIndex) ?? text.endIndex
-      let chunk = String(text[chunkStartIndex..<chunkEndIndex])
-      try embedding.embeddingResult(for: chunk, language: language).enumerateTokenVectors(in: chunk.startIndex..<chunk.endIndex) { tokenVector, _ in
-        for index in sum.indices {
-          sum[index] += tokenVector[index]
-        }
-        tokenCount += 1
-        return true
-      }
-      chunkStartIndex = chunkEndIndex
+  var tokenVectorsByChunk: [[[Double]]] = []
+  var chunkStartIndex = text.startIndex
+  while chunkStartIndex < text.endIndex {
+    let chunkEndIndex = text.index(chunkStartIndex, offsetBy: chunkCharacterCount, limitedBy: text.endIndex) ?? text.endIndex
+    let chunk = String(text[chunkStartIndex..<chunkEndIndex])
+    var tokenVectors: [[Double]] = []
+    try embedding.embeddingResult(for: chunk, language: language).enumerateTokenVectors(in: chunk.startIndex..<chunk.endIndex) { tokenVector, _ in
+      tokenVectors.append(tokenVector)
+      return true
     }
-    return sum.map { Float($0 / Double(max(tokenCount, 1))) }
+    tokenVectorsByChunk.append(tokenVectors)
+    chunkStartIndex = chunkEndIndex
   }
+  return tokenVectorsByChunk
+}
+
+/// トークンのベクトルの平均。トークンが無い時は長さ `dimension` の 0 のベクトルを返す。
+func meanTokenVector(tokenVectors: [[Double]], dimension: Int) -> [Float] {
+  var sum = [Double](repeating: 0, count: dimension)
+  for tokenVector in tokenVectors {
+    for index in sum.indices {
+      sum[index] += tokenVector[index]
+    }
+  }
+  return sum.map { Float($0 / Double(max(tokenVectors.count, 1))) }
 }
 
 /// NLContextualEmbedding の資産をダウンロードする。ダウンロード済みか、ダウンロードできた時に `true` を返す。
