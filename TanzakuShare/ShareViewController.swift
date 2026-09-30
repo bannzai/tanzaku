@@ -60,17 +60,25 @@ private struct ShareSnippetView: View {
 
 /// 共有された項目から、テキストと URL の文字列を共有された順に取り出す。テキストでも URL でもない添付は読まない。
 ///
+/// 添付からテキストも URL も読めなかった項目は、項目の本文 (`attributedContentText`) を使う。添付を付けずに本文だけで文字列を渡すアプリがあるため。
 /// `NSItemProvider` の読み込みの完了はメインスレッドの外で呼ばれるため、メインスレッドに縛らないよう nonisolated にする。
 private nonisolated func loadSharedTexts(extensionItems: [NSExtensionItem]) async -> [String] {
   var sharedTexts: [String] = []
-  for itemProvider in extensionItems.flatMap({ $0.attachments ?? [] }) {
-    if itemProvider.hasItemConformingToTypeIdentifier(UTType.url.identifier), let url = await loadSharedObject(itemProvider: itemProvider, objectType: URL.self) {
-      sharedTexts.append(url.absoluteString)
-    } else if itemProvider.hasItemConformingToTypeIdentifier(UTType.plainText.identifier),
-      let text = await loadSharedObject(itemProvider: itemProvider, objectType: String.self)
-    {
-      sharedTexts.append(text)
+  for extensionItem in extensionItems {
+    var extensionItemTexts: [String] = []
+    for itemProvider in extensionItem.attachments ?? [] {
+      if itemProvider.hasItemConformingToTypeIdentifier(UTType.url.identifier), let url = await loadSharedObject(itemProvider: itemProvider, objectType: URL.self) {
+        extensionItemTexts.append(url.absoluteString)
+      } else if itemProvider.hasItemConformingToTypeIdentifier(UTType.plainText.identifier),
+        let text = await loadSharedObject(itemProvider: itemProvider, objectType: String.self)
+      {
+        extensionItemTexts.append(text)
+      }
     }
+    if extensionItemTexts.isEmpty, let contentText = extensionItem.attributedContentText?.string, !contentText.isEmpty {
+      extensionItemTexts.append(contentText)
+    }
+    sharedTexts += extensionItemTexts
   }
   return sharedTexts
 }
