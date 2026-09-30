@@ -64,25 +64,25 @@
 		7D1000000000000000000011 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 7D1000000000000000001011 /* Localizable.xcstrings */; };
 		7D1000000000000000000013 /* SnippetEmbeddingIndexer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B2000000000000000000030 /* SnippetEmbeddingIndexer.swift */; };
 		7D1000000000000000000014 /* SnippetColorAppearance.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A2000000000000000000103 /* SnippetColorAppearance.swift */; };
-		7E1000000000000000000001 /* SnippetSpotlightIndex.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E10000000000000000000A1 /* SnippetSpotlightIndex.swift */; };
-		7E1000000000000000000002 /* SnippetIntents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E10000000000000000000A2 /* SnippetIntents.swift */; };
-		7E1000000000000000000003 /* TanzakuShare.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 7E10000000000000000000A6 /* TanzakuShare.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
-		7E1000000000000000000011 /* IOSModelContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D1000000000000000001001 /* IOSModelContainer.swift */; };
-		7E1000000000000000000012 /* SnippetBandColor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D1000000000000000001002 /* SnippetBandColor.swift */; };
-		7E1000000000000000000013 /* SnippetPasteboard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D1000000000000000001003 /* SnippetPasteboard.swift */; };
-		7E1000000000000000000014 /* SnippetLibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D1000000000000000001004 /* SnippetLibraryView.swift */; };
-		7E1000000000000000000015 /* SnippetListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D1000000000000000001005 /* SnippetListView.swift */; };
-		7E1000000000000000000016 /* SnippetDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D1000000000000000001006 /* SnippetDetailView.swift */; };
-		7E1000000000000000000017 /* SnippetEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D1000000000000000001007 /* SnippetEditorView.swift */; };
-		7E1000000000000000000018 /* SnippetGroupEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D1000000000000000001008 /* SnippetGroupEditorView.swift */; };
-		7E1000000000000000000019 /* DeveloperMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D1000000000000000001009 /* DeveloperMenu.swift */; };
-		7E100000000000000000001A /* SnippetEmbeddingController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D1000000000000000001010 /* SnippetEmbeddingController.swift */; };
-		7E100000000000000000001B /* SnippetSpotlightIndex.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E10000000000000000000A1 /* SnippetSpotlightIndex.swift */; };
-		7E100000000000000000001C /* SnippetEmbeddingIndexer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B2000000000000000000030 /* SnippetEmbeddingIndexer.swift */; };
-		7E100000000000000000001D /* SnippetColorAppearance.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A2000000000000000000103 /* SnippetColorAppearance.swift */; };
-		7E100000000000000000001E /* ShareViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E10000000000000000000A3 /* ShareViewController.swift */; };
-		7E1000000000000000000021 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 7D1000000000000000001011 /* Localizable.xcstrings */; };
-		7E1000000000000000000022 /* TanzakuKit in Frameworks */ = {isa = PBXBuildFile; productRef = 7E1000000000000000000083 /* TanzakuKit */; };
+		7F1000000000000000000001 /* SnippetSpotlightIndex.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F10000000000000000000A1 /* SnippetSpotlightIndex.swift */; };
+		7F1000000000000000000002 /* SnippetIntents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F10000000000000000000A2 /* SnippetIntents.swift */; };
+		7F1000000000000000000003 /* TanzakuShare.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 7F10000000000000000000A6 /* TanzakuShare.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		7F1000000000000000000011 /* IOSModelContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D1000000000000000001001 /* IOSModelContainer.swift */; };
+		7F1000000000000000000012 /* SnippetBandColor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D1000000000000000001002 /* SnippetBandColor.swift */; };
+		7F1000000000000000000013 /* SnippetPasteboard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D1000000000000000001003 /* SnippetPasteboard.swift */; };
+		7F1000000000000000000014 /* SnippetLibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D1000000000000000001004 /* SnippetLibraryView.swift */; };
+		7F1000000000000000000015 /* SnippetListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D1000000000000000001005 /* SnippetListView.swift */; };
+		7F1000000000000000000016 /* SnippetDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D1000000000000000001006 /* SnippetDetailView.swift */; };
+		7F1000000000000000000017 /* SnippetEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D1000000000000000001007 /* SnippetEditorView.swift */; };
+		7F1000000000000000000018 /* SnippetGroupEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D1000000000000000001008 /* SnippetGroupEditorView.swift */; };
+		7F1000000000000000000019 /* DeveloperMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D1000000000000000001009 /* DeveloperMenu.swift */; };
+		7F100000000000000000001A /* SnippetEmbeddingController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D1000000000000000001010 /* SnippetEmbeddingController.swift */; };
+		7F100000000000000000001B /* SnippetSpotlightIndex.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F10000000000000000000A1 /* SnippetSpotlightIndex.swift */; };
+		7F100000000000000000001C /* SnippetEmbeddingIndexer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B2000000000000000000030 /* SnippetEmbeddingIndexer.swift */; };
+		7F100000000000000000001D /* SnippetColorAppearance.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A2000000000000000000103 /* SnippetColorAppearance.swift */; };
+		7F100000000000000000001E /* ShareViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F10000000000000000000A3 /* ShareViewController.swift */; };
+		7F1000000000000000000021 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 7D1000000000000000001011 /* Localizable.xcstrings */; };
+		7F1000000000000000000022 /* TanzakuKit in Frameworks */ = {isa = PBXBuildFile; productRef = 7F1000000000000000000083 /* TanzakuKit */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -93,23 +93,23 @@
 			remoteGlobalIDString = 53454CE5B8EC5CB018DE5C6F;
 			remoteInfo = Tanzaku;
 		};
-		7E1000000000000000000071 /* PBXContainerItemProxy */ = {
+		7F1000000000000000000071 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 8F0C9A2A7B5BB151CF4B5CA6 /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = 7E1000000000000000000041;
+			remoteGlobalIDString = 7F1000000000000000000041;
 			remoteInfo = TanzakuShare;
 		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
-		7E1000000000000000000034 /* Embed Foundation Extensions */ = {
+		7F1000000000000000000034 /* Embed Foundation Extensions */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
 			dstPath = "";
 			dstSubfolderSpec = 13;
 			files = (
-				7E1000000000000000000003 /* TanzakuShare.appex in Embed Foundation Extensions */,
+				7F1000000000000000000003 /* TanzakuShare.appex in Embed Foundation Extensions */,
 			);
 			name = "Embed Foundation Extensions";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -175,12 +175,12 @@
 		7D1000000000000000001010 /* SnippetEmbeddingController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnippetEmbeddingController.swift; sourceTree = "<group>"; };
 		7D1000000000000000001011 /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
 		7D1000000000000000001012 /* TanzakuiOS.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = TanzakuiOS.entitlements; sourceTree = "<group>"; };
-		7E10000000000000000000A1 /* SnippetSpotlightIndex.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnippetSpotlightIndex.swift; sourceTree = "<group>"; };
-		7E10000000000000000000A2 /* SnippetIntents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnippetIntents.swift; sourceTree = "<group>"; };
-		7E10000000000000000000A3 /* ShareViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareViewController.swift; sourceTree = "<group>"; };
-		7E10000000000000000000A4 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		7E10000000000000000000A5 /* TanzakuShare.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = TanzakuShare.entitlements; sourceTree = "<group>"; };
-		7E10000000000000000000A6 /* TanzakuShare.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = TanzakuShare.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		7F10000000000000000000A1 /* SnippetSpotlightIndex.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnippetSpotlightIndex.swift; sourceTree = "<group>"; };
+		7F10000000000000000000A2 /* SnippetIntents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnippetIntents.swift; sourceTree = "<group>"; };
+		7F10000000000000000000A3 /* ShareViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareViewController.swift; sourceTree = "<group>"; };
+		7F10000000000000000000A4 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		7F10000000000000000000A5 /* TanzakuShare.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = TanzakuShare.entitlements; sourceTree = "<group>"; };
+		7F10000000000000000000A6 /* TanzakuShare.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = TanzakuShare.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -200,11 +200,11 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		7E1000000000000000000032 /* Frameworks */ = {
+		7F1000000000000000000032 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				7E1000000000000000000022 /* TanzakuKit in Frameworks */,
+				7F1000000000000000000022 /* TanzakuKit in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -217,7 +217,7 @@
 				E804D807AB678D0394017B55 /* Tanzaku.app */,
 				F42397ABB5D473ABA5C9F741 /* TanzakuTests.xctest */,
 				7A1000000000000000000012 /* TanzakuiOS.app */,
-				7E10000000000000000000A6 /* TanzakuShare.appex */,
+				7F10000000000000000000A6 /* TanzakuShare.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -236,20 +236,20 @@
 				7D1000000000000000001008 /* SnippetGroupEditorView.swift */,
 				7D1000000000000000001009 /* DeveloperMenu.swift */,
 				7D1000000000000000001010 /* SnippetEmbeddingController.swift */,
-				7E10000000000000000000A1 /* SnippetSpotlightIndex.swift */,
-				7E10000000000000000000A2 /* SnippetIntents.swift */,
+				7F10000000000000000000A1 /* SnippetSpotlightIndex.swift */,
+				7F10000000000000000000A2 /* SnippetIntents.swift */,
 				7D1000000000000000001011 /* Localizable.xcstrings */,
 				7D1000000000000000001012 /* TanzakuiOS.entitlements */,
 			);
 			path = TanzakuiOS;
 			sourceTree = "<group>";
 		};
-		7E1000000000000000000081 /* TanzakuShare */ = {
+		7F1000000000000000000081 /* TanzakuShare */ = {
 			isa = PBXGroup;
 			children = (
-				7E10000000000000000000A3 /* ShareViewController.swift */,
-				7E10000000000000000000A4 /* Info.plist */,
-				7E10000000000000000000A5 /* TanzakuShare.entitlements */,
+				7F10000000000000000000A3 /* ShareViewController.swift */,
+				7F10000000000000000000A4 /* Info.plist */,
+				7F10000000000000000000A5 /* TanzakuShare.entitlements */,
 			);
 			path = TanzakuShare;
 			sourceTree = "<group>";
@@ -301,7 +301,7 @@
 			children = (
 				C2232B089B697C8061A78001 /* Tanzaku */,
 				7A1000000000000000000021 /* TanzakuiOS */,
-				7E1000000000000000000081 /* TanzakuShare */,
+				7F1000000000000000000081 /* TanzakuShare */,
 				FFDDB424F544A78FD2837B05 /* TanzakuTests */,
 				794AF1B7E86592B62D074032 /* Products */,
 			);
@@ -369,12 +369,12 @@
 				7A1000000000000000000033 /* Sources */,
 				7A1000000000000000000032 /* Frameworks */,
 				7A1000000000000000000034 /* Resources */,
-				7E1000000000000000000034 /* Embed Foundation Extensions */,
+				7F1000000000000000000034 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
-				7E1000000000000000000072 /* PBXTargetDependency */,
+				7F1000000000000000000072 /* PBXTargetDependency */,
 			);
 			name = TanzakuiOS;
 			packageProductDependencies = (
@@ -384,13 +384,13 @@
 			productReference = 7A1000000000000000000012 /* TanzakuiOS.app */;
 			productType = "com.apple.product-type.application";
 		};
-		7E1000000000000000000041 /* TanzakuShare */ = {
+		7F1000000000000000000041 /* TanzakuShare */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 7E1000000000000000000061 /* Build configuration list for PBXNativeTarget "TanzakuShare" */;
+			buildConfigurationList = 7F1000000000000000000061 /* Build configuration list for PBXNativeTarget "TanzakuShare" */;
 			buildPhases = (
-				7E1000000000000000000031 /* Sources */,
-				7E1000000000000000000032 /* Frameworks */,
-				7E1000000000000000000033 /* Resources */,
+				7F1000000000000000000031 /* Sources */,
+				7F1000000000000000000032 /* Frameworks */,
+				7F1000000000000000000033 /* Resources */,
 			);
 			buildRules = (
 			);
@@ -398,10 +398,10 @@
 			);
 			name = TanzakuShare;
 			packageProductDependencies = (
-				7E1000000000000000000083 /* TanzakuKit */,
+				7F1000000000000000000083 /* TanzakuKit */,
 			);
 			productName = TanzakuShare;
-			productReference = 7E10000000000000000000A6 /* TanzakuShare.appex */;
+			productReference = 7F10000000000000000000A6 /* TanzakuShare.appex */;
 			productType = "com.apple.product-type.app-extension";
 		};
 /* End PBXNativeTarget section */
@@ -425,7 +425,7 @@
 						DevelopmentTeam = TQPN82UBBY;
 						ProvisioningStyle = Automatic;
 					};
-					7E1000000000000000000041 = {
+					7F1000000000000000000041 = {
 						DevelopmentTeam = TQPN82UBBY;
 						ProvisioningStyle = Automatic;
 					};
@@ -452,7 +452,7 @@
 				53454CE5B8EC5CB018DE5C6F /* Tanzaku */,
 				3D161F7F2FCD597949FE21AC /* TanzakuTests */,
 				7A1000000000000000000041 /* TanzakuiOS */,
-				7E1000000000000000000041 /* TanzakuShare */,
+				7F1000000000000000000041 /* TanzakuShare */,
 			);
 		};
 /* End PBXProject section */
@@ -475,11 +475,11 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		7E1000000000000000000033 /* Resources */ = {
+		7F1000000000000000000033 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				7E1000000000000000000021 /* Localizable.xcstrings in Resources */,
+				7F1000000000000000000021 /* Localizable.xcstrings in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -556,29 +556,29 @@
 				7D1000000000000000000010 /* SnippetEmbeddingController.swift in Sources */,
 				7D1000000000000000000013 /* SnippetEmbeddingIndexer.swift in Sources */,
 				7D1000000000000000000014 /* SnippetColorAppearance.swift in Sources */,
-				7E1000000000000000000001 /* SnippetSpotlightIndex.swift in Sources */,
-				7E1000000000000000000002 /* SnippetIntents.swift in Sources */,
+				7F1000000000000000000001 /* SnippetSpotlightIndex.swift in Sources */,
+				7F1000000000000000000002 /* SnippetIntents.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		7E1000000000000000000031 /* Sources */ = {
+		7F1000000000000000000031 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				7E100000000000000000001E /* ShareViewController.swift in Sources */,
-				7E1000000000000000000011 /* IOSModelContainer.swift in Sources */,
-				7E1000000000000000000012 /* SnippetBandColor.swift in Sources */,
-				7E1000000000000000000013 /* SnippetPasteboard.swift in Sources */,
-				7E1000000000000000000014 /* SnippetLibraryView.swift in Sources */,
-				7E1000000000000000000015 /* SnippetListView.swift in Sources */,
-				7E1000000000000000000016 /* SnippetDetailView.swift in Sources */,
-				7E1000000000000000000017 /* SnippetEditorView.swift in Sources */,
-				7E1000000000000000000018 /* SnippetGroupEditorView.swift in Sources */,
-				7E1000000000000000000019 /* DeveloperMenu.swift in Sources */,
-				7E100000000000000000001A /* SnippetEmbeddingController.swift in Sources */,
-				7E100000000000000000001B /* SnippetSpotlightIndex.swift in Sources */,
-				7E100000000000000000001C /* SnippetEmbeddingIndexer.swift in Sources */,
-				7E100000000000000000001D /* SnippetColorAppearance.swift in Sources */,
+				7F100000000000000000001E /* ShareViewController.swift in Sources */,
+				7F1000000000000000000011 /* IOSModelContainer.swift in Sources */,
+				7F1000000000000000000012 /* SnippetBandColor.swift in Sources */,
+				7F1000000000000000000013 /* SnippetPasteboard.swift in Sources */,
+				7F1000000000000000000014 /* SnippetLibraryView.swift in Sources */,
+				7F1000000000000000000015 /* SnippetListView.swift in Sources */,
+				7F1000000000000000000016 /* SnippetDetailView.swift in Sources */,
+				7F1000000000000000000017 /* SnippetEditorView.swift in Sources */,
+				7F1000000000000000000018 /* SnippetGroupEditorView.swift in Sources */,
+				7F1000000000000000000019 /* DeveloperMenu.swift in Sources */,
+				7F100000000000000000001A /* SnippetEmbeddingController.swift in Sources */,
+				7F100000000000000000001B /* SnippetSpotlightIndex.swift in Sources */,
+				7F100000000000000000001C /* SnippetEmbeddingIndexer.swift in Sources */,
+				7F100000000000000000001D /* SnippetColorAppearance.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -590,10 +590,10 @@
 			target = 53454CE5B8EC5CB018DE5C6F /* Tanzaku */;
 			targetProxy = 2A2863FFD099AF75DED0B5B9 /* PBXContainerItemProxy */;
 		};
-		7E1000000000000000000072 /* PBXTargetDependency */ = {
+		7F1000000000000000000072 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 7E1000000000000000000041 /* TanzakuShare */;
-			targetProxy = 7E1000000000000000000071 /* PBXContainerItemProxy */;
+			target = 7F1000000000000000000041 /* TanzakuShare */;
+			targetProxy = 7F1000000000000000000071 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -996,7 +996,7 @@
 			};
 			name = Release;
 		};
-		7E1000000000000000000051 /* Debug */ = {
+		7F1000000000000000000051 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
@@ -1018,7 +1018,7 @@
 			};
 			name = Debug;
 		};
-		7E1000000000000000000052 /* DebugUnsigned */ = {
+		7F1000000000000000000052 /* DebugUnsigned */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
@@ -1043,7 +1043,7 @@
 			};
 			name = DebugUnsigned;
 		};
-		7E1000000000000000000053 /* Release */ = {
+		7F1000000000000000000053 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
@@ -1109,12 +1109,12 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
 		};
-		7E1000000000000000000061 /* Build configuration list for PBXNativeTarget "TanzakuShare" */ = {
+		7F1000000000000000000061 /* Build configuration list for PBXNativeTarget "TanzakuShare" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				7E1000000000000000000051 /* Debug */,
-				7E1000000000000000000052 /* DebugUnsigned */,
-				7E1000000000000000000053 /* Release */,
+				7F1000000000000000000051 /* Debug */,
+				7F1000000000000000000052 /* DebugUnsigned */,
+				7F1000000000000000000053 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
@@ -1137,7 +1137,7 @@
 			isa = XCSwiftPackageProductDependency;
 			productName = TanzakuKit;
 		};
-		7E1000000000000000000083 /* TanzakuKit */ = {
+		7F1000000000000000000083 /* TanzakuKit */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = TanzakuKit;
 		};
