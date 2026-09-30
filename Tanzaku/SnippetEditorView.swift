@@ -41,8 +41,8 @@ struct SnippetEditorView: View {
   @State private var newFolderName = ""
   /// 削除の確認を出しているスニペット。
   @State private var deletingSnippet: Snippet?
-  /// 新規作成の下書きのスニペット。検査を通るとストアに入る。ストアへの保存に失敗した後の再試行でも同じスニペットを使い、
-  /// 失敗した時に入れたスニペットと別のスニペットを作って、キーワードの重複やレコードの重複にしないため。
+  /// 新規作成の下書きのスニペット。検査を通るとストアに入る。ストアへの保存に失敗した時は入れたのを取り消し (`saveManagerChanges(modelContext:)`)、
+  /// 次の保存では新しい下書きを使う。取り消したスニペットをもう一度ストアに入れられるかは SwiftData が保証していないため。
   @State private var draftSnippet = Snippet(body: "")
 
   /// 編集画面の入力の初期値をスニペットから決めるため、`@State` の初期値を渡す。`draftTitle` は新規の時のタイトルの初期値 (ランチャーに入力した言葉)。
@@ -278,7 +278,14 @@ struct SnippetEditorView: View {
         modelContext: modelContext,
         now: .now
       )
-      try modelContext.save()
+      // 保存に失敗したら、書き込んだ変更と新規の挿入を取り消す。残すと、自動保存や別の項目の保存で失敗した変更まで保存されるため。入力は画面の状態に残る。
+      if let saveErrorMessage = saveManagerChanges(modelContext: modelContext) {
+        errorMessage = saveErrorMessage
+        if snippet == nil {
+          draftSnippet = Snippet(body: "")
+        }
+        return
+      }
       onSnippetsChange()
       errorMessage = nil
       if snippet == nil {

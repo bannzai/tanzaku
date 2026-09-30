@@ -23,7 +23,7 @@ struct SnippetGroupEditorView: View {
   @State private var errorMessage: String?
   /// 削除の確認を出しているスニペットグループ。
   @State private var deletingSnippetGroup: SnippetGroup?
-  /// 新規作成の下書きのスニペットグループ。保存に失敗した後の再試行で同じグループを使う理由は `SnippetEditorView.draftSnippet` と同じ。
+  /// 新規作成の下書きのスニペットグループ。保存に失敗した時に取り消し、次の保存で新しい下書きを使う理由は `SnippetEditorView.draftSnippet` と同じ。
   @State private var draftSnippetGroup = SnippetGroup(name: "")
 
   /// 編集画面の入力の初期値をスニペットグループから決めるため、`@State` の初期値を渡す。
@@ -156,7 +156,14 @@ struct SnippetGroupEditorView: View {
         modelContext: modelContext,
         now: .now
       )
-      try modelContext.save()
+      // 保存に失敗したら、書き込んだ変更と新規の挿入を取り消す (理由は `SnippetEditorView.save()` と同じ)。
+      if let saveErrorMessage = saveManagerChanges(modelContext: modelContext) {
+        errorMessage = saveErrorMessage
+        if snippetGroup == nil {
+          draftSnippetGroup = SnippetGroup(name: "")
+        }
+        return
+      }
       errorMessage = nil
       if snippetGroup == nil {
         selection = .snippetGroup(snippetGroupID: editingSnippetGroup.id)
