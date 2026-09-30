@@ -42,7 +42,7 @@ struct MCPProtocolError: Error {
 let mcpSearchDefaultLimit = 20
 
 /// 検索のツールが受け付けるクエリの最大の文字数。検索のクエリは語か短い文で、500 文字あれば言い換えた文章でも足りるため。
-/// ベクトルを作る時間は文字数に比例して延びるため (`makeContextualSnippetTextEmbedder(language:)` は文章を区切って順に埋め込む)、上限で抑える。
+/// ベクトルを作る時間は文字数に比例して延び (`makeContextualSnippetTextEmbedder(language:)` は文章を区切って順に埋め込む)、その間ランチャーの意味検索も待たせるため、上限で抑える。
 let mcpSearchMaximumQueryLength = 500
 
 /// `tools/list` で返すツールの定義。並びは返す順で、クライアントがキャッシュできるよう毎回同じにする。
@@ -146,7 +146,7 @@ private func mcpToolResult(name: String, arguments: [String: Any], rpcRequestID:
     let structuredContent: [String: Any]
     switch name {
     case "search_snippets":
-      structuredContent = try searchSnippetsTool(arguments: arguments, environment: environment)
+      structuredContent = try await searchSnippetsTool(arguments: arguments, environment: environment)
     case "get_snippet":
       structuredContent = ["snippet": mcpSnippetJSONObject(snippet: try fetchSnippetArgument(arguments: arguments, modelContext: environment.modelContext))]
     case "create_snippet":
@@ -249,7 +249,7 @@ func mcpOptionalText(text: String) -> String? {
 }
 
 /// `search_snippets` の結果。
-func searchSnippetsTool(arguments: [String: Any], environment: MCPServerEnvironment) throws -> [String: Any] {
+func searchSnippetsTool(arguments: [String: Any], environment: MCPServerEnvironment) async throws -> [String: Any] {
   let query = try mcpRequiredStringArgument(arguments: arguments, name: "query")
   // クエリの意味検索のベクトルはメインアクターで作るため、長いクエリで画面とほかのリクエストの処理を止めないよう長さを抑える。
   guard query.count <= mcpSearchMaximumQueryLength else {
@@ -264,7 +264,7 @@ func searchSnippetsTool(arguments: [String: Any], environment: MCPServerEnvironm
   default:
     throw MCPToolError(description: "The argument \"limit\" must be a positive integer.")
   }
-  let result = try searchSnippets(query: query, modelContext: environment.modelContext, embedder: environment.embedder())
+  let result = try await searchSnippets(query: query, modelContext: environment.modelContext, embedder: environment.semanticQueryEmbedder(query))
   return [
     "keywordMatches": result.keywordMatches.prefix(limit).map { match in
       ["match": mcpKeywordMatchKindText(kind: match.kind), "snippet": mcpSnippetJSONObject(snippet: match.snippet)] as [String: Any]

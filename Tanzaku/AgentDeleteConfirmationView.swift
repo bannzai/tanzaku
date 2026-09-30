@@ -71,7 +71,7 @@ struct AgentDeleteConfirmationView: View {
             .foregroundStyle(.tertiary)
           HStack(spacing: 6) {
             Circle()
-              .fill(SnippetColor.matsuba.color)
+              .fill(snippetBandColor(snippetColor: .matsuba))
               .frame(width: 7, height: 7)
             Text("\(request.clientName) (connected client)")
           }
@@ -115,9 +115,9 @@ struct AgentDeleteConfirmationView: View {
           .font(.system(size: 12, weight: .semibold))
           .foregroundStyle(.secondary)
         HStack(alignment: .top, spacing: 12) {
-          if let color = request.snippet.colorRawValue.flatMap({ SnippetColor(rawValue: $0) }) {
+          if let snippetColor = request.snippet.color {
             RoundedRectangle(cornerRadius: 2)
-              .fill(color.color)
+              .fill(snippetBandColor(snippetColor: snippetColor))
               .frame(width: 4)
           }
           VStack(alignment: .leading, spacing: 8) {
@@ -210,7 +210,7 @@ struct AgentDeleteAppIcon: View {
         .fill(.quaternary)
         .overlay(RoundedRectangle(cornerRadius: 10).stroke(.separator))
       RoundedRectangle(cornerRadius: 2)
-        .fill(SnippetColor.ai.color)
+        .fill(snippetBandColor(snippetColor: .ai))
         .frame(width: 12, height: 28)
         .overlay(alignment: .top) {
           Circle()

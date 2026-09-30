@@ -126,11 +126,11 @@ func maskedMCPAccessToken(token: String) -> String {
 func mcpServerStateColor(state: MCPServerState) -> Color {
   switch state {
   case .running:
-    SnippetColor.matsuba.color
+    snippetBandColor(snippetColor: .matsuba)
   case .starting:
-    SnippetColor.yamabuki.color
+    snippetBandColor(snippetColor: .yamabuki)
   case .failed:
-    SnippetColor.shu.color
+    snippetBandColor(snippetColor: .shu)
   case .stopped:
     Color.secondary
   }

@@ -12,15 +12,6 @@ struct PendingSnippetDeletion {
   var continuation: CheckedContinuation<Bool, Never>
 }
 
-/// ほかのスレッドで読み込んだ埋め込みモデルを、メインアクターへ渡すための入れ物。
-///
-/// `SnippetTextEmbedder` はクロージャを持つため Sendable ではない。検索のクエリ用のモデルは読み込んだ後はメインアクターだけが使い、
-/// ベクトルの作り直し用のモデルは一度に 1 つの作り直し (`requestSnippetEmbeddingRefresh()`) だけが使うため、同じモデルを同時に使うことはない。
-nonisolated struct UncheckedSendableEmbedder: @unchecked Sendable {
-  /// 読み込んだ埋め込みモデル。読み込めなければ `nil`。
-  var embedder: SnippetTextEmbedder?
-}
-
 /// 待ち受けるポート。デザイン (`documents/design/Settings.dc.html`) の値。
 /// 起動のたびに変わると Claude Code に登録した URL が使えなくなるため固定する。
 let mcpServerPort = 47831
@@ -43,8 +34,6 @@ final class MCPServerController {
   private(set) var tokenErrorMessage: String?
   /// 確認を待っている削除の依頼。先頭を確認の画面に出す。
   private(set) var pendingDeletions: [PendingSnippetDeletion] = []
-  /// 意味検索の埋め込みモデル。資産のダウンロードが済むまでは `nil`。
-  private(set) var embedder: SnippetTextEmbedder?
 
   /// MCP のサーバーを動かすか。
   var isServerEnabled: Bool {
@@ -75,17 +64,24 @@ final class MCPServerController {
   @ObservationIgnored private var deletionConfirmationPanel: NSPanel?
   /// 削除の確認の画面の内容の、最後に測った大きさ。
   @ObservationIgnored private var deletionConfirmationContentSize: CGSize?
-  /// ベクトルの作り直しだけに使う埋め込みモデル。資産のダウンロードが済むまでは `nil`。
-  @ObservationIgnored private var snippetEmbeddingRefreshEmbedder: UncheckedSendableEmbedder?
-  /// ベクトルを作り直している途中か。
-  @ObservationIgnored private var isRefreshingSnippetEmbeddings = false
-  /// 作り直しを頼まれてから、まだ作り直していないか。
-  @ObservationIgnored private var needsSnippetEmbeddingRefresh = false
+  /// 検索のクエリの意味検索の埋め込みモデルを返す。ランチャー (`LauncherPanelController.semanticQueryEmbedder(query:)`) と同じ埋め込みモデルを使う。
+  @ObservationIgnored private let semanticQueryEmbedder: @MainActor (String) async -> SnippetTextEmbedder?
+  /// スニペットの追加・更新・削除を保存した後に呼ぶ。ランチャーの意味検索のベクトルを作り直す (`LauncherPanelController.refreshSnippetEmbeddingsAndSearch()`)。
+  @ObservationIgnored private let snippetsDidChange: @MainActor () -> Void
 
   /// 保存した設定を読み、設定で動かしていればサーバーを起動する。
-  init(modelContainer: ModelContainer, tokenStore: MCPTokenStore) {
+  ///
+  /// 意味検索の埋め込みモデルはランチャーが持つ。同じモデルをもう 1 つ読み込むとメモリに 2 つ持つことになるため、MCP の検索とベクトルの作り直しはランチャーに頼む。
+  init(
+    modelContainer: ModelContainer,
+    tokenStore: MCPTokenStore,
+    semanticQueryEmbedder: @escaping @MainActor (String) async -> SnippetTextEmbedder?,
+    snippetsDidChange: @escaping @MainActor () -> Void
+  ) {
     self.modelContainer = modelContainer
     self.tokenStore = tokenStore
+    self.semanticQueryEmbedder = semanticQueryEmbedder
+    self.snippetsDidChange = snippetsDidChange
     // 初回起動の最後の手順で AI エージェントを接続するため (`documents/PROJECT.md`「設定・初回起動」)、設定を開かなくても接続できるよう既定は動かす。
     isServerEnabled = UserDefaults.standard.object(forKey: mcpServerEnabledDefaultsKey) as? Bool ?? true
     // 既定はオン (`documents/PROJECT.md`「MCP サーバー」)。
@@ -104,8 +100,8 @@ final class MCPServerController {
       modelContext: ModelContext(modelContainer),
       tokenStore: tokenStore,
       port: mcpServerPort,
-      embedder: { [weak self] in self?.embedder },
-      snippetsDidChange: { [weak self] in self?.requestSnippetEmbeddingRefresh() },
+      semanticQueryEmbedder: semanticQueryEmbedder,
+      snippetsDidChange: snippetsDidChange,
       requiresDeletionConfirmation: { [weak self] in self?.requiresDeletionConfirmation ?? true },
       confirmSnippetDeletion: { [weak self] request in await self?.confirmSnippetDeletion(request: request) ?? false },
       cancelClientRequest: { [weak self] clientID, rpcRequestID in
@@ -150,60 +146,6 @@ final class MCPServerController {
     listener?.cancel()
     listener = nil
     state = .stopped
-  }
-
-  /// 意味検索の埋め込みモデルの資産を用意し、使えるようになったら MCP の検索とベクトルの作り直しで使う。
-  ///
-  /// モデルの準備が済む前に保存したスニペットにはベクトルが無いため、準備が済んだらすべてのスニペットのベクトルを作り直す。
-  func prepareEmbedder() async {
-    let language = snippetEmbeddingLanguage(preferredLanguages: Locale.preferredLanguages)
-    guard (try? await requestContextualEmbeddingAssets(language: language)) == true else {
-      return
-    }
-    // 埋め込みモデルの読み込み (NLContextualEmbedding の load()) はモデルの大きさの分だけ時間が掛かり、
-    // メインスレッドで行うと、その間は画面も MCP のリクエストの処理も止まるため、ほかのスレッドで行う。
-    // 検索のクエリ (メインアクター) とベクトルの作り直し (ほかのスレッド) が同じモデルを同時に使わないよう、別々に読み込む。
-    let embedders = await Task.detached(priority: .utility) {
-      (
-        query: UncheckedSendableEmbedder(embedder: try? makeContextualSnippetTextEmbedder(language: language)),
-        refresh: UncheckedSendableEmbedder(embedder: try? makeContextualSnippetTextEmbedder(language: language))
-      )
-    }.value
-    embedder = embedders.query.embedder
-    snippetEmbeddingRefreshEmbedder = embedders.refresh
-    requestSnippetEmbeddingRefresh()
-  }
-
-  /// すべてのスニペットの意味検索のベクトルを、今のスニペットに合わせて作り直すよう頼む。
-  ///
-  /// ベクトルの作成はスニペットの数と長さの分だけ時間が掛かるため、ほかのスレッドで専用のコンテキストを使って行う。
-  /// 作り直している間に頼まれたら、その間の変更を取りこぼさないよう、終わった後にもう一度作り直す。
-  /// 埋め込みモデルの準備が済む前に頼まれた分は、準備が済んだ時の作り直し (`prepareEmbedder()`) に含まれる。
-  func requestSnippetEmbeddingRefresh() {
-    needsSnippetEmbeddingRefresh = true
-    guard !isRefreshingSnippetEmbeddings, let snippetEmbeddingRefreshEmbedder, snippetEmbeddingRefreshEmbedder.embedder != nil else {
-      return
-    }
-    isRefreshingSnippetEmbeddings = true
-    let modelContainer = modelContainer
-    Task {
-      while needsSnippetEmbeddingRefresh {
-        needsSnippetEmbeddingRefresh = false
-        await Task.detached(priority: .utility) {
-          guard let embedder = snippetEmbeddingRefreshEmbedder.embedder else {
-            return
-          }
-          let modelContext = ModelContext(modelContainer)
-          do {
-            try updateSnippetEmbeddings(modelContext: modelContext, embedder: embedder)
-            try modelContext.save()
-          } catch {
-            mcpServerLogger.error("Could not update snippet embeddings: \(error.localizedDescription, privacy: .public)")
-          }
-        }.value
-      }
-      isRefreshingSnippetEmbeddings = false
-    }
   }
 
   /// 表示するトークンを Keychain から読み直す。無ければ作る。

@@ -57,7 +57,7 @@ struct MCPServerTests {
       modelContext: modelContext,
       tokenStore: inMemoryMCPTokenStore(initialTokens: tokens),
       port: mcpServerPort,
-      embedder: { nil },
+      semanticQueryEmbedder: { _ in nil },
       snippetsDidChange: {
         snippetChangeCounter.count += 1
       },

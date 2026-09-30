@@ -1,68 +1,95 @@
-import SwiftData
 import SwiftUI
-import TanzakuKit
+
+/// 管理ウィンドウの scene の識別子。ランチャーから `openWindow(id:)` で開くのに使う。
+let managerWindowID = "manager"
 
 /// アプリのエントリポイント。
 @main
 struct TanzakuApp: App {
-  /// スニペットのストア。
-  private let modelContainer: ModelContainer
-  /// 内蔵の MCP のサーバー。
-  @State private var mcpServerController: MCPServerController
-
-  /// ストアを開き、MCP のサーバーを起動する。
-  init() {
-    let modelContainer = makeAppModelContainer()
-    self.modelContainer = modelContainer
-    _mcpServerController = State(initialValue: MCPServerController(modelContainer: modelContainer, tokenStore: keychainMCPTokenStore()))
-  }
+  /// ストア・ランチャー・グローバルショートカットを用意する delegate。
+  @NSApplicationDelegateAdaptor private var appDelegate: AppDelegate
 
   var body: some Scene {
-    WindowGroup {
-      ContentView()
-        .task {
-          await mcpServerController.prepareEmbedder()
-        }
+    // ランチャーから開いた時に既に開いている管理ウィンドウを前に出すため、複数のウィンドウを作る WindowGroup ではなく 1 つだけの Window にする。
+    Window("Tanzaku", id: managerWindowID) {
+      ManagerWindowRoot(appDelegate: appDelegate)
     }
-    .modelContainer(modelContainer)
-    .environment(mcpServerController)
+    // デザインの管理ウィンドウの大きさ (`documents/design/Manager.dc.html` の 1280×800)。
+    .defaultSize(width: 1280, height: 800)
     #if DEBUG
       .commands {
-        DeveloperCommands(controller: mcpServerController)
+        DeveloperCommands(appDelegate: appDelegate)
       }
     #endif
 
     Settings {
-      TabView {
-        AgentSettingsView()
-          .tabItem {
-            Label("AI Agents", systemImage: "cpu")
-          }
-      }
-      .frame(width: 600)
-      .frame(minHeight: 640)
+      SettingsRoot(appDelegate: appDelegate)
     }
-    .modelContainer(modelContainer)
-    .environment(mcpServerController)
   }
 }
 
-/// アプリが使うストアを開く。ストアのファイルはアプリケーションサポートの中に置く。
-///
-/// 同期するストアの CloudKit は iCloud の同期を作る issue (#19) で有効にする。CI の ad-hoc 署名では iCloud の entitlement を満たせないため (`documents/data-model.md`「前提」)、それまでは同期しない。
-/// ストアを開けないとスニペットを扱えず、アプリとして動けないため、開けなければ止める。
-func makeAppModelContainer() -> ModelContainer {
-  let storeDirectoryURL = URL.applicationSupportDirectory.appending(path: "Tanzaku", directoryHint: .isDirectory)
-  do {
-    try FileManager.default.createDirectory(at: storeDirectoryURL, withIntermediateDirectories: true)
-    return try makeTanzakuModelContainer(
-      storeLocation: .files(
-        syncedStoreURL: storeDirectoryURL.appending(path: "Synced.store"),
-        localStoreURL: storeDirectoryURL.appending(path: "Local.store")
-      ),
-      syncedStoreCloudKitDatabase: .none
-    )
-  } catch {
-    fatalError("Could not open the snippet store: \(error)")
+/// 設定のウィンドウの中身。タブは「AI エージェント」だけで、「一般」は #15 で足す。
+private struct SettingsRoot: View {
+  /// ストアと MCP のサーバーを持つ delegate。
+  let appDelegate: AppDelegate
+
+  var body: some View {
+    Group {
+      switch (appDelegate.modelContainerResult, appDelegate.mcpServerController) {
+      case (.success(let modelContainer), .some(let mcpServerController)):
+        TabView {
+          AgentSettingsView()
+            .tabItem {
+              Label("AI Agents", systemImage: "cpu")
+            }
+        }
+        .modelContainer(modelContainer)
+        .environment(mcpServerController)
+      case (.failure(let error), _):
+        // ストアを開けなかった理由をユーザーが知れるよう、管理ウィンドウと同じくアプリを落とさずに出す。
+        Text(verbatim: error.localizedDescription)
+      case (.success, .none):
+        // ストアを開けた時は MCP のサーバーも作るため (`AppDelegate.mcpServerController`)、ここには来ない。
+        EmptyView()
+      }
+    }
+    .frame(width: 600)
+    .frame(minHeight: 640)
+  }
+}
+
+/// 管理ウィンドウの中身を包み、ランチャーから管理ウィンドウを開けるよう `openWindow` を delegate に渡す。
+private struct ManagerWindowRoot: View {
+  /// ストア・`openWindow`・新規作成の下書きを受け渡す delegate。
+  let appDelegate: AppDelegate
+  /// 管理ウィンドウを開く SwiftUI の操作。
+  @Environment(\.openWindow) private var openWindow
+
+  var body: some View {
+    Group {
+      switch appDelegate.modelContainerResult {
+      case .success(let modelContainer):
+        ManagerView(
+          semanticQueryEmbedder: { query in
+            await appDelegate.launcherPanelController?.semanticQueryEmbedder(query: query)
+          },
+          onSnippetsChange: {
+            appDelegate.launcherPanelController?.refreshSnippetEmbeddingsAndSearch()
+          }
+        )
+        .modelContainer(modelContainer)
+      case .failure(let error):
+        // ストアを開けなかった理由をユーザーが知れるよう、アプリを落とさずに出す。
+        Text(verbatim: error.localizedDescription)
+          .frame(minWidth: 480, minHeight: 320)
+      }
+    }
+    .environment(appDelegate.newSnippetDraft)
+    .environment(appDelegate.snippetEmbeddingRevision)
+    .onAppear {
+      appDelegate.openManagerWindow = {
+        openWindow(id: managerWindowID)
+      }
+    }
   }
 }

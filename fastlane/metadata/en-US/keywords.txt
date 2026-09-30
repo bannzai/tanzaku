@@ -1,1 +1,1 @@
-snippet,text expander,launcher,MCP,AI agent,semantic search,code,prompt,clipboard,template
+snippet,text expander,keyboard,AI,semantic search,code,prompt,clipboard,template,copy,iCloud

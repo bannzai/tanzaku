@@ -8,13 +8,13 @@ public enum SnippetValidationError: Error, Equatable, CustomStringConvertible {
   /// 本文が空 (空白と改行だけの本文を含む)。
   case emptyBody
 
-  /// 画面にそのまま表示する文言。
+  /// 画面にそのまま表示する文言。アプリと拡張のどこから表示しても同じ翻訳になるよう、このパッケージの翻訳を使う。
   public var description: String {
     switch self {
     case .keywordAlreadyUsed(let keyword):
-      "The keyword \"\(keyword)\" is already used by another snippet or snippet group."
+      String(localized: "The keyword \"\(keyword)\" is already used by another snippet or snippet group.", bundle: .module)
     case .emptyBody:
-      "The snippet body is empty."
+      String(localized: "The snippet body is empty.", bundle: .module)
     }
   }
 }

@@ -1,0 +1,26 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "The keyword \"%@\" is already used by another snippet or snippet group." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "キーワード「%@」は別のスニペットかスニペットグループで使われています"
+          }
+        }
+      }
+    },
+    "The snippet body is empty." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "本文が空です"
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.0"
+}
