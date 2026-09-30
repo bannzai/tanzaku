@@ -51,7 +51,7 @@ nonisolated struct SnippetAppEntityQuery: EntityStringQuery {
 /// スニペットを選んで本文をクリップボードへコピーする intent。ショートカット・アクションボタンから使う (`documents/PROJECT.md`「iOS > Spotlight・App Intents」)。
 ///
 /// アプリを前面に出さずにコピーだけ済ませるため、アプリを開かない (`openAppWhenRun` の既定の `false`)。
-/// ストアとクリップボードをメインスレッドで扱うため、ほかの App Intents の型と違い nonisolated にしない (`@Parameter` は nonisolated の型に置けない)。
+/// `@Parameter` の可変のプロパティは nonisolated の型に置けないため、ほかの App Intents の型と違い nonisolated にしない。`perform()` はメインスレッドの外から呼ばれるため、ストアとクリップボードはメインスレッドの関数に任せる。
 struct CopySnippetIntent: AppIntent {
   /// ショートカットの画面に出す名前。
   static var title: LocalizedStringResource {
@@ -69,7 +69,7 @@ struct CopySnippetIntent: AppIntent {
 
   /// 選んだスニペットの本文をコピーし、コピーしたスニペットの名前を伝える。
   func perform() async throws -> some IntentResult & ProvidesDialog {
-    let copiedSnippetTitle = try copySnippetBodyForIntent(snippetID: snippet.id)
+    let copiedSnippetTitle = try await copySnippetBodyForIntent(snippetID: snippet.id)
     return .result(dialog: "Copied “\(copiedSnippetTitle)”")
   }
 }
