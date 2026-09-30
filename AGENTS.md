@@ -11,8 +11,9 @@
 
 | 確認すること | 既定の実行先 (public リポジトリ) | private / internal に変わった場合 |
 | --- | --- | --- |
-| ビルドとユニットテスト | GitHub Actions の `.github/workflows/ci.yml` (`macos-26` ランナーで `make build-macos` と `make test`)。ブランチを push し、`gh pr checks <PR 番号>` と失敗時の `gh run view <run ID> --log-failed` で結果を見る | GitHub-hosted の macOS ランナーが課金対象になるため、Devin の macOS セッション (`/devin-macos-e2e` skill) で行う |
+| ビルドとユニットテスト | GitHub Actions の `.github/workflows/ci.yml` (`macos-26` ランナーで `make build-macos`・`make build-ios`・`make test`)。ブランチを push し、`gh pr checks <PR 番号>` と失敗時の `gh run view <run ID> --log-failed` で結果を見る | GitHub-hosted の macOS ランナーが課金対象になるため、Devin の macOS セッション (`/devin-macos-e2e` skill) で行う |
 | macOS アプリの画面・挙動 | simtunnel (`/macos-simtunnel` skill)。GitHub Actions の macOS ランナーのデスクトップでアプリを動かし、tailnet 経由で操作・撮影する | Devin の macOS セッション (`/devin-macos-e2e` skill) |
+| iOS アプリの画面・挙動 | `/ios-simulator` skill の Phase 1 で経路を決める。iOS のシミュレータの simtunnel の caller workflow (`.github/workflows/simulator-session.yml`) は未導入で、iOS の画面を作る issue で足す | Devin の macOS セッション (`/devin-macos-e2e` skill) |
 | 公開サイト (`docs/` の LP・法務ドキュメント) の表示 | webtunnel (`/webtunnel` skill)。GitHub Actions の Linux ランナーの Chromium で `docs/` を開く | 同じ (webtunnel は caller リポジトリの visibility を問わない) |
 
 ### Makefile
@@ -20,7 +21,8 @@
 | コマンド | 内容 |
 | --- | --- |
 | `make build-macos` | macOS アプリのビルド (`-derivedDataPath tmp/DerivedData`) |
-| `make test` | ユニットテスト (Swift Testing) |
+| `make build-ios` | iOS アプリのシミュレータ向けのビルド |
+| `make test` | macOS アプリと `TanzakuKit` のユニットテスト (Swift Testing) |
 | `make macos` | Release ビルドを `/Applications/Tanzaku.app` に配置する。開発者が普段使いする時の手段で、agent の検証手段ではない |
 | `make clean` | `tmp/DerivedData` を消す |
 

@@ -6,13 +6,21 @@ DERIVED_DATA := tmp/DerivedData
 # CI には署名 ID が無いため、CI は SIGNING_FLAGS を ad-hoc 署名の設定で上書きする (.github/workflows/ci.yml)。
 SIGNING_FLAGS ?= -allowProvisioningUpdates
 
-.PHONY: build-macos test clean
+IOS_SCHEME := TanzakuiOS
+PACKAGE_DIR := TanzakuKit
+
+.PHONY: build-macos build-ios test clean
 
 build-macos:
 	xcodebuild -project $(XCODEPROJ) -scheme $(SCHEME) -configuration $(CONFIGURATION) -derivedDataPath $(DERIVED_DATA) -destination 'generic/platform=macOS' $(SIGNING_FLAGS) build
 
+# 実機向けは provisioning profile が要り CI の ad-hoc 署名では通らないため、シミュレータ向けにビルドする。
+build-ios:
+	xcodebuild -project $(XCODEPROJ) -scheme $(IOS_SCHEME) -configuration $(CONFIGURATION) -derivedDataPath $(DERIVED_DATA) -destination 'generic/platform=iOS Simulator' $(SIGNING_FLAGS) build
+
 test:
 	xcodebuild -project $(XCODEPROJ) -scheme $(SCHEME) -configuration $(CONFIGURATION) -derivedDataPath $(DERIVED_DATA) -destination 'platform=macOS' $(SIGNING_FLAGS) test
+	cd $(PACKAGE_DIR) && xcodebuild -scheme TanzakuKit -derivedDataPath $(CURDIR)/$(DERIVED_DATA) -destination 'platform=macOS' $(SIGNING_FLAGS) test
 
 clean:
 	rm -rf $(DERIVED_DATA)
