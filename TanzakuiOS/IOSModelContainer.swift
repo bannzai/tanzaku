@@ -20,6 +20,11 @@ enum IOSModelContainerError: Error, CustomStringConvertible {
   }
 }
 
+/// このプロセスで 1 つだけ持つストア。開けなかった時はその理由。
+///
+/// 本体の画面と App Intents (アプリのプロセスで動く) が同じ `ModelContainer` を使うため、最初に使った時に 1 回だけ開く。
+let iosModelContainerResult = Result { try makeIOSModelContainer() }
+
 /// iOS アプリの `ModelContainer` を作る。ストアのファイルは App Group の共有コンテナの `Tanzaku/` に置く。フォルダが無ければ作り、あればそのまま使うため、何度呼んでも同じストアを開く。
 ///
 /// iCloud (CloudKit) との同期は同期の issue (#19) で有効にするまで切っておく。iCloud コンテナが未作成で (#5)、CI・simtunnel の署名しないビルドでは iCloud の entitlement を満たせないため。

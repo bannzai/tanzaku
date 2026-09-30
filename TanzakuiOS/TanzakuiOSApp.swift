@@ -12,7 +12,7 @@ struct TanzakuiOSApp: App {
 
   /// ストアを開き、同じストアでベクトルを作る `SnippetEmbeddingController` を作る。どちらもアプリで 1 つだけ持つため、`App` の init で作る。
   init() {
-    modelContainerResult = Result { try makeIOSModelContainer() }
+    modelContainerResult = iosModelContainerResult
     snippetEmbeddingController = (try? modelContainerResult.get()).map { SnippetEmbeddingController(modelContainer: $0) }
   }
 

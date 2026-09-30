@@ -1,3 +1,4 @@
+import CoreSpotlight
 import SwiftData
 import SwiftUI
 import TanzakuKit
@@ -27,6 +28,8 @@ struct SnippetLibraryView: View {
   @State private var selectedSnippetID: UUID?
   /// iPhone の画面の積み重ね。最初の画面を「すべてのスニペット」の一覧にするため、それを積んだ状態から始める。
   @State private var compactNavigationPath: [SnippetSidebarItem] = [.library(filter: .all)]
+  /// iPhone で Spotlight から開いたスニペットの識別子。詳細の列が無いため sheet で出す。消されたスニペットを参照しないよう識別子で持つ。
+  @State private var spotlightSnippetID: UUID?
   #if DEBUG
     /// 開発者メニューで選んだ外観。simtunnel の画面の確認でライト・ダークを撮るため (`AGENTS.md`「画面の確認」)。
     @AppStorage(developerAppearanceUserDefaultsKey) private var developerAppearance = DeveloperAppearance.system
@@ -55,10 +58,52 @@ struct SnippetLibraryView: View {
         }
       }
     }
+    .task(id: SnippetSpotlightIndexTaskID(snippetIDs: snippets.map(\.id), snippetUpdatedAts: snippets.map(\.updatedAt))) {
+      await replaceSnippetSpotlightIndex(snippets: snippets)
+    }
+    .onContinueUserActivity(CSSearchableItemActionType) { userActivity in
+      guard let snippetID = (userActivity.userInfo?[CSSearchableItemActivityIdentifier] as? String).flatMap(UUID.init(uuidString:)) else {
+        return
+      }
+      if horizontalSizeClass == .compact {
+        spotlightSnippetID = snippetID
+      } else {
+        selectedSidebarItem = .library(filter: .all)
+        selectedSnippetID = snippetID
+      }
+    }
+    .sheet(isPresented: Binding(get: { spotlightSnippetID != nil }, set: { _ in spotlightSnippetID = nil })) {
+      NavigationStack {
+        Group {
+          if let spotlightSnippet = snippets.first(where: { $0.id == spotlightSnippetID }) {
+            SnippetDetailView(snippet: spotlightSnippet)
+          } else {
+            ContentUnavailableView("The snippet was deleted", systemImage: "rectangle.portrait.slash")
+          }
+        }
+        .toolbar {
+          ToolbarItem(placement: .cancellationAction) {
+            Button("Done") {
+              spotlightSnippetID = nil
+            }
+          }
+        }
+      }
+    }
     #if DEBUG
       .preferredColorScheme(developerAppearance.colorScheme)
     #endif
   }
+}
+
+/// Spotlight の索引を入れ直す条件。スニペットの追加・削除 (識別子) と更新 (更新日時) のどれかが変わったら入れ直す。
+///
+/// 共有シートの拡張が保存したスニペットも、本体の一覧 (`@Query`) に出た時にここで索引に入る。
+private struct SnippetSpotlightIndexTaskID: Hashable {
+  /// すべてのスニペットの識別子。
+  let snippetIDs: [UUID]
+  /// すべてのスニペットの更新日時。タイトル・キーワードを変えると変わる。
+  let snippetUpdatedAts: [Date]
 }
 
 /// サイドバー。ライブラリ (すべて・AI エージェントが追加)・フォルダ・タグ・スニペットグループを並べる (`documents/design/Manager.dc.html` のサイドバー)。

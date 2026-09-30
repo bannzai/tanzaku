@@ -101,12 +101,32 @@
         }
       }
     },
+    "Copies the body of the selected snippet to the clipboard." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "選んだスニペットの本文をクリップボードにコピーします"
+          }
+        }
+      }
+    },
     "Copy" : {
       "localizations" : {
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "コピー"
+          }
+        }
+      }
+    },
+    "Copy Snippet" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "スニペットをコピー"
           }
         }
       }
@@ -157,6 +177,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "削除"
+          }
+        }
+      }
+    },
+    "Done" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "完了"
           }
         }
       }
@@ -431,6 +461,16 @@
         }
       }
     },
+    "Snippet" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "スニペット"
+          }
+        }
+      }
+    },
     "Snippet Groups" : {
       "localizations" : {
         "ja" : {
@@ -477,6 +517,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "スニペットをタップするとコピーしてここに詳細を出します"
+          }
+        }
+      }
+    },
+    "The snippet was deleted" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "スニペットは削除されました"
           }
         }
       }
