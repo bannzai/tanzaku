@@ -51,6 +51,7 @@ private struct ManagerWindowRoot: View {
       }
     }
     .environment(appDelegate.newSnippetDraft)
+    .environment(appDelegate.snippetEmbeddingRevision)
     .onAppear {
       appDelegate.openManagerWindow = {
         openWindow(id: managerWindowID)

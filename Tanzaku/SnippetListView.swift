@@ -15,6 +15,8 @@ struct SnippetListView: View {
   /// 一覧で選んでいる項目。
   @Binding var selection: ManagerDetailSelection?
   @Environment(\.modelContext) private var modelContext
+  /// 意味検索のベクトルを作り直した回数。埋め込みモデルの用意が済んだ時とベクトルを作り直した時に検索し直すため。
+  @Environment(SnippetEmbeddingRevision.self) private var snippetEmbeddingRevision
   /// すべてのスニペット。スニペットの追加・更新・削除で一覧を描き直すため `@Query` で持つ。
   @Query(sort: \Snippet.updatedAt, order: .reverse) private var snippets: [Snippet]
   /// 見出しに出すフォルダ名を探すためのすべてのフォルダ。
@@ -56,7 +58,8 @@ struct SnippetListView: View {
         query: searchText,
         filter: filter,
         snippetIDs: snippets.map(\.id),
-        snippetUpdatedAts: snippets.map(\.updatedAt)
+        snippetUpdatedAts: snippets.map(\.updatedAt),
+        snippetEmbeddingRevision: snippetEmbeddingRevision.value
       )
     ) {
       guard isSearching else {
@@ -104,7 +107,7 @@ struct SnippetListView: View {
   }
 }
 
-/// 一覧の検索をやり直す条件。入力・絞り込み・スニペットの追加と更新と削除のどれかが変わったら検索し直す。
+/// 一覧の検索をやり直す条件。入力・絞り込み・スニペットの追加と更新と削除・意味検索のベクトルのどれかが変わったら検索し直す。
 private struct SnippetSearchTaskID: Hashable {
   /// 検索欄に入力した文字列。
   let query: String
@@ -114,6 +117,8 @@ private struct SnippetSearchTaskID: Hashable {
   let snippetIDs: [UUID]
   /// すべてのスニペットの更新日時。更新で変わる。
   let snippetUpdatedAts: [Date]
+  /// 意味検索のベクトルを作り直した回数 (`SnippetEmbeddingRevision.value`)。
+  let snippetEmbeddingRevision: Int
 }
 
 /// スニペットの一覧の 1 行。色の帯・名前・更新日・本文の 1 行目・キーワード (`documents/design/Manager.dc.html`)。

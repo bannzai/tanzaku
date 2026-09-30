@@ -24,6 +24,8 @@ final class LauncherPanelController: NSObject, NSWindowDelegate {
   private var snippetEmbeddingIndexer: SnippetEmbeddingIndexer?
   /// 用意できた埋め込みモデルの `modelIdentifier`。検索の入力のベクトルを作ったモデルと、保存したベクトルのモデルを揃えるのに使う。
   private var snippetEmbeddingModelIdentifier: String?
+  /// 意味検索のベクトルを作り直した後に呼ぶ。管理ウィンドウが今の入力で検索し直すのに使う。
+  var onSnippetEmbeddingsUpdate: (() -> Void)?
   /// 実行中の意味検索。入力が変わったら古い入力の意味検索を取り消す。
   private var semanticSearchTask: Task<Void, Never>?
   /// 画面の状態。
@@ -198,6 +200,7 @@ final class LauncherPanelController: NSObject, NSWindowDelegate {
     Task { [weak self] in
       do {
         try await snippetEmbeddingIndexer.updateEmbeddings()
+        self?.onSnippetEmbeddingsUpdate?()
       } catch {
         self?.logger.error("Failed to update snippet embeddings: \(String(describing: error))")
       }
