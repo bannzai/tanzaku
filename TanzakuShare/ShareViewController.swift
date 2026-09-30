@@ -69,7 +69,7 @@ private nonisolated func loadSharedTexts(extensionItems: [NSExtensionItem]) asyn
     for itemProvider in extensionItem.attachments ?? [] {
       if itemProvider.hasItemConformingToTypeIdentifier(UTType.url.identifier), let url = await loadSharedObject(itemProvider: itemProvider, objectType: URL.self) {
         extensionItemTexts.append(url.absoluteString)
-      } else if itemProvider.hasItemConformingToTypeIdentifier(UTType.plainText.identifier),
+      } else if itemProvider.hasItemConformingToTypeIdentifier(UTType.text.identifier),
         let text = await loadSharedObject(itemProvider: itemProvider, objectType: String.self)
       {
         extensionItemTexts.append(text)
