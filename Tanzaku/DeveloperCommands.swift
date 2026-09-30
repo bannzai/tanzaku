@@ -3,6 +3,29 @@
   import SwiftData
   import SwiftUI
   import TanzakuKit
+  import os
+
+  /// 開発者メニューの操作の失敗の記録。開発者メニューは画面の確認で状態を作るための Debug ビルドだけの操作で、失敗してもアプリを落とさず記録だけにする。スニペットの本文は入れない (`.claude/rules/snippet-content-handling.md`)。
+  private let developerCommandsLogger = Logger(subsystem: "com.bannzai.tanzaku", category: "DeveloperCommands")
+
+  /// スニペット・フォルダ・タグ・意味検索のベクトルをすべて消して保存する。
+  ///
+  /// 1 件ずつ消す。`ModelContext.delete(model:)` の一括削除はリレーション (スニペットとタグの多対多など) の削除ルールを通さず、simtunnel で押すとアプリが落ちたため (落ちた箇所のログは取れていない)。消す対象が無ければ何もせず、何度呼んでも結果は同じになる。
+  func deleteAllSnippetData(modelContext: ModelContext) throws {
+    for snippet in try modelContext.fetch(FetchDescriptor<Snippet>()) {
+      modelContext.delete(snippet)
+    }
+    for folder in try modelContext.fetch(FetchDescriptor<Folder>()) {
+      modelContext.delete(folder)
+    }
+    for tag in try modelContext.fetch(FetchDescriptor<Tag>()) {
+      modelContext.delete(tag)
+    }
+    for snippetEmbedding in try modelContext.fetch(FetchDescriptor<SnippetEmbedding>()) {
+      modelContext.delete(snippetEmbedding)
+    }
+    try modelContext.save()
+  }
 
   /// Debug ビルドだけに出す開発者メニュー。simtunnel の画面の確認で、スニペットがある状態・無い状態とライト・ダークを作るため (`AGENTS.md`「画面の確認」)。
   ///
@@ -83,21 +106,16 @@
         }
         try modelContext.save()
       } catch {
-        assertionFailure("Failed to insert sample snippets: \(error)")
+        developerCommandsLogger.error("Failed to insert sample snippets: \(String(describing: error), privacy: .public)")
       }
     }
 
     /// スニペット・フォルダ・タグをすべて消す。結果なしの画面を出すため (意味検索のベクトルがあると、関係の無い入力でも意味が近い欄が埋まる。`documents/DIRECTION.md`「決めたこと」)。
     func deleteAllSnippets() {
-      let modelContext = modelContainer.mainContext
       do {
-        try modelContext.delete(model: Snippet.self)
-        try modelContext.delete(model: Folder.self)
-        try modelContext.delete(model: Tag.self)
-        try modelContext.delete(model: SnippetEmbedding.self)
-        try modelContext.save()
+        try deleteAllSnippetData(modelContext: modelContainer.mainContext)
       } catch {
-        assertionFailure("Failed to delete snippets: \(error)")
+        developerCommandsLogger.error("Failed to delete snippets: \(String(describing: error), privacy: .public)")
       }
     }
   }

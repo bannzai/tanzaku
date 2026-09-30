@@ -30,6 +30,7 @@
 		7B2000000000000000000025 /* LauncherOutputActionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B2000000000000000000026 /* LauncherOutputActionTests.swift */; };
 		7B2000000000000000000027 /* LauncherResultListTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B2000000000000000000028 /* LauncherResultListTests.swift */; };
 		7B2000000000000000000029 /* SnippetEmbeddingIndexer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B2000000000000000000030 /* SnippetEmbeddingIndexer.swift */; };
+		7B2000000000000000000031 /* DeveloperCommandsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B2000000000000000000032 /* DeveloperCommandsTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -68,6 +69,7 @@
 		7B2000000000000000000026 /* LauncherOutputActionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LauncherOutputActionTests.swift; sourceTree = "<group>"; };
 		7B2000000000000000000028 /* LauncherResultListTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LauncherResultListTests.swift; sourceTree = "<group>"; };
 		7B2000000000000000000030 /* SnippetEmbeddingIndexer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnippetEmbeddingIndexer.swift; sourceTree = "<group>"; };
+		7B2000000000000000000032 /* DeveloperCommandsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeveloperCommandsTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -147,6 +149,7 @@
 			isa = PBXGroup;
 			children = (
 				696013EBD8A305FE612B27B7 /* TanzakuTests.swift */,
+				7B2000000000000000000032 /* DeveloperCommandsTests.swift */,
 				7B2000000000000000000026 /* LauncherOutputActionTests.swift */,
 				7B2000000000000000000028 /* LauncherResultListTests.swift */,
 			);
@@ -287,6 +290,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				F3D1C21226DC1199B58783CB /* TanzakuTests.swift in Sources */,
+				7B2000000000000000000031 /* DeveloperCommandsTests.swift in Sources */,
 				7B2000000000000000000025 /* LauncherOutputActionTests.swift in Sources */,
 				7B2000000000000000000027 /* LauncherResultListTests.swift in Sources */,
 			);
