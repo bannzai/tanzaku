@@ -91,6 +91,16 @@
         }
       }
     },
+    "Copied the snippet" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "スニペットをコピーしました"
+          }
+        }
+      }
+    },
     "Copied “%@”" : {
       "localizations" : {
         "ja" : {

@@ -52,7 +52,7 @@ nonisolated struct SnippetAppEntityQuery: EntityStringQuery {
 ///
 /// アプリを前面に出さずにコピーだけ済ませるため、アプリを開かない (`openAppWhenRun` の既定の `false`)。
 /// `@Parameter` の可変のプロパティは nonisolated の型に置けないため、型は nonisolated にせず、App Intents が呼ぶ要素と準拠を nonisolated にする。
-/// App Intents はメインスレッドの外でこの型を作り、名前を読み、`perform()` を呼ぶ。メインスレッドに縛った準拠のままでは、ショートカットから実行すると「Unable to run App Shortcut」で失敗したため (2026-09-30 に simtunnel の Simulator で確かめた)。ストアとクリップボードはメインスレッドの関数に任せる。
+/// App Intents はメインスレッドの外でこの型を作り、名前を読み、`perform()` を呼ぶため。ストアとクリップボードはメインスレッドの関数に任せる。
 struct CopySnippetIntent: nonisolated AppIntent {
   /// ショートカットの画面に出す名前。
   nonisolated static var title: LocalizedStringResource {
@@ -71,10 +71,14 @@ struct CopySnippetIntent: nonisolated AppIntent {
   /// App Intents がメインスレッドの外から作るため nonisolated にする。値はショートカットが `snippet` に入れる。
   nonisolated init() {}
 
-  /// 選んだスニペットの本文をコピーし、コピーしたスニペットの名前を伝える。
+  /// 選んだスニペットの本文をコピーし、コピーしたことを伝える。
+  ///
+  /// 伝える名前はタイトルかキーワードだけにし、どちらも無ければ名前を出さない。完了の文言は Siri が読み上げることがあり、本文の 1 行目 (`snippetDisplayTitle(snippet:)`) を使うと本文の秘匿情報を周りに聞かせてしまうため (`.claude/rules/snippet-content-handling.md`)。
   nonisolated func perform() async throws -> some IntentResult & ProvidesDialog {
-    let copiedSnippetTitle = try await copySnippetBodyForIntent(snippetID: snippet.id)
-    return .result(dialog: "Copied “\(copiedSnippetTitle)”")
+    if let copiedSnippetName = try await copySnippetBodyForIntent(snippetID: snippet.id) {
+      return .result(dialog: "Copied “\(copiedSnippetName)”")
+    }
+    return .result(dialog: "Copied the snippet")
   }
 }
 
@@ -117,13 +121,12 @@ private func recentSnippetAppEntities() throws -> [SnippetAppEntity] {
   )
 }
 
-/// 識別子のスニペットの本文をクリップボードへコピーし、そのスニペットの名前を返す。
-private func copySnippetBodyForIntent(snippetID: UUID) throws -> String {
-  snippetDisplayTitle(
-    snippet: try copySnippetBody(
-      snippetID: snippetID,
-      modelContext: iosModelContainerResult.get().mainContext,
-      pasteboardWriter: copySnippetBodyToPasteboard(body:)
-    )
+/// 識別子のスニペットの本文をクリップボードへコピーし、そのスニペットのタイトル (無ければキーワード) を返す。どちらも無ければ `nil`。本文から作った名前は返さない (`CopySnippetIntent.perform()`)。
+private func copySnippetBodyForIntent(snippetID: UUID) throws -> String? {
+  let snippet = try copySnippetBody(
+    snippetID: snippetID,
+    modelContext: iosModelContainerResult.get().mainContext,
+    pasteboardWriter: copySnippetBodyToPasteboard(body:)
   )
+  return snippet.title ?? snippet.keyword
 }
