@@ -40,7 +40,7 @@ iOS では、本体アプリ・共有シート・App Intents・カスタムキ�
 | `body` | `String` | `""` | 出力する本文。必須 (空の本文では保存させない。アプリのコードで検査する) |
 | `title` | `String?` | `nil` | 無ければ一覧・ランチャーで本文の 1 行目を表示する |
 | `keyword` | `String?` | `nil` | キーワード展開・ランチャーで一致させる略語。`SnippetGroup.keyword` と同じ名前空間で一意 |
-| `language` | `String?` | `nil` | シンタックスハイライトの言語 (`SnippetLanguage` の raw value)。`nil` はプレーンテキスト |
+| `language` | `String?` | `nil` | シンタックスハイライトの言語。よく使う言語は `SnippetLanguage` の raw value、それ以外は highlight.js の言語名 (`rust` など)。`nil` と、言語の Picker に並ばない値はプレーンテキスト |
 | `colorRawValue` | `String?` | `nil` | 色 (朱・藍・松葉・山吹・紫) の raw value (`SnippetColor` の `shu` / `ai` / `matsuba` / `yamabuki` / `murasaki`)。`nil` と、これ以外の値は色なし |
 | `folder` | `Folder?` | `nil` | 0〜1 個のフォルダ |
 | `tags` | `[Tag]?` | `[]` | 0 個以上のタグ |
