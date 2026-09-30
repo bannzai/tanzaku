@@ -1,9 +1,10 @@
 #if DEBUG
+  import AppKit
   import SwiftData
   import SwiftUI
   import TanzakuKit
 
-  /// Debug ビルドだけのメニュー。画面の確認で要る状態 (スニペットが並んだ管理ウィンドウ) を、simtunnel の runner 上でもメニューの操作だけで作るため
+  /// Debug ビルドだけのメニュー。画面の確認で要る状態 (スニペットが並んだ管理ウィンドウ・ライトとダークの外観) を、simtunnel の runner 上でもメニューの操作だけで作るため
   /// (`AGENTS.md`「画面の確認」、起動引数より開発者メニューを優先する規約)。
   struct DebugCommands: Commands {
     /// 見本データを入れるストア。
@@ -15,6 +16,17 @@
           try? insertDebugSampleData(modelContext: modelContainer.mainContext, now: .now)
         }
         .keyboardShortcut("d", modifiers: [.command, .option, .shift])
+        Divider()
+        // ライト・ダークの画面をどちらも確かめるため。simtunnel の runner ではシステムの外観を変えられず、起動引数の `-AppleInterfaceStyle Dark` も効かなかった (2026-09-30 に確認)。
+        Button("Use Light Appearance") {
+          NSApp.appearance = NSAppearance(named: .aqua)
+        }
+        Button("Use Dark Appearance") {
+          NSApp.appearance = NSAppearance(named: .darkAqua)
+        }
+        Button("Use System Appearance") {
+          NSApp.appearance = nil
+        }
       }
     }
   }
