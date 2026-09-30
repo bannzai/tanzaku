@@ -91,6 +91,16 @@
         }
       }
     },
+    "Copied the snippet" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "スニペットをコピーしました"
+          }
+        }
+      }
+    },
     "Copied “%@”" : {
       "localizations" : {
         "ja" : {
@@ -101,12 +111,32 @@
         }
       }
     },
+    "Copies the body of the selected snippet to the clipboard." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "選んだスニペットの本文をクリップボードにコピーします"
+          }
+        }
+      }
+    },
     "Copy" : {
       "localizations" : {
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "コピー"
+          }
+        }
+      }
+    },
+    "Copy Snippet" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "スニペットをコピー"
           }
         }
       }
@@ -157,6 +187,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "削除"
+          }
+        }
+      }
+    },
+    "Done" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "完了"
           }
         }
       }
@@ -431,6 +471,16 @@
         }
       }
     },
+    "Snippet" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "スニペット"
+          }
+        }
+      }
+    },
     "Snippet Groups" : {
       "localizations" : {
         "ja" : {
@@ -481,6 +531,16 @@
         }
       }
     },
+    "The snippet was deleted" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "スニペットは削除されました"
+          }
+        }
+      }
+    },
     "Title" : {
       "localizations" : {
         "ja" : {
@@ -497,6 +557,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Mac でキーワードを打つとこのスニペットのメニューが出ます"
+          }
+        }
+      }
+    },
+    "Untitled Snippet" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "タイトルなしのスニペット"
           }
         }
       }

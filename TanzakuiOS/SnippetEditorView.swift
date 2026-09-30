@@ -46,11 +46,17 @@ struct SnippetEditorView: View {
 
   /// 新規の時にサイドバーで選んでいたタグの識別子。タグ名は `@Query` の `tags` から引くため、init ではなく画面に出た時に `tagNames` へ入れる。
   private let initialTagID: UUID?
+  /// 保存・取り消しで画面を閉じた後に呼ぶ。共有シートの拡張は `dismiss` では閉じられず、拡張の要求を終える必要があるため。
+  private let onClose: () -> Void
 
-  /// 入力の初期値をスニペットから決めるため、`@State` の初期値を渡す。新規の時は、サイドバーで選んでいたフォルダ・タグを最初から入れておく。
-  init(snippet: Snippet?, initialSidebarItem: SnippetSidebarItem) {
+  /// 入力の初期値をスニペットから決めるため、`@State` の初期値を渡す。新規の時は、サイドバーで選んでいたフォルダ・タグと `initialBody` を最初から入れておく。
+  ///
+  /// `initialBody` の既定の空文字は、アプリの新規作成が空の本文から始まるため。共有シートの拡張は共有された文字列を渡す。
+  /// `onClose` の既定は何もしない。アプリの sheet は `dismiss` だけで閉じるため。
+  init(snippet: Snippet?, initialSidebarItem: SnippetSidebarItem, initialBody: String = "", onClose: @escaping () -> Void = {}) {
     self.snippet = snippet
-    _bodyText = State(initialValue: snippet?.body ?? "")
+    self.onClose = onClose
+    _bodyText = State(initialValue: snippet?.body ?? initialBody)
     _title = State(initialValue: snippet?.title ?? "")
     _keyword = State(initialValue: snippet?.keyword ?? "")
     _language = State(initialValue: snippetLanguagePickerSelection(language: snippet?.language, highlightLanguageNames: snippetHighlightLanguageNames()))
@@ -164,6 +170,7 @@ struct SnippetEditorView: View {
         ToolbarItem(placement: .cancellationAction) {
           Button("Cancel") {
             dismiss()
+            onClose()
           }
         }
         ToolbarItem(placement: .confirmationAction) {
@@ -236,6 +243,7 @@ struct SnippetEditorView: View {
       await snippetEmbeddingController.refreshEmbeddings()
     }
     dismiss()
+    onClose()
   }
 
   /// 入力した名前のフォルダを選ぶ。同じ名前のフォルダがあればそれを使い、無ければ作って保存する。保存に失敗したら理由を出す。

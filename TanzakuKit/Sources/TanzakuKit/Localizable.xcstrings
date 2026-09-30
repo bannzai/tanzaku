@@ -20,6 +20,16 @@
           }
         }
       }
+    },
+    "The snippet was not found. It may have been deleted." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "スニペットが見つかりません。削除された可能性があります"
+          }
+        }
+      }
     }
   },
   "version" : "1.0"
