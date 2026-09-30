@@ -84,6 +84,8 @@ private struct SnippetGroupDeleteConfirmation: ViewModifier {
   /// 一覧で選んでいる項目。
   @Binding var selection: ManagerDetailSelection?
   @Environment(\.modelContext) private var modelContext
+  /// 削除の保存に失敗した理由。アラートで出す。
+  @State private var saveErrorMessage: String?
 
   func body(content: Content) -> some View {
     content.confirmationDialog(
@@ -103,11 +105,12 @@ private struct SnippetGroupDeleteConfirmation: ViewModifier {
           selection = nil
         }
         modelContext.delete(snippetGroup)
-        try? modelContext.save()
+        saveErrorMessage = saveManagerChanges(modelContext: modelContext)
         deletingSnippetGroup = nil
       }
     } message: { snippetGroup in
       Text("The snippets in \(snippetGroupNameText(snippetGroup: snippetGroup)) are not deleted.")
     }
+    .managerSaveErrorAlert(errorMessage: $saveErrorMessage)
   }
 }

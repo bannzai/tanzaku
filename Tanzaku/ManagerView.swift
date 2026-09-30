@@ -103,6 +103,42 @@ struct ManagerView: View {
   }
 }
 
+/// 管理ウィンドウでの変更を保存する。保存に失敗したら未保存の変更を取り消し、失敗の理由を返す (成功したら `nil`)。
+///
+/// 取り消すのは、消したはずのフォルダ・タグ・スニペットが画面から消えたまま、次に別の操作で保存された時に消えるのを防ぐため。
+/// 編集中の入力は各編集画面の状態に持ち、ストアの未保存の変更には入っていないため、取り消しても入力は残る。
+func saveManagerChanges(modelContext: ModelContext) -> String? {
+  do {
+    try modelContext.save()
+    return nil
+  } catch {
+    modelContext.rollback()
+    return error.localizedDescription
+  }
+}
+
+extension View {
+  /// 保存に失敗した理由をアラートで出す。`errorMessage` が `nil` でない間だけ出し、閉じると `nil` に戻す。
+  func managerSaveErrorAlert(errorMessage: Binding<String?>) -> some View {
+    alert(
+      "Couldn't Save the Change",
+      isPresented: Binding(
+        get: { errorMessage.wrappedValue != nil },
+        set: { isPresented in
+          if !isPresented {
+            errorMessage.wrappedValue = nil
+          }
+        }
+      ),
+      presenting: errorMessage.wrappedValue
+    ) { _ in
+      Button("OK", role: .cancel) {}
+    } message: { message in
+      Text(verbatim: message)
+    }
+  }
+}
+
 /// 一覧で選んだ項目の編集画面。
 private struct ManagerDetailView: View {
   /// 一覧で選んでいる項目。

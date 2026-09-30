@@ -294,7 +294,7 @@ struct SnippetEditorView: View {
     }
   }
 
-  /// 入力した名前のフォルダを選ぶ。同じ名前のフォルダがあればそれを使い、無ければ作る。
+  /// 入力した名前のフォルダを選ぶ。同じ名前のフォルダがあればそれを使い、無ければ作る。作ったフォルダの保存に失敗したら、作るのを取り消して理由を編集の列に出す。
   private func createFolder() {
     let folderName = newFolderName.trimmingCharacters(in: .whitespacesAndNewlines)
     guard !folderName.isEmpty else {
@@ -306,7 +306,10 @@ struct SnippetEditorView: View {
     }
     let newFolder = Folder(name: folderName)
     modelContext.insert(newFolder)
-    try? modelContext.save()
+    if let saveErrorMessage = saveManagerChanges(modelContext: modelContext) {
+      errorMessage = saveErrorMessage
+      return
+    }
     folderID = newFolder.id
   }
 }

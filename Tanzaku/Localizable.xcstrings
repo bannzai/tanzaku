@@ -159,6 +159,16 @@
         }
       }
     },
+    "Couldn't Save the Change" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "変更を保存できませんでした"
+          }
+        }
+      }
+    },
     "Create" : {
       "localizations" : {
         "ja" : {
@@ -465,6 +475,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "なし"
+          }
+        }
+      }
+    },
+    "OK" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "OK"
           }
         }
       }

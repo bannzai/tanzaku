@@ -176,6 +176,8 @@ private struct SnippetDeleteConfirmation: ViewModifier {
   /// 一覧で選んでいる項目。
   @Binding var selection: ManagerDetailSelection?
   @Environment(\.modelContext) private var modelContext
+  /// 削除の保存に失敗した理由。アラートで出す。
+  @State private var saveErrorMessage: String?
 
   func body(content: Content) -> some View {
     content.confirmationDialog(
@@ -192,13 +194,16 @@ private struct SnippetDeleteConfirmation: ViewModifier {
           selection = nil
         }
         modelContext.delete(snippet)
-        try? modelContext.save()
-        onSnippetsChange()
+        saveErrorMessage = saveManagerChanges(modelContext: modelContext)
+        if saveErrorMessage == nil {
+          onSnippetsChange()
+        }
         deletingSnippet = nil
       }
       .accessibilityIdentifier("confirm-delete-snippet-button")
     } message: { snippet in
       Text(verbatim: snippetDisplayTitle(snippet: snippet))
     }
+    .managerSaveErrorAlert(errorMessage: $saveErrorMessage)
   }
 }

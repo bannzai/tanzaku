@@ -18,6 +18,8 @@ struct ManagerSidebar: View {
   @Query(sort: \Tag.name) private var tags: [Tag]
   /// 件数を数えるためのすべてのスニペットグループ。
   @Query private var snippetGroups: [SnippetGroup]
+  /// フォルダ・タグの削除の保存に失敗した理由。アラートで出す。
+  @State private var saveErrorMessage: String?
 
   var body: some View {
     List(selection: $selection) {
@@ -67,6 +69,7 @@ struct ManagerSidebar: View {
     .safeAreaInset(edge: .bottom) {
       freePlanFooter
     }
+    .managerSaveErrorAlert(errorMessage: $saveErrorMessage)
   }
 
   /// サイドバーの 1 行。件数が 0 の時は数字を出さない。
@@ -111,12 +114,12 @@ struct ManagerSidebar: View {
     }
   }
 
-  /// フォルダかタグを消す。スニペットは消さない (削除ルールは `.nullify`)。消したものを選んでいたら「すべてのスニペット」に戻す。
+  /// フォルダかタグを消す。スニペットは消さない (削除ルールは `.nullify`)。消したものを選んでいたら「すべてのスニペット」に戻す。保存に失敗したら削除を取り消して理由を出す。
   private func delete(model: some PersistentModel, filter: SnippetLibraryFilter) {
     if selection == .snippets(filter: filter) {
       selection = .snippets(filter: .all)
     }
     modelContext.delete(model)
-    try? modelContext.save()
+    saveErrorMessage = saveManagerChanges(modelContext: modelContext)
   }
 }
