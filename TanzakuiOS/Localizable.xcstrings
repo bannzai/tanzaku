@@ -41,6 +41,16 @@
         }
       }
     },
+    "Add snippets in the Tanzaku app" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tanzaku のアプリでスニペットを追加"
+          }
+        }
+      }
+    },
     "Added by AI Agents" : {
       "localizations" : {
         "ja" : {
@@ -61,6 +71,16 @@
         }
       }
     },
+    "Allow Full Access to insert snippets" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "スニペットを入れるにはフルアクセスを許可"
+          }
+        }
+      }
+    },
     "Body" : {
       "localizations" : {
         "ja" : {
@@ -77,6 +97,26 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "キャンセル"
+          }
+        }
+      }
+    },
+    "Clear" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "消去"
+          }
+        }
+      }
+    },
+    "Close" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "閉じる"
           }
         }
       }
@@ -371,12 +411,32 @@
         }
       }
     },
+    "Next Keyboard" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "次のキーボード"
+          }
+        }
+      }
+    },
     "No Color" : {
       "localizations" : {
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "色なし"
+          }
+        }
+      }
+    },
+    "No Results" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "見つかりません"
           }
         }
       }
@@ -471,6 +531,36 @@
         }
       }
     },
+    "Search snippets" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "スニペットを検索"
+          }
+        }
+      }
+    },
+    "Settings > General > Keyboard > Keyboards > Tanzaku > Allow Full Access" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "設定 > 一般 > キーボード > キーボード > Tanzaku > フルアクセスを許可"
+          }
+        }
+      }
+    },
+    "Shift" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "シフト"
+          }
+        }
+      }
+    },
     "Snippet" : {
       "localizations" : {
         "ja" : {
@@ -487,6 +577,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "スニペットグループ"
+          }
+        }
+      }
+    },
+    "Snippets" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "スニペット"
           }
         }
       }
@@ -561,6 +661,16 @@
         }
       }
     },
+    "Typing works without Full Access. Tanzaku never saves or sends what you type." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "文字の入力はフルアクセスなしで使えます。入力した内容は保存も送信もしません。"
+          }
+        }
+      }
+    },
     "Untitled Snippet" : {
       "localizations" : {
         "ja" : {
@@ -597,6 +707,26 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "朱"
+          }
+        }
+      }
+    },
+    "return" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "改行"
+          }
+        }
+      }
+    },
+    "space" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "空白"
           }
         }
       }

@@ -61,6 +61,56 @@ struct SnippetGroupKeywordMatchTests {
     #expect(snippetGroupMatchingTypedText(typedText: ";empty", snippetGroups: [emptyGroup]) == nil)
   }
 
+  @Test(
+    "キーボードは入力欄のカーソルより前の文字の末尾でキーワードを判定する",
+    arguments: [";dev", "dummy text\n;dev", "echo ;dev"]
+  )
+  func keyboardMatchesKeywordAtEndOfDocumentContext(documentContextBeforeInput: String) throws {
+    let snippetGroup = try insertSnippetGroup(keyword: ";dev", snippets: [insertSnippet(body: "make deploy")])
+
+    #expect(
+      snippetGroupMatchingDocumentContext(
+        documentContextBeforeInput: documentContextBeforeInput,
+        dismissedDocumentContextBeforeInput: nil,
+        snippetGroups: [snippetGroup]
+      )?.id == snippetGroup.id
+    )
+  }
+
+  @Test("キーボードは入力欄が空・キーワードの後に打った・閉じた時と同じ文字の時はメニューを出さない")
+  func keyboardDoesNotMatchOtherDocumentContext() throws {
+    let snippetGroup = try insertSnippetGroup(keyword: ";dev", snippets: [insertSnippet(body: "make deploy")])
+
+    #expect(
+      snippetGroupMatchingDocumentContext(documentContextBeforeInput: nil, dismissedDocumentContextBeforeInput: nil, snippetGroups: [snippetGroup])
+        == nil
+    )
+    #expect(
+      snippetGroupMatchingDocumentContext(documentContextBeforeInput: ";dev ", dismissedDocumentContextBeforeInput: nil, snippetGroups: [snippetGroup])
+        == nil
+    )
+    #expect(
+      snippetGroupMatchingDocumentContext(
+        documentContextBeforeInput: "dummy ;dev",
+        dismissedDocumentContextBeforeInput: "dummy ;dev",
+        snippetGroups: [snippetGroup]
+      ) == nil
+    )
+  }
+
+  @Test("キーボードでメニューを閉じた後、文字が変わってまたキーワードで終われば出し直す")
+  func keyboardMatchesAgainAfterDocumentContextChanges() throws {
+    let snippetGroup = try insertSnippetGroup(keyword: ";dev", snippets: [insertSnippet(body: "make deploy")])
+
+    #expect(
+      snippetGroupMatchingDocumentContext(
+        documentContextBeforeInput: ";dev\n;dev",
+        dismissedDocumentContextBeforeInput: ";dev",
+        snippetGroups: [snippetGroup]
+      )?.id == snippetGroup.id
+    )
+  }
+
   @Test("メニューの項目はグループに登録した順に並び、スニペットを失った項目は除く")
   func menuSnippetsFollowItemOrder() throws {
     let deploySnippet = insertSnippet(body: "make deploy")

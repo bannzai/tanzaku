@@ -107,6 +107,15 @@
 		7F1500000000000000000007 /* LauncherShortcutTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F1500000000000000000107 /* LauncherShortcutTests.swift */; };
 		7F1500000000000000000008 /* OnboardingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F1500000000000000000108 /* OnboardingTests.swift */; };
 		7F1500000000000000000009 /* HelpCommandsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F1500000000000000000109 /* HelpCommandsTests.swift */; };
+		7F2000000000000000000001 /* KeyboardViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F20000000000000000000A1 /* KeyboardViewController.swift */; };
+		7F2000000000000000000002 /* KeyboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F20000000000000000000A2 /* KeyboardView.swift */; };
+		7F2000000000000000000003 /* KeyboardKeysView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F20000000000000000000A3 /* KeyboardKeysView.swift */; };
+		7F2000000000000000000004 /* KeyboardSnippetPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F20000000000000000000A4 /* KeyboardSnippetPanel.swift */; };
+		7F2000000000000000000005 /* IOSModelContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D1000000000000000001001 /* IOSModelContainer.swift */; };
+		7F2000000000000000000006 /* SnippetBandColor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D1000000000000000001002 /* SnippetBandColor.swift */; };
+		7F2000000000000000000007 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 7D1000000000000000001011 /* Localizable.xcstrings */; };
+		7F2000000000000000000008 /* TanzakuKit in Frameworks */ = {isa = PBXBuildFile; productRef = 7F2000000000000000000083 /* TanzakuKit */; };
+		7F2000000000000000000009 /* TanzakuKeyboard.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 7F20000000000000000000A7 /* TanzakuKeyboard.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -124,6 +133,13 @@
 			remoteGlobalIDString = 7F1000000000000000000041;
 			remoteInfo = TanzakuShare;
 		};
+		7F2000000000000000000071 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 8F0C9A2A7B5BB151CF4B5CA6 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 7F2000000000000000000041;
+			remoteInfo = TanzakuKeyboard;
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -134,6 +150,7 @@
 			dstSubfolderSpec = 13;
 			files = (
 				7F1000000000000000000003 /* TanzakuShare.appex in Embed Foundation Extensions */,
+				7F2000000000000000000009 /* TanzakuKeyboard.appex in Embed Foundation Extensions */,
 			);
 			name = "Embed Foundation Extensions";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -228,6 +245,13 @@
 		7F1500000000000000000107 /* LauncherShortcutTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LauncherShortcutTests.swift; sourceTree = "<group>"; };
 		7F1500000000000000000108 /* OnboardingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingTests.swift; sourceTree = "<group>"; };
 		7F1500000000000000000109 /* HelpCommandsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HelpCommandsTests.swift; sourceTree = "<group>"; };
+		7F20000000000000000000A1 /* KeyboardViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyboardViewController.swift; sourceTree = "<group>"; };
+		7F20000000000000000000A2 /* KeyboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyboardView.swift; sourceTree = "<group>"; };
+		7F20000000000000000000A3 /* KeyboardKeysView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyboardKeysView.swift; sourceTree = "<group>"; };
+		7F20000000000000000000A4 /* KeyboardSnippetPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyboardSnippetPanel.swift; sourceTree = "<group>"; };
+		7F20000000000000000000A5 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		7F20000000000000000000A6 /* TanzakuKeyboard.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = TanzakuKeyboard.entitlements; sourceTree = "<group>"; };
+		7F20000000000000000000A7 /* TanzakuKeyboard.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = TanzakuKeyboard.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -255,6 +279,14 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		7F2000000000000000000032 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				7F2000000000000000000008 /* TanzakuKit in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -265,6 +297,7 @@
 				F42397ABB5D473ABA5C9F741 /* TanzakuTests.xctest */,
 				7A1000000000000000000012 /* TanzakuiOS.app */,
 				7F10000000000000000000A6 /* TanzakuShare.appex */,
+				7F20000000000000000000A7 /* TanzakuKeyboard.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -300,6 +333,19 @@
 				7F10000000000000000000A5 /* TanzakuShare.entitlements */,
 			);
 			path = TanzakuShare;
+			sourceTree = "<group>";
+		};
+		7F2000000000000000000081 /* TanzakuKeyboard */ = {
+			isa = PBXGroup;
+			children = (
+				7F20000000000000000000A1 /* KeyboardViewController.swift */,
+				7F20000000000000000000A2 /* KeyboardView.swift */,
+				7F20000000000000000000A3 /* KeyboardKeysView.swift */,
+				7F20000000000000000000A4 /* KeyboardSnippetPanel.swift */,
+				7F20000000000000000000A5 /* Info.plist */,
+				7F20000000000000000000A6 /* TanzakuKeyboard.entitlements */,
+			);
+			path = TanzakuKeyboard;
 			sourceTree = "<group>";
 		};
 		C2232B089B697C8061A78001 /* Tanzaku */ = {
@@ -366,6 +412,7 @@
 				C2232B089B697C8061A78001 /* Tanzaku */,
 				7A1000000000000000000021 /* TanzakuiOS */,
 				7F1000000000000000000081 /* TanzakuShare */,
+				7F2000000000000000000081 /* TanzakuKeyboard */,
 				FFDDB424F544A78FD2837B05 /* TanzakuTests */,
 				794AF1B7E86592B62D074032 /* Products */,
 			);
@@ -445,6 +492,7 @@
 			);
 			dependencies = (
 				7F1000000000000000000072 /* PBXTargetDependency */,
+				7F2000000000000000000072 /* PBXTargetDependency */,
 			);
 			name = TanzakuiOS;
 			packageProductDependencies = (
@@ -474,6 +522,26 @@
 			productReference = 7F10000000000000000000A6 /* TanzakuShare.appex */;
 			productType = "com.apple.product-type.app-extension";
 		};
+		7F2000000000000000000041 /* TanzakuKeyboard */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 7F2000000000000000000061 /* Build configuration list for PBXNativeTarget "TanzakuKeyboard" */;
+			buildPhases = (
+				7F2000000000000000000031 /* Sources */,
+				7F2000000000000000000032 /* Frameworks */,
+				7F2000000000000000000033 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = TanzakuKeyboard;
+			packageProductDependencies = (
+				7F2000000000000000000083 /* TanzakuKit */,
+			);
+			productName = TanzakuKeyboard;
+			productReference = 7F20000000000000000000A7 /* TanzakuKeyboard.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -496,6 +564,10 @@
 						ProvisioningStyle = Automatic;
 					};
 					7F1000000000000000000041 = {
+						DevelopmentTeam = TQPN82UBBY;
+						ProvisioningStyle = Automatic;
+					};
+					7F2000000000000000000041 = {
 						DevelopmentTeam = TQPN82UBBY;
 						ProvisioningStyle = Automatic;
 					};
@@ -523,6 +595,7 @@
 				3D161F7F2FCD597949FE21AC /* TanzakuTests */,
 				7A1000000000000000000041 /* TanzakuiOS */,
 				7F1000000000000000000041 /* TanzakuShare */,
+				7F2000000000000000000041 /* TanzakuKeyboard */,
 			);
 		};
 /* End PBXProject section */
@@ -550,6 +623,14 @@
 			buildActionMask = 2147483647;
 			files = (
 				7F1000000000000000000021 /* Localizable.xcstrings in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		7F2000000000000000000033 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				7F2000000000000000000007 /* Localizable.xcstrings in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -676,6 +757,19 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		7F2000000000000000000031 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				7F2000000000000000000001 /* KeyboardViewController.swift in Sources */,
+				7F2000000000000000000002 /* KeyboardView.swift in Sources */,
+				7F2000000000000000000003 /* KeyboardKeysView.swift in Sources */,
+				7F2000000000000000000004 /* KeyboardSnippetPanel.swift in Sources */,
+				7F2000000000000000000005 /* IOSModelContainer.swift in Sources */,
+				7F2000000000000000000006 /* SnippetBandColor.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -688,6 +782,11 @@
 			isa = PBXTargetDependency;
 			target = 7F1000000000000000000041 /* TanzakuShare */;
 			targetProxy = 7F1000000000000000000071 /* PBXContainerItemProxy */;
+		};
+		7F2000000000000000000072 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 7F2000000000000000000041 /* TanzakuKeyboard */;
+			targetProxy = 7F2000000000000000000071 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -1156,6 +1255,74 @@
 			};
 			name = Release;
 		};
+		7F2000000000000000000051 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = TanzakuKeyboard/TanzakuKeyboard.entitlements;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = TanzakuKeyboard/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Tanzaku;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.bannzai.tanzaku.keyboard;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		7F2000000000000000000052 /* DebugUnsigned */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = TanzakuKeyboard/TanzakuKeyboard.entitlements;
+				CODE_SIGNING_ALLOWED = NO;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = TanzakuKeyboard/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Tanzaku;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.bannzai.tanzaku.keyboard;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = DebugUnsigned;
+		};
+		7F2000000000000000000053 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = TanzakuKeyboard/TanzakuKeyboard.entitlements;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = TanzakuKeyboard/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Tanzaku;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.bannzai.tanzaku.keyboard;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -1209,6 +1376,16 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
 		};
+		7F2000000000000000000061 /* Build configuration list for PBXNativeTarget "TanzakuKeyboard" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				7F2000000000000000000051 /* Debug */,
+				7F2000000000000000000052 /* DebugUnsigned */,
+				7F2000000000000000000053 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
 /* End XCConfigurationList section */
 
 /* Begin XCLocalSwiftPackageReference section */
@@ -1228,6 +1405,10 @@
 			productName = TanzakuKit;
 		};
 		7F1000000000000000000083 /* TanzakuKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = TanzakuKit;
+		};
+		7F2000000000000000000083 /* TanzakuKit */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = TanzakuKit;
 		};
