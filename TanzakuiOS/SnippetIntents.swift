@@ -51,7 +51,8 @@ nonisolated struct SnippetAppEntityQuery: EntityStringQuery {
 /// スニペットを選んで本文をクリップボードへコピーする intent。ショートカット・アクションボタンから使う (`documents/PROJECT.md`「iOS > Spotlight・App Intents」)。
 ///
 /// アプリを前面に出さずにコピーだけ済ませるため、アプリを開かない (`openAppWhenRun` の既定の `false`)。
-nonisolated struct CopySnippetIntent: AppIntent {
+/// ストアとクリップボードをメインスレッドで扱うため、ほかの App Intents の型と違い nonisolated にしない (`@Parameter` は nonisolated の型に置けない)。
+struct CopySnippetIntent: AppIntent {
   /// ショートカットの画面に出す名前。
   static var title: LocalizedStringResource {
     "Copy Snippet"
@@ -68,13 +69,13 @@ nonisolated struct CopySnippetIntent: AppIntent {
 
   /// 選んだスニペットの本文をコピーし、コピーしたスニペットの名前を伝える。
   func perform() async throws -> some IntentResult & ProvidesDialog {
-    let copiedSnippetTitle = try await copySnippetBodyForIntent(snippetID: snippet.id)
+    let copiedSnippetTitle = try copySnippetBodyForIntent(snippetID: snippet.id)
     return .result(dialog: "Copied “\(copiedSnippetTitle)”")
   }
 }
 
-/// ショートカットのアプリに、設定なしで出す intent。
-nonisolated struct TanzakuAppShortcuts: AppShortcutsProvider {
+/// ショートカットのアプリに、設定なしで出す intent。`CopySnippetIntent` を作るため、それと同じくメインスレッドに置く。
+struct TanzakuAppShortcuts: AppShortcutsProvider {
   /// スニペットをコピーする intent。
   static var appShortcuts: [AppShortcut] {
     AppShortcut(
