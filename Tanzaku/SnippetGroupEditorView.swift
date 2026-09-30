@@ -171,6 +171,11 @@ struct SnippetGroupEditorView: View {
     } catch let validationError as SnippetValidationError {
       errorMessage = validationError.description
     } catch {
+      // 途中まで書き込んだ変更と新規の挿入を取り消す (理由は `SnippetEditorView.save()` と同じ)。
+      modelContext.rollback()
+      if snippetGroup == nil {
+        draftSnippetGroup = SnippetGroup(name: "")
+      }
       errorMessage = error.localizedDescription
     }
   }

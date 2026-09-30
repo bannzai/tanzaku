@@ -297,6 +297,11 @@ struct SnippetEditorView: View {
     } catch let validationError as SnippetValidationError {
       errorMessage = validationError.description
     } catch {
+      // ストアの読み込みの失敗 (タグの取得など) は書き込みの途中で起き得るため、途中まで書き込んだ変更と新規の挿入を取り消す。
+      modelContext.rollback()
+      if snippet == nil {
+        draftSnippet = Snippet(body: "")
+      }
       errorMessage = error.localizedDescription
     }
   }
