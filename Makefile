@@ -3,7 +3,7 @@ SCHEME := Tanzaku
 CONFIGURATION := Debug
 # 成果物のパスを決定的にし、システムの DerivedData を汚さないためリポジトリ内に置く。
 DERIVED_DATA := tmp/DerivedData
-# CI には署名 ID が無いため、CI は SIGNING_FLAGS='CODE_SIGNING_ALLOWED=NO' で上書きする (.github/workflows/ci.yml)。
+# CI には署名 ID が無いため、CI は SIGNING_FLAGS を ad-hoc 署名の設定で上書きする (.github/workflows/ci.yml)。
 SIGNING_FLAGS ?= -allowProvisioningUpdates
 
 IOS_SCHEME := TanzakuiOS

@@ -1,9 +1,10 @@
-/// 本文のシンタックスハイライトの言語。`Snippet.language` に raw value を入れ、`nil` はプレーンテキスト。
+import Foundation
+
+/// 本文のシンタックスハイライトの言語。`Snippet.language` にこの raw value を入れ、`nil` はプレーンテキスト (ハイライトなし) を表す。
 ///
-/// raw value は同期するストアに入り、本番の CloudKit スキーマに残るため変えない。言語を足す時は case を足す。
-/// 並びは編集画面の Picker に出す順で、スニペットに入れる本文 (コマンド・設定・プロンプト) で使うことが多いものを先に置く。
+/// 並びは編集画面の Picker に出す順。スニペットに入れる本文として多いシェル・設定ファイル・スクリプトを先に置く。raw value は同期するストアに残るため、変えない。
 public enum SnippetLanguage: String, CaseIterable, Sendable {
-  /// シェル (bash・zsh)。
+  /// シェル。
   case shell
   /// YAML。
   case yaml
@@ -21,16 +22,16 @@ public enum SnippetLanguage: String, CaseIterable, Sendable {
   case javascript
   /// TypeScript。
   case typescript
-  /// Go。
-  case go
   /// Ruby。
   case ruby
+  /// Go。
+  case go
   /// HTML。
   case html
   /// CSS。
   case css
 
-  /// 画面に出す言語の名前。言語の固有名で、翻訳しない。
+  /// Picker に出す名前。言語名は固有名詞で、どのロケールでも同じ表記のため翻訳しない。
   public var displayName: String {
     switch self {
     case .shell:
@@ -51,10 +52,10 @@ public enum SnippetLanguage: String, CaseIterable, Sendable {
       "JavaScript"
     case .typescript:
       "TypeScript"
-    case .go:
-      "Go"
     case .ruby:
       "Ruby"
+    case .go:
+      "Go"
     case .html:
       "HTML"
     case .css:

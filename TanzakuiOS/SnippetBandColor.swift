@@ -35,22 +35,6 @@ func snippetBandColor(snippetColor: SnippetColor) -> Color {
   }
 }
 
-/// 色の名前。編集画面の色の選択肢の読み上げと表示に使う。
-func snippetColorName(snippetColor: SnippetColor) -> LocalizedStringKey {
-  switch snippetColor {
-  case .shu:
-    "Vermilion"
-  case .ai:
-    "Indigo"
-  case .matsuba:
-    "Pine green"
-  case .yamabuki:
-    "Golden yellow"
-  case .murasaki:
-    "Purple"
-  }
-}
-
 /// スニペットの色の帯 (幅 4pt)。色が無いスニペットは帯を出さず、幅だけ空けて名前の位置を揃える (`documents/DIRECTION.md`「決めたこと」)。
 struct SnippetColorBand: View {
   /// 帯のスニペット。
@@ -58,7 +42,7 @@ struct SnippetColorBand: View {
 
   var body: some View {
     RoundedRectangle(cornerRadius: 2)
-      .fill(snippet.colorRawValue.flatMap(SnippetColor.init(rawValue:)).map { snippetBandColor(snippetColor: $0) } ?? .clear)
+      .fill(snippet.color.map { snippetBandColor(snippetColor: $0) } ?? .clear)
       .frame(width: 4)
   }
 }

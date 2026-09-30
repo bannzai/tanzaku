@@ -4,81 +4,127 @@ import TanzakuKit
 
 /// スニペットの追加・編集の画面 (sheet)。Mac の管理ウィンドウと同じ項目 (本文・言語・タイトル・キーワード・フォルダ・タグ・色) を並べる (`documents/design/Manager.dc.html` の右側)。
 ///
-/// `@Model` を直接書き換え、保存で `saveEditedSnippet(snippet:modelContext:now:)` の検査を通った時だけ保存する。
-/// 保存していない変更は、この画面を出した側が sheet の `onDismiss` で `rollback()` して捨てる。取り消し・下へのスワイプのどちらで閉じても検査を通っていない値を残さないためと、
-/// 出した側が閉じた後にほかの保存 (意味検索のベクトル) をする前に捨てるため。`modelContext` の自動保存は切ってある (`makeIOSModelContainer()`)。
+/// 入力はこの画面の状態に持ち、「保存」で検査を通った時だけスニペットに書き込む (`applySnippetEdit`。Mac の編集画面と同じ)。
+/// SwiftData は自動で保存するため、スニペットを直接書き換えると空の本文や重複したキーワードのまま保存されてしまうため。
 struct SnippetEditorView: View {
-  /// 編集するスニペット。追加の時は `modelContext` に入れたばかりの本文が空のもの。
-  @Bindable var snippet: Snippet
-  /// 追加か。画面の題を変える。
-  var isNewSnippet: Bool
+  /// 編集するスニペット。`nil` は新規。
+  let snippet: Snippet?
 
-  /// 保存と取り消しに使う。
   @Environment(\.modelContext) private var modelContext
   /// 画面を閉じる。
   @Environment(\.dismiss) private var dismiss
+  /// 保存の後に意味検索のベクトルを作り直させる。
+  @Environment(SnippetEmbeddingController.self) private var snippetEmbeddingController
   /// フォルダの選択肢。名前の順。
   @Query(sort: \Folder.name) private var folders: [Folder]
   /// タグの選択肢。名前の順。
   @Query(sort: \Tag.name) private var tags: [Tag]
-  /// 足すタグの名前の入力。
+  /// 入力中の本文。
+  @State private var bodyText: String
+  /// 入力中のタイトル。
+  @State private var title: String
+  /// 入力中のキーワード。
+  @State private var keyword: String
+  /// 選んでいる言語。`nil` はプレーンテキスト。
+  @State private var language: SnippetLanguage?
+  /// 選んでいる色。`nil` は色なし。
+  @State private var color: SnippetColor?
+  /// 選んでいるフォルダの識別子。編集中にフォルダが消されても消したモデルを参照しないよう、モデルではなく識別子で持ち、`folders` から引く。
+  @State private var folderID: UUID?
+  /// 付けるタグの名前。
+  @State private var tagNames: [String]
+  /// タグの欄に入力中の、まだタグにしていない名前。
   @State private var newTagName = ""
   /// 新しいフォルダの名前を聞いているか。
-  @State private var isAskingNewFolderName = false
+  @State private var isCreatingFolder = false
   /// 新しいフォルダの名前の入力。
   @State private var newFolderName = ""
   /// 保存の検査・保存の失敗。
   @State private var errorMessage: String?
+  /// 新規作成の下書きのスニペット。検査を通るとストアに入る。保存に失敗した時は入れたのを取り消し、次の保存では新しい下書きを使う (Mac の編集画面と同じ)。
+  @State private var draftSnippet = Snippet(body: "")
+
+  /// 新規の時にサイドバーで選んでいたタグの識別子。タグ名は `@Query` の `tags` から引くため、init ではなく画面に出た時に `tagNames` へ入れる。
+  private let initialTagID: UUID?
+
+  /// 入力の初期値をスニペットから決めるため、`@State` の初期値を渡す。新規の時は、サイドバーで選んでいたフォルダ・タグを最初から入れておく。
+  init(snippet: Snippet?, initialSidebarItem: SnippetSidebarItem) {
+    self.snippet = snippet
+    _bodyText = State(initialValue: snippet?.body ?? "")
+    _title = State(initialValue: snippet?.title ?? "")
+    _keyword = State(initialValue: snippet?.keyword ?? "")
+    _language = State(initialValue: snippet?.language.flatMap(SnippetLanguage.init(rawValue:)))
+    _color = State(initialValue: snippet?.color)
+    _tagNames = State(initialValue: (snippet?.tags ?? []).map(\.name).sorted())
+    switch (snippet, initialSidebarItem) {
+    case (.some(let snippet), _):
+      _folderID = State(initialValue: snippet.folder?.id)
+      initialTagID = nil
+    case (.none, .library(.folder(let folderID))):
+      _folderID = State(initialValue: folderID)
+      initialTagID = nil
+    case (.none, .library(.tag(let tagID))):
+      _folderID = State(initialValue: nil)
+      initialTagID = tagID
+    case (.none, _):
+      _folderID = State(initialValue: nil)
+      initialTagID = nil
+    }
+  }
 
   var body: some View {
     NavigationStack {
       Form {
         Section("Body") {
-          TextEditor(text: $snippet.body)
+          TextEditor(text: $bodyText)
             .font(.callout.monospaced())
             .textInputAutocapitalization(.never)
             .autocorrectionDisabled()
             .frame(minHeight: 160)
             .accessibilityLabel(Text("Body"))
-          Picker("Language", selection: $snippet.language) {
+          Picker("Language", selection: $language) {
             Text("Plain Text")
-              .tag(String?.none)
+              .tag(SnippetLanguage?.none)
             ForEach(SnippetLanguage.allCases, id: \.self) { language in
               Text(verbatim: language.displayName)
-                .tag(String?.some(language.rawValue))
+                .tag(SnippetLanguage?.some(language))
             }
           }
         }
         Section {
-          TextField("Title", text: optionalTextBinding(text: $snippet.title), prompt: Text("Uses the first line of the body"))
-          TextField("Keyword", text: optionalTextBinding(text: $snippet.keyword), prompt: Text("Keyword"))
+          TextField("Title", text: $title, prompt: Text("Uses the first line of the body"))
+          TextField("Keyword", text: $keyword, prompt: Text("Keyword"))
             .textInputAutocapitalization(.never)
             .autocorrectionDisabled()
         }
         Section("Folder") {
-          Picker("Folder", selection: $snippet.folder) {
+          Picker("Folder", selection: $folderID) {
             Text("None")
-              .tag(Folder?.none)
+              .tag(UUID?.none)
             ForEach(folders) { folder in
               Text(verbatim: folder.name)
-                .tag(Folder?.some(folder))
+                .tag(UUID?.some(folder.id))
             }
           }
           Button("New Folder", systemImage: "folder.badge.plus") {
             newFolderName = ""
-            isAskingNewFolderName = true
+            isCreatingFolder = true
           }
         }
         Section("Tags") {
-          ForEach(tags) { tag in
+          ForEach(tagChoices, id: \.self) { tagName in
             Button {
-              toggleTag(tag: tag)
+              if tagNames.contains(tagName) {
+                tagNames.removeAll { $0 == tagName }
+              } else {
+                tagNames.append(tagName)
+              }
             } label: {
               HStack {
-                Text(verbatim: tag.name)
+                Text(verbatim: tagName)
                   .foregroundStyle(.primary)
                 Spacer()
-                if snippet.tags?.contains(where: { $0.id == tag.id }) == true {
+                if tagNames.contains(tagName) {
                   Image(systemName: "checkmark")
                 }
               }
@@ -87,18 +133,24 @@ struct SnippetEditorView: View {
           TextField("Add a Tag", text: $newTagName)
             .textInputAutocapitalization(.never)
             .autocorrectionDisabled()
-            .onSubmit(addNewTag)
+            .onSubmit {
+              let tagName = newTagName.trimmingCharacters(in: .whitespacesAndNewlines)
+              if !tagName.isEmpty && !tagNames.contains(tagName) {
+                tagNames.append(tagName)
+              }
+              newTagName = ""
+            }
         }
         Section("Color") {
-          SnippetColorPicker(colorRawValue: $snippet.colorRawValue)
+          SnippetColorPicker(color: $color)
         }
-        if !isNewSnippet {
+        if let snippet {
           Section {
             SnippetAuthorshipView(snippet: snippet)
           }
         }
       }
-      .navigationTitle(isNewSnippet ? Text("New Snippet") : Text("Edit Snippet"))
+      .navigationTitle(snippet == nil ? Text("New Snippet") : Text("Edit Snippet"))
       .navigationBarTitleDisplayMode(.inline)
       .toolbar {
         ToolbarItem(placement: .cancellationAction) {
@@ -107,83 +159,101 @@ struct SnippetEditorView: View {
           }
         }
         ToolbarItem(placement: .confirmationAction) {
-          Button("Save") {
-            save()
-          }
+          Button("Save", action: save)
         }
       }
-      .alert("New Folder", isPresented: $isAskingNewFolderName) {
+      .alert("New Folder", isPresented: $isCreatingFolder) {
         TextField("Folder Name", text: $newFolderName)
         Button("Cancel", role: .cancel) {}
-        Button("Add") {
-          do {
-            if let folder = try findOrInsertFolder(name: newFolderName, modelContext: modelContext) {
-              snippet.folder = folder
-            }
-          } catch {
-            errorMessage = String(describing: error)
-          }
-        }
+        Button("Add", action: createFolder)
       }
       .alert("Could not save", isPresented: Binding(get: { errorMessage != nil }, set: { _ in errorMessage = nil })) {
         Button("OK") {}
       } message: {
         Text(verbatim: errorMessage ?? "")
       }
+      .onAppear {
+        if let initialTagID, let tag = tags.first(where: { $0.id == initialTagID }), !tagNames.contains(tag.name) {
+          tagNames.append(tag.name)
+        }
+      }
     }
   }
 
-  /// 検査を通れば保存して閉じる。通らなければ理由を出し、編集を続けさせる。タグの欄に入力したまま Return を押していない名前も付けてから保存する。
+  /// タグの選択肢。既存のタグと、この画面で足したまだ無いタグの名前。
+  private var tagChoices: [String] {
+    let existingTagNames = tags.map(\.name)
+    return existingTagNames + tagNames.filter { !existingTagNames.contains($0) }
+  }
+
+  /// 入力を検査してスニペットに書き込み、保存して閉じる。検査・保存に失敗したら理由を出し、編集を続けさせる。
+  ///
+  /// タグの欄に入力したまま Return を押していない名前も付ける (Mac の編集画面と同じ)。
   private func save() {
+    let editingSnippet = snippet ?? draftSnippet
     do {
-      try addTypedTag()
-      try saveEditedSnippet(snippet: snippet, modelContext: modelContext, now: .now)
-      dismiss()
+      try applySnippetEdit(
+        snippet: editingSnippet,
+        body: bodyText,
+        title: title,
+        keyword: keyword,
+        language: language,
+        color: color,
+        folder: folders.first { $0.id == folderID },
+        tagNames: tagNames + [newTagName],
+        modelContext: modelContext,
+        now: .now
+      )
+    } catch let validationError as SnippetValidationError {
+      errorMessage = validationError.description
+      return
     } catch {
-      errorMessage = String(describing: error)
+      // ストアの読み込みの失敗 (タグの取得など) は書き込みの途中で起き得るため、途中まで書き込んだ変更と新規の挿入を取り消す。
+      modelContext.rollback()
+      if snippet == nil {
+        draftSnippet = Snippet(body: "")
+      }
+      errorMessage = error.localizedDescription
+      return
     }
+    // 保存に失敗したら書き込んだ変更と新規の挿入は取り消されている (`saveSnippetChanges(modelContext:)`)。入力は画面の状態に残る。
+    if let saveErrorMessage = saveSnippetChanges(modelContext: modelContext) {
+      errorMessage = saveErrorMessage
+      if snippet == nil {
+        draftSnippet = Snippet(body: "")
+      }
+      return
+    }
+    Task {
+      await snippetEmbeddingController.refreshEmbeddings()
+    }
+    dismiss()
   }
 
-  /// タグが付いていれば外し、付いていなければ付ける。
-  private func toggleTag(tag: Tag) {
-    if snippet.tags?.contains(where: { $0.id == tag.id }) == true {
-      snippet.tags?.removeAll { $0.id == tag.id }
-    } else {
-      snippet.tags = (snippet.tags ?? []) + [tag]
+  /// 入力した名前のフォルダを選ぶ。同じ名前のフォルダがあればそれを使い、無ければ作って保存する。保存に失敗したら理由を出す。
+  private func createFolder() {
+    let folderName = newFolderName.trimmingCharacters(in: .whitespacesAndNewlines)
+    guard !folderName.isEmpty else {
+      return
     }
-  }
-
-  /// タグの欄で Return を押した時に、入力した名前のタグを付ける。
-  private func addNewTag() {
-    do {
-      try addTypedTag()
-    } catch {
-      errorMessage = String(describing: error)
+    if let existingFolder = folders.first(where: { $0.name == folderName }) {
+      folderID = existingFolder.id
+      return
     }
-  }
-
-  /// タグの欄に入力した名前のタグを付けて欄を空にする。同じ名前のタグがあればそれを使い、欄が空白だけなら何もしない。
-  private func addTypedTag() throws {
-    if let tag = try findOrInsertTag(name: newTagName, modelContext: modelContext), snippet.tags?.contains(where: { $0.id == tag.id }) != true {
-      snippet.tags = (snippet.tags ?? []) + [tag]
+    let newFolder = Folder(name: folderName)
+    modelContext.insert(newFolder)
+    if let saveErrorMessage = saveSnippetChanges(modelContext: modelContext) {
+      errorMessage = saveErrorMessage
+      return
     }
-    newTagName = ""
-  }
-}
-
-/// 任意の文字列の属性を `TextField` で書き換えるための `Binding`。空欄は保存の時に `nil` にする (`saveEditedSnippet(snippet:modelContext:now:)`)。
-func optionalTextBinding(text: Binding<String?>) -> Binding<String> {
-  Binding {
-    text.wrappedValue ?? ""
-  } set: {
-    text.wrappedValue = $0
+    folderID = newFolder.id
   }
 }
 
 /// 色の帯の色を選ぶ。色なしと 5 色を並べる (`documents/design/Manager.dc.html` の「色」)。
 private struct SnippetColorPicker: View {
-  /// 選んでいる色の raw value。`nil` は色なし。
-  @Binding var colorRawValue: String?
+  /// 選んでいる色。`nil` は色なし。
+  @Binding var color: SnippetColor?
 
   var body: some View {
     HStack(spacing: 14) {
@@ -198,7 +268,7 @@ private struct SnippetColorPicker: View {
   /// 色の選択肢の 1 つ。選んでいる色は枠で囲む。
   private func colorButton(snippetColor: SnippetColor?) -> some View {
     Button {
-      colorRawValue = snippetColor?.rawValue
+      color = snippetColor
     } label: {
       RoundedRectangle(cornerRadius: 3)
         .fill(snippetColor.map { snippetBandColor(snippetColor: $0) } ?? Color.clear)
@@ -212,11 +282,11 @@ private struct SnippetColorPicker: View {
         .padding(3)
         .overlay(
           RoundedRectangle(cornerRadius: 5)
-            .strokeBorder(colorRawValue == snippetColor?.rawValue ? Color.accentColor : .clear, lineWidth: 2)
+            .strokeBorder(color == snippetColor ? Color.accentColor : .clear, lineWidth: 2)
         )
     }
     .buttonStyle(.plain)
-    .accessibilityLabel(snippetColor.map { Text(snippetColorName(snippetColor: $0)) } ?? Text("No Color"))
-    .accessibilityAddTraits(colorRawValue == snippetColor?.rawValue ? .isSelected : [])
+    .accessibilityLabel(snippetColor.map { Text($0.label) } ?? Text("No Color"))
+    .accessibilityAddTraits(color == snippetColor ? .isSelected : [])
   }
 }

@@ -42,29 +42,25 @@ public struct SnippetSearchResult {
 /// 意味検索の結果に出す最大の件数。ランチャーの意味検索の欄は文字列の一致の欄の下に置く補助の欄のため (`documents/design/Main.dc.html`)、精度のテストで測る「上位 3 件」と同じ件数にとどめる。
 let semanticMatchLimit = 3
 
-/// 意味検索の結果に出すコサイン類似度の下限 (この値ちょうどは出さない)。意味の向きが直交・逆向きのものだけを落とす。
+/// 意味検索の結果に出すコサイン類似度の下限 (この値ちょうどは出さない)。関係の無いクエリで意味検索の欄を空にするための下限。
 ///
-/// 精度のテスト (`SemanticSearchAccuracyTests`) の 2026-09-28 の CI での実測では、言い換えたクエリと目的のスニペットの類似度が 0.46〜0.86、関係の無いクエリの最も近いスニペットの類似度が 0.51〜0.91 で重なり、0 より上の値では関係の無いものだけを落とせなかったため 0 にしている。
-let semanticMatchMinimumSimilarity: Float = 0
+/// 方法の比較のテスト (`SemanticSearchMethodComparisonTests`) の 2026-09-28 の CI (run 36429714401) の実測で、
+/// 「上位 3 件の割合 + 関係の無いクエリで 0 件になる割合」が最も大きかった方法 (トークンのベクトルの平均 + 絶対のしきい値 0.65) の値。
+/// 上位 3 件の割合は 0.346 (26 件中 9 件。しきい値なしの 0.423 から 2 件減る)、関係の無いクエリで 0 件になる割合は 0.80 (20 件中 16 件) だった。
+/// 0.60 では 10 件・15 件、0.70 では 5 件・16 件で、0.65 より上げると目的のスニペットが急に出なくなる。
+/// 漢字かなのモデルは英語の文章どうしを近く置くため、英語のクエリは関係が無くても英語のスニペットと 0.84 以上になり、このしきい値では落とせない (`documents/DIRECTION.md`「決めたこと」)。
+let semanticMatchMinimumSimilarity: Float = 0.65
 
 /// Mac のランチャー・管理画面、iOS の本体・キーボード・App Intents で共通に使うスニペットの検索。
 ///
 /// `embedder` が `nil` の時 (埋め込みモデルの資産のダウンロードが済んでいない時) は、意味検索なしで文字列の一致だけを返す。
 /// 意味検索は、`embedder` と `modelIdentifier` が一致し、今のスニペットから作ったベクトル (`sourceHash` が一致するもの) だけを使う。ベクトルの作成・作り直しは `updateSnippetEmbeddings(modelContext:embedder:)` が行う。
-/// `libraryFilter` に当てはまるスニペットだけを候補にしてから順位を付け、意味検索の件数を絞る。一覧の絞り込みの中で検索した時に、絞り込みの外のスニペットが意味検索の枠を埋めないため。
-/// 既定の `.allSnippets` は、絞り込みを持たないランチャー・キーボード・App Intents の検索のため。
-public func searchSnippets(
-  query: String,
-  modelContext: ModelContext,
-  embedder: SnippetTextEmbedder?,
-  libraryFilter: SnippetLibraryFilter = .allSnippets
-) throws -> SnippetSearchResult {
+public func searchSnippets(query: String, modelContext: ModelContext, embedder: SnippetTextEmbedder?) throws -> SnippetSearchResult {
   let normalizedQuery = normalizedSnippetSearchText(text: query.trimmingCharacters(in: .whitespacesAndNewlines))
   guard !normalizedQuery.isEmpty else {
     return SnippetSearchResult(keywordMatches: [], semanticMatches: [])
   }
   let snippets = try modelContext.fetch(FetchDescriptor<Snippet>(sortBy: [SortDescriptor(\.updatedAt, order: .reverse)]))
-    .filter { isSnippetInLibraryFilter(snippet: $0, filter: libraryFilter) }
   let keywordMatches = snippets.compactMap { snippet in
     snippetKeywordMatchKind(snippet: snippet, normalizedQuery: normalizedQuery).map { SnippetKeywordMatch(snippet: snippet, kind: $0) }
   }

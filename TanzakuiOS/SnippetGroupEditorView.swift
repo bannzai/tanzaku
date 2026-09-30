@@ -4,42 +4,48 @@ import TanzakuKit
 
 /// スニペットグループの追加・編集の画面 (sheet)。名前・キーワードと、メニューに並べるスニペットとその順を決める。
 ///
-/// 保存していない変更は、この画面を出した側が sheet の `onDismiss` で `rollback()` して捨てる (`SnippetEditorView` と同じ)。
+/// 入力を画面の状態に持ち、「保存」で検査を通った時だけ書き込む (`applySnippetGroupEdit`。Mac の編集画面と同じ)。
 struct SnippetGroupEditorView: View {
-  /// 編集するスニペットグループ。追加の時は `modelContext` に入れたばかりの名前が空のもの。
-  @Bindable var snippetGroup: SnippetGroup
-  /// 追加か。画面の題を変える。
-  var isNewSnippetGroup: Bool
+  /// 編集するスニペットグループ。`nil` は新規。
+  let snippetGroup: SnippetGroup?
 
-  /// 保存に使う。
   @Environment(\.modelContext) private var modelContext
   /// 画面を閉じる。
   @Environment(\.dismiss) private var dismiss
-  /// メニューに並べるスニペット。並べ替えと追加・削除はここで行い、保存の時にグループの項目へ書き込む。
-  @State private var menuSnippets: [Snippet]
+  /// メニューに足せるスニペット。更新日時の新しい順。
+  @Query(sort: \Snippet.updatedAt, order: .reverse) private var snippets: [Snippet]
+  /// 入力中の名前。
+  @State private var name: String
+  /// 入力中のキーワード。
+  @State private var keyword: String
+  /// メニューに並べる順のスニペットの識別子。編集中にスニペットが消されても消したモデルを参照しないよう、モデルではなく識別子で持ち、`snippets` から引く。
+  @State private var groupSnippetIDs: [UUID]
   /// 保存の検査・保存の失敗。
   @State private var errorMessage: String?
+  /// 新規作成の下書きのスニペットグループ。保存に失敗した時に取り消し、次の保存で新しい下書きを使う (Mac の編集画面と同じ)。
+  @State private var draftSnippetGroup = SnippetGroup(name: "")
 
-  /// メニューに並べるスニペットの初期値を今のグループの項目から作るため、init を書く。`onAppear` で作ると、スニペットを足す画面から戻るたびに足したものが消えるため。
-  init(snippetGroup: SnippetGroup, isNewSnippetGroup: Bool) {
+  /// 入力の初期値をスニペットグループから決めるため、`@State` の初期値を渡す。
+  init(snippetGroup: SnippetGroup?) {
     self.snippetGroup = snippetGroup
-    self.isNewSnippetGroup = isNewSnippetGroup
-    _menuSnippets = State(initialValue: snippetGroupSnippets(snippetGroup: snippetGroup))
+    _name = State(initialValue: snippetGroup?.name ?? "")
+    _keyword = State(initialValue: snippetGroup?.keyword ?? "")
+    _groupSnippetIDs = State(initialValue: snippetGroup.map { sortedSnippetGroupItems(snippetGroup: $0).compactMap(\.snippet?.id) } ?? [])
   }
 
   var body: some View {
     NavigationStack {
       Form {
         Section {
-          TextField("Name", text: $snippetGroup.name)
-          TextField("Keyword", text: optionalTextBinding(text: $snippetGroup.keyword), prompt: Text("Keyword (e.g. ;focus-app)"))
+          TextField("Name", text: $name)
+          TextField("Keyword", text: $keyword, prompt: Text("Keyword (e.g. ;focus-app)"))
             .textInputAutocapitalization(.never)
             .autocorrectionDisabled()
         } footer: {
           Text("Type the keyword on Mac to show a menu of these snippets")
         }
         Section("Menu Items") {
-          ForEach(menuSnippets) { snippet in
+          ForEach(groupSnippets) { snippet in
             HStack(spacing: 10) {
               SnippetColorBand(snippet: snippet)
                 .frame(height: 20)
@@ -48,14 +54,17 @@ struct SnippetGroupEditorView: View {
             }
           }
           .onMove { indices, newOffset in
-            menuSnippets.move(fromOffsets: indices, toOffset: newOffset)
+            // 並べ替えの位置は表示している (消されたスニペットを除いた) 並びの位置のため、表示している並びの識別子で置き換えてから動かす。
+            groupSnippetIDs = groupSnippets.map(\.id)
+            groupSnippetIDs.move(fromOffsets: indices, toOffset: newOffset)
           }
           .onDelete { indices in
-            menuSnippets.remove(atOffsets: indices)
+            groupSnippetIDs = groupSnippets.map(\.id)
+            groupSnippetIDs.remove(atOffsets: indices)
           }
           NavigationLink {
-            SnippetGroupItemPicker(excludedSnippetIDs: Set(menuSnippets.map(\.id))) { snippet in
-              menuSnippets.append(snippet)
+            SnippetGroupItemPicker(snippets: snippets.filter { !groupSnippetIDs.contains($0.id) }) { snippet in
+              groupSnippetIDs.append(snippet.id)
             }
           } label: {
             Label("Add Snippets", systemImage: "plus")
@@ -63,7 +72,7 @@ struct SnippetGroupEditorView: View {
         }
       }
       .environment(\.editMode, .constant(.active))
-      .navigationTitle(isNewSnippetGroup ? Text("New Snippet Group") : Text("Edit Snippet Group"))
+      .navigationTitle(snippetGroup == nil ? Text("New Snippet Group") : Text("Edit Snippet Group"))
       .navigationBarTitleDisplayMode(.inline)
       .toolbar {
         ToolbarItem(placement: .cancellationAction) {
@@ -72,9 +81,7 @@ struct SnippetGroupEditorView: View {
           }
         }
         ToolbarItem(placement: .confirmationAction) {
-          Button("Save") {
-            save()
-          }
+          Button("Save", action: save)
         }
       }
       .alert("Could not save", isPresented: Binding(get: { errorMessage != nil }, set: { _ in errorMessage = nil })) {
@@ -85,31 +92,56 @@ struct SnippetGroupEditorView: View {
     }
   }
 
-  /// メニューの項目を書き込み、検査を通れば保存して閉じる。通らなければ理由を出し、編集を続けさせる。
+  /// メニューに並べる順のスニペット。消されたスニペットは `snippets` に無いため除かれる。
+  private var groupSnippets: [Snippet] {
+    groupSnippetIDs.compactMap { snippetID in snippets.first { $0.id == snippetID } }
+  }
+
+  /// 入力を検査してスニペットグループに書き込み、保存して閉じる。検査・保存に失敗したら理由を出し、編集を続けさせる。
   private func save() {
-    replaceSnippetGroupItems(snippetGroup: snippetGroup, snippets: menuSnippets, modelContext: modelContext)
+    let editingSnippetGroup = snippetGroup ?? draftSnippetGroup
     do {
-      try saveEditedSnippetGroup(snippetGroup: snippetGroup, modelContext: modelContext, now: .now)
-      dismiss()
+      try applySnippetGroupEdit(
+        snippetGroup: editingSnippetGroup,
+        name: name,
+        keyword: keyword,
+        snippets: groupSnippets,
+        modelContext: modelContext,
+        now: .now
+      )
+    } catch let validationError as SnippetValidationError {
+      errorMessage = validationError.description
+      return
     } catch {
-      errorMessage = String(describing: error)
+      // 途中まで書き込んだ変更と新規の挿入を取り消す (理由は `SnippetEditorView.save()` と同じ)。
+      modelContext.rollback()
+      if snippetGroup == nil {
+        draftSnippetGroup = SnippetGroup(name: "")
+      }
+      errorMessage = error.localizedDescription
+      return
     }
+    if let saveErrorMessage = saveSnippetChanges(modelContext: modelContext) {
+      errorMessage = saveErrorMessage
+      if snippetGroup == nil {
+        draftSnippetGroup = SnippetGroup(name: "")
+      }
+      return
+    }
+    dismiss()
   }
 }
 
-/// スニペットグループに足すスニペットを選ぶ一覧。選ぶたびに `onSelect` を呼び、選んだものは一覧から外す。
+/// スニペットグループに足すスニペットを選ぶ一覧。選ぶたびに `onSelect` を呼ぶ。選んだものは呼び出し側が `snippets` から外す。
 private struct SnippetGroupItemPicker: View {
-  /// 既にメニューにあるスニペット。一覧に出さない。
-  var excludedSnippetIDs: Set<UUID>
+  /// 足せるスニペット。
+  var snippets: [Snippet]
   /// スニペットを選んだ時に呼ぶ。
   var onSelect: (Snippet) -> Void
 
-  /// すべてのスニペット。更新日時の新しい順。
-  @Query(sort: \Snippet.updatedAt, order: .reverse) private var snippets: [Snippet]
-
   var body: some View {
     List {
-      ForEach(snippets.filter { !excludedSnippetIDs.contains($0.id) }) { snippet in
+      ForEach(snippets) { snippet in
         Button {
           onSelect(snippet)
         } label: {
@@ -119,7 +151,7 @@ private struct SnippetGroupItemPicker: View {
       }
     }
     .overlay {
-      if snippets.allSatisfy({ excludedSnippetIDs.contains($0.id) }) {
+      if snippets.isEmpty {
         ContentUnavailableView("No Snippets to Add", systemImage: "rectangle.portrait")
       }
     }

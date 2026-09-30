@@ -4,18 +4,18 @@ import TanzakuKit
 
 /// iPad の詳細の列に出すスニペット。本文を等幅で全部見せ、キーワード・タグ・フォルダ・作成と更新の主体を並べる (`documents/design/Manager.dc.html` の右側)。
 ///
-/// 書き換えは編集画面 (sheet) で行う。詳細の列で直接書き換えると、検査を通る前の値が一覧にも出るため。
+/// 書き換えは編集画面 (sheet) で行い、検査を通った時だけ保存する (`applySnippetEdit`)。
 struct SnippetDetailView: View {
   /// 出すスニペット。
   var snippet: Snippet
-  /// スニペットを消す前に呼ぶ。詳細の列から外し、消したモデルを画面が読まないようにするため。
-  var onDelete: () -> Void
 
   /// 削除に使う。
   @Environment(\.modelContext) private var modelContext
-  /// 編集画面を出しているか。
-  @State private var isEditing = false
-  /// 削除の失敗。
+  /// 削除の後に意味検索のベクトルを作り直させる。
+  @Environment(SnippetEmbeddingController.self) private var snippetEmbeddingController
+  /// 編集画面を出しているもの。
+  @State private var snippetEditor: SnippetEditorTarget?
+  /// 削除の保存の失敗。
   @State private var errorMessage: String?
 
   var body: some View {
@@ -69,27 +69,21 @@ struct SnippetDetailView: View {
         }
         ShareLink(item: snippet.body)
         Button("Edit", systemImage: "pencil") {
-          isEditing = true
+          snippetEditor = SnippetEditorTarget(snippet: snippet, sidebarItem: .library(filter: .all))
         }
         Button("Delete", systemImage: "trash", role: .destructive) {
-          onDelete()
-          do {
-            try deleteSnippets(snippets: [snippet], modelContext: modelContext)
-          } catch {
-            modelContext.rollback()
-            errorMessage = String(describing: error)
+          modelContext.delete(snippet)
+          errorMessage = saveSnippetChanges(modelContext: modelContext)
+          if errorMessage == nil {
+            Task {
+              await snippetEmbeddingController.refreshEmbeddings()
+            }
           }
         }
       }
     }
-    .sheet(
-      isPresented: $isEditing,
-      onDismiss: {
-        // 取り消した編集を捨てる。保存した後なら捨てるものは無い。
-        modelContext.rollback()
-      }
-    ) {
-      SnippetEditorView(snippet: snippet, isNewSnippet: false)
+    .sheet(item: $snippetEditor) { snippetEditor in
+      SnippetEditorView(snippet: snippetEditor.snippet, initialSidebarItem: snippetEditor.sidebarItem)
     }
     .alert("Could not delete", isPresented: Binding(get: { errorMessage != nil }, set: { _ in errorMessage = nil })) {
       Button("OK") {}
@@ -106,10 +100,10 @@ struct SnippetAuthorshipView: View {
 
   var body: some View {
     LabeledContent("Created") {
-      authorshipText(date: snippet.createdAt, clientName: snippet.createdByKind == snippetAuthorMCPKind ? snippet.createdByClientName : nil)
+      authorshipText(date: snippet.createdAt, clientName: snippet.createdByKind == "mcp" ? snippet.createdByClientName : nil)
     }
     LabeledContent("Updated") {
-      authorshipText(date: snippet.updatedAt, clientName: snippet.updatedByKind == snippetAuthorMCPKind ? snippet.updatedByClientName : nil)
+      authorshipText(date: snippet.updatedAt, clientName: snippet.updatedByKind == "mcp" ? snippet.updatedByClientName : nil)
     }
   }
 

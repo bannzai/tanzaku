@@ -1,27 +1,35 @@
 import SwiftData
 import SwiftUI
 import TanzakuKit
-import os
 
 /// iOS アプリのエントリポイント。ストアを開いて本体の画面を出し、意味検索の埋め込みモデルを用意する。
 @main
 struct TanzakuiOSApp: App {
   /// ストア。開けなかった時はその理由で、画面に出す。
-  private let modelContainerResult = Result { try makeIOSModelContainer() }
-  /// 意味検索の埋め込みモデル。資産のダウンロードが済むまでは `nil` で、その間は文字列の一致だけで検索する。
-  @State private var snippetTextEmbedder: SnippetTextEmbedder?
+  private let modelContainerResult: Result<ModelContainer, any Error>
+  /// 意味検索の埋め込みモデルとベクトル。ストアを開けなかった時は `nil`。
+  private let snippetEmbeddingController: SnippetEmbeddingController?
+
+  /// ストアを開き、同じストアでベクトルを作る `SnippetEmbeddingController` を作る。どちらもアプリで 1 つだけ持つため、`App` の init で作る。
+  init() {
+    modelContainerResult = Result { try makeIOSModelContainer() }
+    snippetEmbeddingController = (try? modelContainerResult.get()).map { SnippetEmbeddingController(modelContainer: $0) }
+  }
 
   var body: some Scene {
     WindowGroup {
-      switch modelContainerResult {
-      case .success(let modelContainer):
+      switch (modelContainerResult, snippetEmbeddingController) {
+      case (.success(let modelContainer), .some(let snippetEmbeddingController)):
         SnippetLibraryView()
-          .environment(\.snippetTextEmbedder, snippetTextEmbedder)
+          .environment(snippetEmbeddingController)
           .modelContainer(modelContainer)
           .task {
-            snippetTextEmbedder = await loadSnippetTextEmbedder()
+            await snippetEmbeddingController.loadEmbeddingModel()
           }
-      case .failure(let error):
+      case (.success, .none):
+        // ストアを開けた時は `SnippetEmbeddingController` も作るため (`init()`)、ここには来ない。
+        EmptyView()
+      case (.failure(let error), _):
         ContentUnavailableView {
           Label("Could not open snippets", systemImage: "exclamationmark.triangle")
         } description: {
@@ -29,27 +37,5 @@ struct TanzakuiOSApp: App {
         }
       }
     }
-  }
-}
-
-extension EnvironmentValues {
-  /// 意味検索の埋め込みモデル。一覧の検索とベクトルの作り直しに使う。
-  @Entry var snippetTextEmbedder: SnippetTextEmbedder?
-}
-
-/// 起動時の準備の失敗の記録。スニペットの本文は入れない (`.claude/rules/snippet-content-handling.md`)。
-private let appLogger = Logger(subsystem: "com.bannzai.tanzaku", category: "App")
-
-/// 端末の優先言語の埋め込みモデルを用意する。資産が無ければダウンロードを待つ。用意できなければ `nil` を返し、一覧は文字列の一致だけで検索する。
-private func loadSnippetTextEmbedder() async -> SnippetTextEmbedder? {
-  let language = snippetEmbeddingLanguage(preferredLanguages: Locale.preferredLanguages)
-  do {
-    guard try await requestContextualEmbeddingAssets(language: language) else {
-      return nil
-    }
-    return try makeContextualSnippetTextEmbedder(language: language)
-  } catch {
-    appLogger.error("Failed to load the embedding model: \(String(describing: error), privacy: .public)")
-    return nil
   }
 }

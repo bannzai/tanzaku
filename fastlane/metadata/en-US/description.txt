@@ -1,19 +1,22 @@
-Tanzaku is a snippet manager for Mac. Save boilerplate text, commands, code and AI prompts, and pull them up from a launcher you open with a shortcut.
+Tanzaku is a snippet manager for iPhone. Save boilerplate text, commands, code and AI prompts, and pull them up the moment you need them.
 
 - Find snippets even when you forget the abbreviation
-As your snippets grow, you stop remembering their keywords. Along with fuzzy search over titles, bodies and keywords, the launcher uses semantic search, including Japanese, to find a snippet from whatever fragment you remember. Searching happens on your Mac.
+As your snippets grow, you stop remembering their keywords. Along with fuzzy search over titles, bodies and keywords, Tanzaku uses semantic search, including Japanese, to find a snippet from whatever fragment you remember. Searching happens on your iPhone.
 
-- Copy, or paste right away
-The snippet you pick is copied to the clipboard. Grant the Accessibility permission and Tanzaku pastes it into the front app for you.
+- Type snippets straight from the keyboard
+Switch to the Tanzaku keyboard to pick a snippet and type it into the text field of any app. The keyboard neither stores nor sends what you type.
 
-- Let AI agents organize them
-Tanzaku has a built-in MCP server. AI agents that support MCP can search, add, update and delete snippets. The server accepts connections only from the same Mac, and only from clients holding a token Tanzaku issued.
+- Save from the share sheet
+Save text or a URL you selected in another app as a snippet from the share sheet.
 
-- Deletions need Touch ID
-When an AI agent tries to delete a snippet, Tanzaku asks for Touch ID. You can hand the work over and still decide what gets deleted.
+- Call them up from search and Shortcuts
+Find snippets by title and keyword from iPhone search. Search for a snippet and copy it from Shortcuts or the Action button.
 
-- Your snippets stay on your Mac
-No account. Snippets are stored only on your Mac and never sent to the developer's servers.
+- Sync with Mac
+Your snippets sync with Tanzaku for Mac through iCloud.
+
+- No account
+Snippets are stored on your iPhone and in your iCloud, and never sent to the developer's servers.
 
 - One-time purchase
 Try every feature for free, up to 20 snippets. A single purchase removes the limit.

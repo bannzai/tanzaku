@@ -261,16 +261,6 @@
         }
       }
     },
-    "Keyword Matches" : {
-      "localizations" : {
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "キーワードが一致"
-          }
-        }
-      }
-    },
     "Language" : {
       "localizations" : {
         "ja" : {
@@ -441,42 +431,12 @@
         }
       }
     },
-    "Searched by the meaning of keywords, titles, and bodies" : {
-      "localizations" : {
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "キーワード・タイトル・本文の意味から探しました"
-          }
-        }
-      }
-    },
-    "Similar Meaning" : {
-      "localizations" : {
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "意味が近い"
-          }
-        }
-      }
-    },
     "Snippet Groups" : {
       "localizations" : {
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "スニペットグループ"
-          }
-        }
-      }
-    },
-    "Something went wrong" : {
-      "localizations" : {
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "問題が起きました"
           }
         }
       }

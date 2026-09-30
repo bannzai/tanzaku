@@ -1,79 +1,67 @@
 import SwiftData
 import SwiftUI
 import TanzakuKit
-import os
 
 /// スニペットの一覧。タップで本文をコピーし、検索・追加・編集・削除・共有をここから行う。
 ///
 /// iOS ではほかのアプリの入力欄へ貼るのが主な使い方のため、行のタップをコピーにする。編集と削除は行のスワイプと長押しのメニューに置く。
 /// iPad では、タップした行を詳細の列にも出す。
 struct SnippetListView: View {
-  /// 一覧の絞り込み。
-  var filter: SnippetLibraryFilter
-  /// iPad の詳細の列に出すスニペット。iPhone では `nil`。
-  var selectedSnippet: Binding<Snippet?>?
+  /// サイドバーで選んだ行。
+  var sidebarItem: SnippetSidebarItem
+  /// iPad の詳細の列に出すスニペットの識別子。iPhone では `nil`。
+  var selectedSnippetID: Binding<UUID?>?
 
-  /// すべてのスニペット。更新日時の新しい順 (`documents/design/Manager.dc.html` の一覧)。
+  /// すべてのスニペット。更新日時の新しい順 (`documents/design/Manager.dc.html` の一覧)。スニペットの追加・更新・削除で一覧を描き直すため `@Query` で持つ。
   @Query(sort: \Snippet.updatedAt, order: .reverse) private var snippets: [Snippet]
-  /// スニペットグループ。項目を変えた時に検索し直すために見る。
+  /// 一覧と見出しに出すスニペットグループを識別子から引くためのすべてのグループ。
   @Query private var snippetGroups: [SnippetGroup]
-  /// 保存・削除・検索に使う。
+  /// 見出しに出すフォルダ名を識別子から引くためのすべてのフォルダ。
+  @Query private var folders: [Folder]
+  /// 見出しに出すタグ名を識別子から引くためのすべてのタグ。
+  @Query private var tags: [Tag]
+  /// 削除と検索に使う。
   @Environment(\.modelContext) private var modelContext
-  /// 意味検索の埋め込みモデル。
-  @Environment(\.snippetTextEmbedder) private var snippetTextEmbedder
+  /// 意味検索の埋め込みモデルとベクトル。
+  @Environment(SnippetEmbeddingController.self) private var snippetEmbeddingController
   /// 検索欄の入力。
-  @State private var searchQuery = ""
-  /// 入力で検索した結果。入力が空の時は使わない。
-  @State private var searchResult = SnippetSearchResult(keywordMatches: [], semanticMatches: [])
-  /// 編集画面を出しているスニペット。
-  @State private var editingSnippet: Snippet?
-  /// 編集画面が追加か。
-  @State private var isEditingNewSnippet = false
-  /// 最後にコピーしたスニペット。コピーしたことを知らせる表示に使う。
-  @State private var copiedSnippet: Snippet?
+  @State private var searchText = ""
+  /// 検索欄に入力がある時の検索の結果の識別子 (一致の強い順)。
+  ///
+  /// 検索は意味検索の推論を含み重いため、描画のたびではなく `.task(id:)` で入力が止まった時だけ行い、結果をここに持つ (Mac の管理ウィンドウの一覧と同じ)。
+  /// 検索の後に消されたスニペットを参照しないよう、モデルではなく識別子で持ち、描画の時に `snippets` から引く。
+  @State private var searchedSnippetIDs: [UUID] = []
+  /// 編集画面を出しているもの。
+  @State private var snippetEditor: SnippetEditorTarget?
+  /// 最後にコピーしたスニペットの名前。コピーしたことを知らせる表示に使う。
+  @State private var copiedSnippetTitle: String?
   /// コピーした回数。同じ行を続けてタップした時も、表示の時間を測り直して触覚で知らせるため。
   @State private var copyCount = 0
-  /// 保存・削除・検索の失敗。
+  /// 削除の保存の失敗。
   @State private var errorMessage: String?
 
   var body: some View {
+    let isSearching = !searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    let listedSnippets =
+      isSearching ? searchedSnippetIDs.compactMap { snippetID in snippets.first { $0.id == snippetID } } : unsearchedSnippets
     List {
-      if trimmedSearchQuery.isEmpty {
-        ForEach(filteredLibrarySnippets(snippets: snippets, filter: filter)) { snippet in
-          snippetRow(snippet: snippet)
-        }
-      } else {
-        if !searchResult.keywordMatches.isEmpty {
-          Section("Keyword Matches") {
-            ForEach(searchResult.keywordMatches.map(\.snippet)) { snippet in
-              snippetRow(snippet: snippet)
-            }
-          }
-        }
-        if !searchResult.semanticMatches.isEmpty {
-          Section {
-            ForEach(searchResult.semanticMatches) { snippet in
-              snippetRow(snippet: snippet)
-            }
-          } header: {
-            Text("Similar Meaning")
-          } footer: {
-            Text("Searched by the meaning of keywords, titles, and bodies")
-          }
-        }
+      ForEach(listedSnippets) { snippet in
+        snippetRow(snippet: snippet)
       }
     }
     .overlay {
-      if trimmedSearchQuery.isEmpty, filteredLibrarySnippets(snippets: snippets, filter: filter).isEmpty {
-        ContentUnavailableView("No Snippets", systemImage: "rectangle.portrait", description: Text("Tap + to add a snippet"))
-      } else if !trimmedSearchQuery.isEmpty, searchResult.keywordMatches.isEmpty, searchResult.semanticMatches.isEmpty {
-        ContentUnavailableView.search(text: trimmedSearchQuery)
+      if listedSnippets.isEmpty {
+        if isSearching {
+          ContentUnavailableView.search(text: searchText.trimmingCharacters(in: .whitespacesAndNewlines))
+        } else {
+          ContentUnavailableView("No Snippets", systemImage: "rectangle.portrait", description: Text("Tap + to add a snippet"))
+        }
       }
     }
     .overlay(alignment: .bottom) {
-      if let copiedSnippet {
+      if let copiedSnippetTitle {
         Label {
-          Text("Copied “\(snippetDisplayTitle(snippet: copiedSnippet))”")
+          Text("Copied “\(copiedSnippetTitle)”")
         } icon: {
           Image(systemName: "checkmark.circle.fill")
         }
@@ -89,47 +77,46 @@ struct SnippetListView: View {
             return
           }
           withAnimation {
-            self.copiedSnippet = nil
+            self.copiedSnippetTitle = nil
           }
         }
       }
     }
     .sensoryFeedback(.success, trigger: copyCount)
-    .searchable(text: $searchQuery, prompt: Text("Search by keyword or meaning"))
-    .onChange(of: searchQuery) {
-      search()
-    }
-    // iPad で検索の入力を残したままサイドバーの絞り込みを変えた時に、新しい絞り込みの中で検索し直す。
-    .onChange(of: filter) {
-      search()
-    }
-    .task(id: snippetTextEmbedder?.modelIdentifier) {
-      refreshSnippetEmbeddings()
-      search()
-    }
-    // 保存・削除 (この一覧・iPad の詳細の列・開発者メニューのどこからでも) で更新日時か件数が変わった時に、ベクトルと検索の結果を合わせる。
-    .onChange(of: snippets.map(\.updatedAt)) {
-      refreshSnippetEmbeddings()
-      search()
-    }
-    // スニペットグループの項目を変えると、スニペットの更新日時は変わらずにグループの絞り込みの中身が変わるため、グループの保存でも検索し直す。
-    .onChange(of: snippetGroups.map(\.updatedAt)) {
-      search()
+    .searchable(text: $searchText, prompt: Text("Search by keyword or meaning"))
+    .task(
+      id: SnippetSearchTaskID(
+        query: searchText,
+        sidebarItem: sidebarItem,
+        snippetIDs: snippets.map(\.id),
+        snippetUpdatedAts: snippets.map(\.updatedAt),
+        snippetGroupUpdatedAts: snippetGroups.map(\.updatedAt),
+        snippetEmbeddingRevision: snippetEmbeddingController.revision
+      )
+    ) {
+      guard isSearching else {
+        searchedSnippetIDs = []
+        return
+      }
+      // 入力の 1 文字ごとに意味検索の推論を走らせないよう、入力が止まってから検索する。250 ミリ秒は Mac の管理ウィンドウと同じで、打鍵の間隔 (1 文字あたりおよそ 100〜200 ミリ秒) より長く、止めてから結果が出るまでの遅れに気づきにくい長さ。
+      do {
+        try await Task.sleep(for: .milliseconds(250))
+      } catch {
+        return
+      }
+      let embedder = await snippetEmbeddingController.queryEmbedder(query: searchText)
+      // 推論を待つ間に入力が変わって取り消された検索は、新しい入力の検索に任せる。
+      guard !Task.isCancelled else {
+        return
+      }
+      // 検索に失敗した時 (ストアの読み込みの失敗) は、誤った結果を出さないよう空の一覧にする。
+      searchedSnippetIDs = ((try? searchedSnippets(embedder: embedder)) ?? []).map(\.id)
     }
     .navigationTitle(navigationTitle)
     .toolbar {
       ToolbarItem(placement: .primaryAction) {
         Button("New Snippet", systemImage: "plus") {
-          let snippet = Snippet(body: "")
-          modelContext.insert(snippet)
-          if case .folder(let folder) = filter {
-            snippet.folder = folder
-          }
-          if case .tag(let tag) = filter {
-            snippet.tags = [tag]
-          }
-          isEditingNewSnippet = true
-          editingSnippet = snippet
+          snippetEditor = SnippetEditorTarget(snippet: nil, sidebarItem: sidebarItem)
         }
       }
       #if DEBUG
@@ -138,16 +125,10 @@ struct SnippetListView: View {
         }
       #endif
     }
-    .sheet(
-      item: $editingSnippet,
-      onDismiss: {
-        // 取り消した編集を捨てる。保存した後なら捨てるものは無い。
-        modelContext.rollback()
-      }
-    ) { snippet in
-      SnippetEditorView(snippet: snippet, isNewSnippet: isEditingNewSnippet)
+    .sheet(item: $snippetEditor) { snippetEditor in
+      SnippetEditorView(snippet: snippetEditor.snippet, initialSidebarItem: snippetEditor.sidebarItem)
     }
-    .alert("Something went wrong", isPresented: Binding(get: { errorMessage != nil }, set: { _ in errorMessage = nil })) {
+    .alert("Could not delete", isPresented: Binding(get: { errorMessage != nil }, set: { _ in errorMessage = nil })) {
       Button("OK") {}
     } message: {
       Text(verbatim: errorMessage ?? "")
@@ -157,30 +138,32 @@ struct SnippetListView: View {
   /// 一覧の 1 行。タップでコピーし、スワイプと長押しで編集・削除・共有する。
   private func snippetRow(snippet: Snippet) -> some View {
     Button {
-      copy(snippet: snippet)
-      selectedSnippet?.wrappedValue = snippet
+      copySnippetBodyToPasteboard(body: snippet.body)
+      withAnimation {
+        copiedSnippetTitle = snippetDisplayTitle(snippet: snippet)
+      }
+      copyCount += 1
+      selectedSnippetID?.wrappedValue = snippet.id
     } label: {
       SnippetRow(snippet: snippet)
     }
     .foregroundStyle(.primary)
-    .listRowBackground(selectedSnippet?.wrappedValue?.id == snippet.id ? Color.accentColor.opacity(0.15) : nil)
+    .listRowBackground(selectedSnippetID?.wrappedValue == snippet.id ? Color.accentColor.opacity(0.15) : nil)
     .swipeActions(edge: .trailing) {
       Button("Delete", systemImage: "trash", role: .destructive) {
         delete(snippet: snippet)
       }
       Button("Edit", systemImage: "pencil") {
-        isEditingNewSnippet = false
-        editingSnippet = snippet
+        snippetEditor = SnippetEditorTarget(snippet: snippet, sidebarItem: sidebarItem)
       }
       .tint(.accentColor)
     }
     .contextMenu {
       Button("Copy", systemImage: "doc.on.doc") {
-        copy(snippet: snippet)
+        copySnippetBodyToPasteboard(body: snippet.body)
       }
       Button("Edit", systemImage: "pencil") {
-        isEditingNewSnippet = false
-        editingSnippet = snippet
+        snippetEditor = SnippetEditorTarget(snippet: snippet, sidebarItem: sidebarItem)
       }
       ShareLink(item: snippet.body)
       Button("Delete", systemImage: "trash", role: .destructive) {
@@ -189,85 +172,85 @@ struct SnippetListView: View {
     }
   }
 
-  /// 本文をクリップボードに入れ、コピーしたことを知らせる。冪等ではない: 呼ぶたびに知らせる表示と触覚の合図が 1 回起きる。
-  private func copy(snippet: Snippet) {
-    copySnippetBodyToPasteboard(body: snippet.body)
-    withAnimation {
-      copiedSnippet = snippet
+  /// 検索欄が空の時の一覧。ライブラリ・フォルダ・タグは更新日時の新しい順、スニペットグループはメニューに並べる順。
+  private var unsearchedSnippets: [Snippet] {
+    switch sidebarItem {
+    case .library(let filter):
+      snippets.filter { snippetMatchesLibraryFilter(snippet: $0, filter: filter) }
+    case .snippetGroup(let snippetGroupID):
+      snippetGroups.first { $0.id == snippetGroupID }.map { sortedSnippetGroupItems(snippetGroup: $0).compactMap(\.snippet) } ?? []
     }
-    copyCount += 1
   }
 
-  /// 前後の空白を除いた検索欄の入力。
-  private var trimmedSearchQuery: String {
-    searchQuery.trimmingCharacters(in: .whitespacesAndNewlines)
+  /// 検索欄の入力で、サイドバーで選んだ行の中を検索した結果。
+  private func searchedSnippets(embedder: SnippetTextEmbedder?) throws -> [Snippet] {
+    switch sidebarItem {
+    case .library(let filter):
+      return try filteredSnippets(query: searchText, filter: filter, snippets: snippets, modelContext: modelContext, embedder: embedder)
+    case .snippetGroup(let snippetGroupID):
+      guard let snippetGroup = snippetGroups.first(where: { $0.id == snippetGroupID }) else {
+        return []
+      }
+      return try filteredSnippetGroupSnippets(query: searchText, snippetGroup: snippetGroup, modelContext: modelContext, embedder: embedder)
+    }
   }
 
-  /// 画面の題。絞り込みの名前にする。
+  /// 画面の題。サイドバーで選んだ行の名前。
   private var navigationTitle: Text {
-    switch filter {
-    case .allSnippets:
+    switch sidebarItem {
+    case .library(.all):
       Text("All Snippets")
-    case .addedByAgent:
+    case .library(.addedByAgent):
       Text("Added by AI Agents")
-    case .folder(let folder):
-      Text(verbatim: folder.name)
-    case .tag(let tag):
-      Text(verbatim: tag.name)
-    case .snippetGroup(let snippetGroup):
-      Text(verbatim: snippetGroup.name)
+    case .library(.folder(let folderID)):
+      Text(verbatim: folders.first { $0.id == folderID }?.name ?? "")
+    case .library(.tag(let tagID)):
+      Text(verbatim: tags.first { $0.id == tagID }?.name ?? "")
+    case .snippetGroup(let snippetGroupID):
+      Text(verbatim: snippetGroups.first { $0.id == snippetGroupID }?.name ?? "")
     }
   }
 
-  /// 検索欄の入力で検索し直す。入力が空なら何もしない (一覧を出すため)。
-  private func search() {
-    guard !trimmedSearchQuery.isEmpty else {
-      return
-    }
-    do {
-      searchResult = try searchSnippets(query: searchQuery, modelContext: modelContext, embedder: snippetTextEmbedder, libraryFilter: filter)
-    } catch {
-      snippetListLogger.error("Failed to search snippets: \(String(describing: error))")
-      searchResult = SnippetSearchResult(keywordMatches: [], semanticMatches: [])
-    }
-  }
-
-  /// 意味検索のベクトルを、保存済みのスニペットに合わせる。変わっていないベクトルは作り直さない。
-  ///
-  /// 画面の `modelContext` とは別の `ModelContext` で読み書きする。編集画面を出している間も、ベクトルの保存が検査を通っていない編集を一緒に保存せず、見送らずに作り直せるため。
-  private func refreshSnippetEmbeddings() {
-    guard let snippetTextEmbedder else {
-      return
-    }
-    let embeddingModelContext = ModelContext(modelContext.container)
-    do {
-      try updateSnippetEmbeddings(modelContext: embeddingModelContext, embedder: snippetTextEmbedder)
-      try embeddingModelContext.save()
-    } catch {
-      snippetListLogger.error("Failed to update snippet embeddings: \(String(describing: error))")
-    }
-  }
-
-  /// スニペットを消す。詳細の列に出していれば先に外す (消したモデルを画面が読まないため)。
+  /// スニペットを消して保存し、意味検索のベクトルを作り直させる。詳細の列に出していれば外す。
   private func delete(snippet: Snippet) {
-    if selectedSnippet?.wrappedValue?.id == snippet.id {
-      selectedSnippet?.wrappedValue = nil
+    if selectedSnippetID?.wrappedValue == snippet.id {
+      selectedSnippetID?.wrappedValue = nil
     }
-    if copiedSnippet?.id == snippet.id {
-      copiedSnippet = nil
+    modelContext.delete(snippet)
+    errorMessage = saveSnippetChanges(modelContext: modelContext)
+    if errorMessage == nil {
+      Task {
+        await snippetEmbeddingController.refreshEmbeddings()
+      }
     }
-    do {
-      try deleteSnippets(snippets: [snippet], modelContext: modelContext)
-    } catch {
-      modelContext.rollback()
-      errorMessage = String(describing: error)
-    }
-    search()
   }
 }
 
-/// 一覧のエラーの記録。スニペットの本文は入れない (`.claude/rules/snippet-content-handling.md`)。
-private let snippetListLogger = Logger(subsystem: "com.bannzai.tanzaku", category: "SnippetList")
+/// スニペットの編集画面 (sheet) で編集するもの。`sheet(item:)` に渡すため `Identifiable` にする。
+struct SnippetEditorTarget: Identifiable {
+  /// 編集するスニペット。`nil` は新規。
+  let snippet: Snippet?
+  /// 新規の時に、サイドバーで選んでいたフォルダ・タグを最初から入れておくため、選んでいた行を渡す。
+  let sidebarItem: SnippetSidebarItem
+  /// sheet を出すたびに別のものとして扱う識別子。新規は同じスニペットが無いため、毎回作る。
+  let id = UUID()
+}
+
+/// 一覧の検索をやり直す条件。入力・サイドバーの行・スニペットの追加と更新と削除・スニペットグループの更新・意味検索のベクトルのどれかが変わったら検索し直す。
+private struct SnippetSearchTaskID: Hashable {
+  /// 検索欄に入力した文字列。
+  let query: String
+  /// サイドバーで選んだ行。
+  let sidebarItem: SnippetSidebarItem
+  /// すべてのスニペットの識別子。追加・削除で変わる。
+  let snippetIDs: [UUID]
+  /// すべてのスニペットの更新日時。更新で変わる。
+  let snippetUpdatedAts: [Date]
+  /// すべてのスニペットグループの更新日時。グループの項目を変えるとスニペットは変わらずに更新日時だけが変わる。
+  let snippetGroupUpdatedAts: [Date]
+  /// 意味検索のベクトルを作り直した回数 (`SnippetEmbeddingController.revision`)。
+  let snippetEmbeddingRevision: Int
+}
 
 /// 一覧の 1 行の中身。色の帯・名前・更新日・本文の 1 行目・キーワードを並べる (`documents/design/Manager.dc.html` の一覧の行)。
 struct SnippetRow: View {

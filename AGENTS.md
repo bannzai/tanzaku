@@ -40,7 +40,7 @@ CI はランナーに署名 ID が無いため `SIGNING_FLAGS` を ad-hoc 署名
 
 ### ローカルで実行してよい場合
 
-次のどれかに当たる時だけローカルでビルド・起動し、その理由を完了報告に書く。
+次のどれかに当たり、GitHub Actions (CI・simtunnel・webtunnel) では確認が成立しない時だけローカルでビルド・起動する。当たる時も、実行の直前に CPU 使用率を `top -l 2 -n 0 -s 1` の 2 回目の `CPU usage` の行で確かめ、idle が 50% 未満なら実行せず、負荷が下がるのを待つか外部のマシンで確認できる方法に切り替える。この Mac は他のプロジェクトの作業者・Simulator と CPU を分け合っており、idle が半分を切った状態で `xcodebuild` やアプリの起動を足すと開発者の操作が止まるため (2026-09-28 に load average 125 の状態で bannzai から指摘を受けた)。ローカルで実行した時は、当たった理由と実行直前の idle を完了報告に書く。
 
 - 外部のマシンで確認が成立しない (Touch ID の実機認証、ローカルにしか無い Claude Code / Claude Desktop からの MCP 接続、アクセシビリティ権限を与えた状態の貼り付け)
 - simtunnel / webtunnel の導入が完了していない (Secrets の `TS_OIDC_CLIENT_ID` / `TS_OIDC_AUDIENCE` が未登録)、tailnet に接続できない、macOS ランナーの並列上限に達している
