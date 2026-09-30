@@ -132,6 +132,13 @@
           Text(verbatim: "Delete All Snippets")
         }
         Divider()
+        // simtunnel のランナーでは入力監視・アクセシビリティの許可を与えられず、キーワードを打ってもメニューが出ないため、メニューの見た目をここから確かめる。
+        Button {
+          appDelegate.snippetGroupMenuController?.toggleSampleSnippetGroupMenu()
+        } label: {
+          Text(verbatim: "Toggle Snippet Group Menu")
+        }
+        Divider()
         // MCP のクライアントを実際に接続しなくても、設定の「AI エージェント」と削除の確認の画面を確かめられるようにするため。
         Button {
           do {
@@ -223,6 +230,27 @@
         try deleteAllSnippetData(modelContext: modelContainer.mainContext)
       } catch {
         developerCommandsLogger.error("Failed to delete snippets: \(String(describing: error), privacy: .public)")
+      }
+    }
+  }
+
+  extension SnippetGroupMenuController {
+    /// メニューを開いていれば閉じ、閉じていればキーワードとスニペットを持つスニペットグループのメニューをキー入力の監視を通さずに開く。「Insert Manager Sample Data」で入れた `;dev-env` があればそれを開く。
+    ///
+    /// キー入力の監視が動いていない時は ↑↓・Return・Esc を受け取れないため、閉じるのもこの操作で行う。開くグループが無ければ何もしない。
+    func toggleSampleSnippetGroupMenu() {
+      if isMenuOpen {
+        closeMenu()
+        return
+      }
+      do {
+        let snippetGroups = try modelContainer.mainContext.fetch(FetchDescriptor<SnippetGroup>(predicate: #Predicate { $0.keyword != nil }))
+          .filter { !snippetGroupMenuSnippets(snippetGroup: $0).isEmpty }
+        if let snippetGroup = snippetGroups.first(where: { $0.keyword == ";dev-env" }) ?? snippetGroups.first {
+          openMenu(snippetGroup: snippetGroup)
+        }
+      } catch {
+        developerCommandsLogger.error("Failed to fetch snippet groups: \(String(describing: error), privacy: .public)")
       }
     }
   }

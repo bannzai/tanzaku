@@ -28,11 +28,25 @@ func pasteToApplication(application: NSRunningApplication?) {
     guard !application.isTerminated, NSWorkspace.shared.frontmostApplication?.processIdentifier == application.processIdentifier else {
       return
     }
-    let eventSource = CGEventSource(stateID: .combinedSessionState)
-    for isKeyDown in [true, false] {
-      let event = CGEvent(keyboardEventSource: eventSource, virtualKey: CGKeyCode(kVK_ANSI_V), keyDown: isKeyDown)
-      event?.flags = .maskCommand
-      event?.post(tap: .cghidEventTap)
-    }
+    postSyntheticKeyStroke(virtualKey: kVK_ANSI_V, flags: .maskCommand)
+  }
+}
+
+/// このアプリが送ったキー入力に付ける印 (`CGEventField.eventSourceUserData`)。スニペットグループのキー入力の監視が、自分で送ったバックスペースや ⌘V をユーザーの入力として数えないために使う。
+///
+/// ほかのアプリが同じ値を付けることは想定しない。値はグローバルショートカットの識別子 (`GlobalHotKey.swift`) と同じ "TNZK" の 4 文字。
+let syntheticKeyEventUserData: Int64 = 0x544E_5A4B
+
+/// キーを 1 回押して離すイベントを前面のアプリへ送る。アクセシビリティ (イベント送信) の許可が無いとイベントは届かない。
+///
+/// 冪等ではない: 呼ぶたびにキー入力が 1 回起きる。
+/// 押している修飾キーを引き継がないよう、`flags` で修飾キーを必ず上書きする。
+func postSyntheticKeyStroke(virtualKey: Int, flags: CGEventFlags) {
+  let eventSource = CGEventSource(stateID: .combinedSessionState)
+  for isKeyDown in [true, false] {
+    let event = CGEvent(keyboardEventSource: eventSource, virtualKey: CGKeyCode(virtualKey), keyDown: isKeyDown)
+    event?.flags = flags
+    event?.setIntegerValueField(.eventSourceUserData, value: syntheticKeyEventUserData)
+    event?.post(tap: .cghidEventTap)
   }
 }

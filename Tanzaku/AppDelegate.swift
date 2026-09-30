@@ -18,6 +18,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
   var openManagerWindow: (() -> Void)?
   /// ランチャー。ストアを開けなかった時は `nil` で、ランチャーは開かない。
   private(set) var launcherPanelController: LauncherPanelController?
+  /// スニペットグループのメニュー。ストアを開けなかった時は `nil` で、キー入力を監視しない。
+  private(set) var snippetGroupMenuController: SnippetGroupMenuController?
   /// 内蔵の MCP のサーバー。ストアを開けなかった時は `nil` で、サーバーは起動しない。
   ///
   /// 設定のウィンドウの scene が `applicationDidFinishLaunching` より先に読んでも同じものを渡せるよう、最初に読まれた時に作る (作るとサーバーが起動する)。
@@ -41,19 +43,24 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
   /// 起動時の準備の失敗の記録。
   private let logger = Logger(subsystem: "com.bannzai.tanzaku", category: "AppDelegate")
 
-  /// ストアを開いてランチャーを作り、ショートカットを登録し、意味検索の埋め込みモデルの用意を始める。初回起動を終えていなければ初回起動のウィンドウを出す。
+  /// ストアを開いてランチャーを作り、ショートカットを登録し、意味検索の埋め込みモデルの用意を始める。許可があればスニペットグループのキー入力の監視を始める。初回起動を終えていなければ初回起動のウィンドウを出す。
   ///
   /// 失敗しても落とさず記録だけにする。ユニットテストはこのアプリを起動して走るため、落とすとテストが走らない。
+  /// 許可が無い時に許可を求めるダイアログを出さない。ユニットテストの CI でダイアログが出たままになるため、許可はスニペットグループの編集画面の案内から求める。
   func applicationDidFinishLaunching(_ notification: Notification) {
-    let launcherPanelController: LauncherPanelController
+    let modelContainer: ModelContainer
     do {
-      launcherPanelController = LauncherPanelController(modelContainer: try modelContainerResult.get()) { [weak self] draftTitle in
-        self?.openNewSnippetEditor(draftTitle: draftTitle)
-      }
+      modelContainer = try modelContainerResult.get()
     } catch {
       logger.error("Failed to open the store: \(String(describing: error))")
       return
     }
+    let launcherPanelController = LauncherPanelController(modelContainer: modelContainer) { [weak self] draftTitle in
+      self?.openNewSnippetEditor(draftTitle: draftTitle)
+    }
+    let snippetGroupMenuController = SnippetGroupMenuController(modelContainer: modelContainer)
+    snippetGroupMenuController.startKeyboardMonitoringIfAllowed()
+    self.snippetGroupMenuController = snippetGroupMenuController
     launcherPanelController.onSnippetEmbeddingsUpdate = { [weak self] in
       self?.snippetEmbeddingRevision.value += 1
     }
