@@ -150,6 +150,9 @@ final class SnippetGroupMenuController {
     switch type {
     case .tapDisabledByTimeout, .tapDisabledByUserInput:
       // 応答が遅れた・安全な入力 (パスワード欄) が続いた時にシステムが監視を止めるため、許可が残っていれば再開する。
+      // 止まっている間の入力・クリックは見ていないため、打った文字とメニューは入力欄と合わなくなっている。再開の前に捨てる。
+      typedText = ""
+      closeMenu()
       if let eventTap, isSnippetGroupKeywordExpansionAllowed() {
         CGEvent.tapEnable(tap: eventTap, enable: true)
       } else {
