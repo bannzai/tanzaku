@@ -10,8 +10,8 @@ import TanzakuKit
 struct SnippetEditorView: View {
   /// 編集するスニペット。`nil` は新規。
   let snippet: Snippet?
-  /// 保存の後に意味検索のベクトルを作り直す埋め込みモデル。
-  let embedder: SnippetTextEmbedder?
+  /// スニペットを保存・削除した後に呼び、意味検索のベクトルを作り直させる。
+  let onSnippetsChange: () -> Void
   /// 一覧で選んでいる項目。新規のスニペットを保存したら、そのスニペットを選ぶ。
   @Binding var selection: ManagerDetailSelection?
   @Environment(\.modelContext) private var modelContext
@@ -45,13 +45,13 @@ struct SnippetEditorView: View {
   /// 失敗した時に入れたスニペットと別のスニペットを作って、キーワードの重複やレコードの重複にしないため。
   @State private var draftSnippet = Snippet(body: "")
 
-  /// 編集画面の入力の初期値をスニペットから決めるため、`@State` の初期値を渡す。
-  init(snippet: Snippet?, embedder: SnippetTextEmbedder?, selection: Binding<ManagerDetailSelection?>) {
+  /// 編集画面の入力の初期値をスニペットから決めるため、`@State` の初期値を渡す。`draftTitle` は新規の時のタイトルの初期値 (ランチャーに入力した言葉)。
+  init(snippet: Snippet?, draftTitle: String, onSnippetsChange: @escaping () -> Void, selection: Binding<ManagerDetailSelection?>) {
     self.snippet = snippet
-    self.embedder = embedder
+    self.onSnippetsChange = onSnippetsChange
     _selection = selection
     _bodyText = State(initialValue: snippet?.body ?? "")
-    _title = State(initialValue: snippet?.title ?? "")
+    _title = State(initialValue: snippet?.title ?? draftTitle)
     _keyword = State(initialValue: snippet?.keyword ?? "")
     _language = State(initialValue: snippet?.language.flatMap(SnippetLanguage.init(rawValue:)))
     _color = State(initialValue: snippet?.color)
@@ -111,7 +111,8 @@ struct SnippetEditorView: View {
           .font(.system(size: 13, design: .monospaced))
           .scrollContentBackground(.hidden)
           .padding(10)
-          .background(Color("CodeBackground"), in: RoundedRectangle(cornerRadius: 8))
+          // 本文の背景はデザインの code の値 (`documents/design/Manager.dc.html` の LIGHT / DARK)。
+          .background(appearanceAdaptiveColor(lightHex: 0xF6F7F9, darkHex: 0x19191B), in: RoundedRectangle(cornerRadius: 8))
           .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color(nsColor: .separatorColor)))
           .accessibilityIdentifier("snippet-body-editor")
       }
@@ -143,7 +144,7 @@ struct SnippetEditorView: View {
       Button("Create", action: createFolder)
       Button("Cancel", role: .cancel) {}
     }
-    .snippetDeleteConfirmation(deletingSnippet: $deletingSnippet, embedder: embedder, selection: $selection)
+    .snippetDeleteConfirmation(deletingSnippet: $deletingSnippet, onSnippetsChange: onSnippetsChange, selection: $selection)
     // 編集中にサイドバーでタグを消すと、スニペットからそのタグが外れる。入力に残したまま保存すると同じ名前のタグを作り直してしまうため、入力からも外す。
     // 入力で足したばかりのタグはスニペットにまだ付いていないため、スニペットから外れた名前だけを外す。
     .onChange(of: (snippet?.tags ?? []).map(\.name).sorted()) { oldTagNames, newTagNames in
@@ -240,7 +241,7 @@ struct SnippetEditorView: View {
           color = color == snippetColor ? nil : snippetColor
         } label: {
           RoundedRectangle(cornerRadius: 2)
-            .fill(snippetColor.bandColor)
+            .fill(snippetBandColor(snippetColor: snippetColor))
             .frame(width: 12, height: 20)
             .padding(3)
             .overlay(RoundedRectangle(cornerRadius: 5).stroke(color == snippetColor ? Color.accentColor : .clear, lineWidth: 2))
@@ -277,7 +278,8 @@ struct SnippetEditorView: View {
         modelContext: modelContext,
         now: .now
       )
-      try saveSnippetChanges(modelContext: modelContext, embedder: embedder)
+      try modelContext.save()
+      onSnippetsChange()
       errorMessage = nil
       if snippet == nil {
         selection = .snippet(snippetID: editingSnippet.id)

@@ -68,7 +68,7 @@ struct SnippetGroupEditorView: View {
               Image(systemName: "line.3.horizontal")
                 .foregroundStyle(.tertiary)
               RoundedRectangle(cornerRadius: 2)
-                .fill(snippet.color?.bandColor ?? .clear)
+                .fill(snippet.color.map { snippetBandColor(snippetColor: $0) } ?? .clear)
                 .frame(width: 4, height: 18)
               Text(verbatim: snippetDisplayTitle(snippet: snippet))
                 .lineLimit(1)

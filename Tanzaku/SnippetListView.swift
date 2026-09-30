@@ -8,8 +8,10 @@ struct SnippetListView: View {
   let filter: SnippetLibraryFilter
   /// 検索欄に入力した文字列。
   let searchText: String
-  /// 意味検索に使う埋め込みモデル。`nil` の時は意味検索なしで検索する。
-  let embedder: SnippetTextEmbedder?
+  /// 検索の入力から意味検索に使う埋め込みモデルを作る。`nil` を返した時は意味検索なしで検索する。
+  let semanticQueryEmbedder: (String) async -> SnippetTextEmbedder?
+  /// スニペットを削除した後に呼び、意味検索のベクトルを作り直させる。
+  let onSnippetsChange: () -> Void
   /// 一覧で選んでいる項目。
   @Binding var selection: ManagerDetailSelection?
   @Environment(\.modelContext) private var modelContext
@@ -23,7 +25,7 @@ struct SnippetListView: View {
   @State private var deletingSnippet: Snippet?
   /// 検索欄に入力がある時の検索の結果の識別子 (一致の強い順)。
   ///
-  /// 検索は意味検索の推論を含み重いため、描画のたびではなく `.task(id:)` で入力が止まった時だけ行い、結果をここに持つ。
+  /// 検索は意味検索の推論を含み重いため、描画のたびではなく `.task(id:)` で入力が止まった時だけ行い、結果をここに持つ。入力のベクトルの推論は `semanticQueryEmbedder` がメインスレッドの外で行う。
   /// 検索の後に消されたスニペットを参照しないよう、モデルではなく識別子で持ち、描画の時に `snippets` から引く。
   @State private var searchedSnippetIDs: [UUID] = []
 
@@ -54,8 +56,7 @@ struct SnippetListView: View {
         query: searchText,
         filter: filter,
         snippetIDs: snippets.map(\.id),
-        snippetUpdatedAts: snippets.map(\.updatedAt),
-        embedderModelIdentifier: embedder?.modelIdentifier
+        snippetUpdatedAts: snippets.map(\.updatedAt)
       )
     ) {
       guard isSearching else {
@@ -66,6 +67,11 @@ struct SnippetListView: View {
       do {
         try await Task.sleep(for: .milliseconds(250))
       } catch {
+        return
+      }
+      let embedder = await semanticQueryEmbedder(searchText)
+      // 推論を待つ間に入力が変わって取り消された検索は、新しい入力の検索に任せる。
+      guard !Task.isCancelled else {
         return
       }
       // 検索に失敗した時 (ストアの読み込みの失敗) は、誤った結果を出さないよう空の一覧にする。
@@ -80,7 +86,7 @@ struct SnippetListView: View {
     }
     .navigationTitle(title)
     .navigationSubtitle(Text("\(listedSnippets.count) snippets"))
-    .snippetDeleteConfirmation(deletingSnippet: $deletingSnippet, embedder: embedder, selection: $selection)
+    .snippetDeleteConfirmation(deletingSnippet: $deletingSnippet, onSnippetsChange: onSnippetsChange, selection: $selection)
   }
 
   /// 一覧の見出し。サイドバーで選んだ項目の名前。
@@ -98,7 +104,7 @@ struct SnippetListView: View {
   }
 }
 
-/// 一覧の検索をやり直す条件。入力・絞り込み・スニペットの追加と更新と削除・埋め込みモデルのどれかが変わったら検索し直す。
+/// 一覧の検索をやり直す条件。入力・絞り込み・スニペットの追加と更新と削除のどれかが変わったら検索し直す。
 private struct SnippetSearchTaskID: Hashable {
   /// 検索欄に入力した文字列。
   let query: String
@@ -108,8 +114,6 @@ private struct SnippetSearchTaskID: Hashable {
   let snippetIDs: [UUID]
   /// すべてのスニペットの更新日時。更新で変わる。
   let snippetUpdatedAts: [Date]
-  /// 意味検索に使う埋め込みモデル。起動後に用意できた時に検索し直すため。
-  let embedderModelIdentifier: String?
 }
 
 /// スニペットの一覧の 1 行。色の帯・名前・更新日・本文の 1 行目・キーワード (`documents/design/Manager.dc.html`)。
@@ -120,7 +124,7 @@ private struct SnippetRow: View {
   var body: some View {
     HStack(alignment: .top, spacing: 10) {
       RoundedRectangle(cornerRadius: 2)
-        .fill(snippet.color?.bandColor ?? .clear)
+        .fill(snippet.color.map { snippetBandColor(snippetColor: $0) } ?? .clear)
         .frame(width: 4, height: 40)
       VStack(alignment: .leading, spacing: 4) {
         HStack(alignment: .firstTextBaseline) {
@@ -132,7 +136,7 @@ private struct SnippetRow: View {
             .font(.caption)
             .foregroundStyle(.secondary)
         }
-        Text(verbatim: snippet.body.split(whereSeparator: \.isNewline).first.map(String.init) ?? "")
+        Text(verbatim: snippetBodyFirstLine(body: snippet.body))
           .font(.subheadline)
           .foregroundStyle(.secondary)
           .lineLimit(1)
@@ -151,19 +155,19 @@ extension View {
   /// スニペットの削除の確認を出し、確かめたら消す。消したスニペットを選んでいたら選択を外す。
   func snippetDeleteConfirmation(
     deletingSnippet: Binding<Snippet?>,
-    embedder: SnippetTextEmbedder?,
+    onSnippetsChange: @escaping () -> Void,
     selection: Binding<ManagerDetailSelection?>
   ) -> some View {
-    modifier(SnippetDeleteConfirmation(deletingSnippet: deletingSnippet, embedder: embedder, selection: selection))
+    modifier(SnippetDeleteConfirmation(deletingSnippet: deletingSnippet, onSnippetsChange: onSnippetsChange, selection: selection))
   }
 }
 
-/// `snippetDeleteConfirmation(deletingSnippet:embedder:selection:)` の本体。削除にストアが要るため、`@Environment` を持てる `ViewModifier` にする。
+/// `snippetDeleteConfirmation(deletingSnippet:onSnippetsChange:selection:)` の本体。削除にストアが要るため、`@Environment` を持てる `ViewModifier` にする。
 private struct SnippetDeleteConfirmation: ViewModifier {
   /// 削除の確認を出しているスニペット。
   @Binding var deletingSnippet: Snippet?
-  /// 削除の後に意味検索のベクトルを合わせる埋め込みモデル。
-  let embedder: SnippetTextEmbedder?
+  /// 削除の後に呼び、意味検索のベクトルを作り直させる。
+  let onSnippetsChange: () -> Void
   /// 一覧で選んでいる項目。
   @Binding var selection: ManagerDetailSelection?
   @Environment(\.modelContext) private var modelContext
@@ -183,7 +187,8 @@ private struct SnippetDeleteConfirmation: ViewModifier {
           selection = nil
         }
         modelContext.delete(snippet)
-        try? saveSnippetChanges(modelContext: modelContext, embedder: embedder)
+        try? modelContext.save()
+        onSnippetsChange()
         deletingSnippet = nil
       }
       .accessibilityIdentifier("confirm-delete-snippet-button")
