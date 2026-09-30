@@ -61,6 +61,6 @@ struct SnippetGroupMenuPositionTests {
       visibleFrame: visibleFrame
     )
 
-    #expect(origin.x == 1440 - 320)
+    #expect(origin == CGPoint(x: 1440 - 320, y: 600 - 4 - 200))
   }
 }
