@@ -19,14 +19,25 @@ nonisolated struct SnippetAppEntity: AppEntity {
 
   /// `Snippet.id`。
   let id: UUID
-  /// ショートカットの選択肢に出す名前 (`snippetDisplayTitle(snippet:)`)。
-  let displayTitle: String
-  /// ショートカットの選択肢の 2 行目に出すキーワード。
+  /// `Snippet.title`。
+  let title: String?
+  /// `Snippet.keyword`。
   let keyword: String?
 
-  /// ショートカットの選択肢の表示。
+  /// ショートカットの選択肢の表示。名前はタイトル (無ければキーワード) にし、どちらも無ければ「Untitled Snippet」にする。
+  ///
+  /// 本文の 1 行目 (`snippetDisplayTitle(snippet:)`) は使わない。Siri が選択肢を読み上げることがあり、本文の秘匿情報を周りに聞かせてしまうため (`.claude/rules/snippet-content-handling.md`)。
   var displayRepresentation: DisplayRepresentation {
-    DisplayRepresentation(title: "\(displayTitle)", subtitle: keyword.map { "\($0)" })
+    switch (title, keyword) {
+    case (.some(let title), .some(let keyword)):
+      DisplayRepresentation(title: "\(title)", subtitle: "\(keyword)")
+    case (.some(let title), .none):
+      DisplayRepresentation(title: "\(title)")
+    case (.none, .some(let keyword)):
+      DisplayRepresentation(title: "\(keyword)")
+    case (.none, .none):
+      DisplayRepresentation(title: "Untitled Snippet")
+    }
   }
 }
 
@@ -97,7 +108,7 @@ nonisolated struct TanzakuAppShortcuts: AppShortcutsProvider {
 
 /// ストアのスニペットから `SnippetAppEntity` を作る。
 private func snippetAppEntities(snippets: [Snippet]) -> [SnippetAppEntity] {
-  snippets.map { SnippetAppEntity(id: $0.id, displayTitle: snippetDisplayTitle(snippet: $0), keyword: $0.keyword) }
+  snippets.map { SnippetAppEntity(id: $0.id, title: $0.title, keyword: $0.keyword) }
 }
 
 /// 識別子のスニペットの `SnippetAppEntity`。

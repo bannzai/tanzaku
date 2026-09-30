@@ -561,6 +561,16 @@
         }
       }
     },
+    "Untitled Snippet" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "タイトルなしのスニペット"
+          }
+        }
+      }
+    },
     "Updated" : {
       "localizations" : {
         "ja" : {
