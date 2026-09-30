@@ -11,7 +11,7 @@ public func filteredSnippetGroupSnippets(
   modelContext: ModelContext,
   embedder: SnippetTextEmbedder?
 ) throws -> [Snippet] {
-  let groupSnippets = sortedSnippetGroupItems(snippetGroup: snippetGroup).compactMap(\.snippet)
+  let groupSnippets = snippetGroupMenuSnippets(snippetGroup: snippetGroup)
   let groupSnippetIDs = Set(groupSnippets.map(\.id))
   return try filteredSnippets(query: query, filter: .all, snippets: groupSnippets, modelContext: modelContext, embedder: embedder)
     .filter { groupSnippetIDs.contains($0.id) }

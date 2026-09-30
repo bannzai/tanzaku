@@ -99,6 +99,16 @@
         }
       }
     },
+    "AI agents" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "AI エージェント"
+          }
+        }
+      }
+    },
     "AI agents can search, add, and organize your snippets. The server listens only inside this Mac (127.0.0.1)." : {
       "localizations" : {
         "ja" : {
@@ -115,6 +125,26 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "アクセストークン"
+          }
+        }
+      }
+    },
+    "Accessibility" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "アクセシビリティ"
+          }
+        }
+      }
+    },
+    "Accessibility permission hasn't been granted yet. Until you allow it, ⌘Return only copies." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "アクセシビリティの許可がまだありません。許可するまでは、⌘Return でもコピーだけを行います。"
           }
         }
       }
@@ -145,6 +175,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "タグを追加"
+          }
+        }
+      }
+    },
+    "Add one piece of text or a command you often type." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "よく打つ定型文やコマンドを 1 つ入れてみてください。"
           }
         }
       }
@@ -189,6 +229,46 @@
         }
       }
     },
+    "Allow Tanzaku in Login Items in System Settings to launch it at login." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ログイン時に起動するには、システム設定のログイン項目で Tanzaku を許可してください。"
+          }
+        }
+      }
+    },
+    "Allow keyboard access to use snippet groups" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "スニペットグループを使うにはキーボードの許可が必要です"
+          }
+        }
+      }
+    },
+    "Allowed" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "許可済み"
+          }
+        }
+      }
+    },
+    "Back" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "戻る"
+          }
+        }
+      }
+    },
     "Body" : {
       "localizations" : {
         "ja" : {
@@ -205,6 +285,36 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "キャンセル"
+          }
+        }
+      }
+    },
+    "Choose the key that opens the launcher" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ランチャーを開くキーを決めます"
+          }
+        }
+      }
+    },
+    "Claude Code can search, add, and organize your Tanzaku snippets.\nDeletions from AI agents are confirmed with Touch ID every time." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Claude Code から Tanzaku のスニペットを検索・追加・整理できるようになります。\nAI からの削除は、毎回 Touch ID で確認します。"
+          }
+        }
+      }
+    },
+    "Clear Shortcut" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ショートカットを消去"
           }
         }
       }
@@ -239,6 +349,26 @@
         }
       }
     },
+    "Command to run in Terminal" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ターミナルで実行するコマンド"
+          }
+        }
+      }
+    },
+    "Connect your AI agents" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "AI エージェントをつなぎます"
+          }
+        }
+      }
+    },
     "Connected clients" : {
       "localizations" : {
         "ja" : {
@@ -255,6 +385,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "接続"
+          }
+        }
+      }
+    },
+    "Contact Us…" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "お問い合わせ…"
           }
         }
       }
@@ -285,6 +425,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "変更を保存できませんでした"
+          }
+        }
+      }
+    },
+    "Couldn't use this shortcut: %@" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "このショートカットは使えません: %@"
           }
         }
       }
@@ -429,6 +579,16 @@
         }
       }
     },
+    "First snippet" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最初のスニペット"
+          }
+        }
+      }
+    },
     "Folder" : {
       "localizations" : {
         "ja" : {
@@ -479,6 +639,46 @@
         }
       }
     },
+    "From any app, this key opens the launcher in the center of the screen.\nType to search, press Return to copy, and Esc to close." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "どのアプリを使っていても、このキーで画面の中央にランチャーが開きます。\n打って探し、Return でコピー、Esc で閉じます。"
+          }
+        }
+      }
+    },
+    "General" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "一般"
+          }
+        }
+      }
+    },
+    "Get Started" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "はじめる"
+          }
+        }
+      }
+    },
+    "Get a token from an environment variable" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "環境変数からトークンを取得"
+          }
+        }
+      }
+    },
     "Golden yellow" : {
       "localizations" : {
         "ja" : {
@@ -489,12 +689,32 @@
         }
       }
     },
+    "If the menu doesn’t appear after you allow access, quit and reopen Tanzaku." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "許可してもメニューが出ない時は、Tanzaku を終了して開き直してください。"
+          }
+        }
+      }
+    },
     "Indigo" : {
       "localizations" : {
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "藍"
+          }
+        }
+      }
+    },
+    "Input Monitoring" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "入力監視"
           }
         }
       }
@@ -545,6 +765,26 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "最後のアクセス %@"
+          }
+        }
+      }
+    },
+    "Launch at login" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ログイン時に起動"
+          }
+        }
+      }
+    },
+    "Launcher shortcut" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ランチャーを開くショートカット"
           }
         }
       }
@@ -639,12 +879,32 @@
         }
       }
     },
+    "Next" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "次へ"
+          }
+        }
+      }
+    },
     "No AI agent has connected yet. Run the command above in your terminal." : {
       "localizations" : {
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "まだ AI エージェントが接続していません。上のコマンドをターミナルで実行してください。"
+          }
+        }
+      }
+    },
+    "No shortcut" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ショートカットなし"
           }
         }
       }
@@ -689,12 +949,62 @@
         }
       }
     },
+    "Open Login Items" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ログイン項目を開く"
+          }
+        }
+      }
+    },
+    "Open System Settings" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "システム設定を開く"
+          }
+        }
+      }
+    },
+    "Opens in the center of the screen from any app" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "どのアプリを使っていても、画面の中央に開きます"
+          }
+        }
+      }
+    },
     "Opens the editor in the manager window with your words as the title" : {
       "localizations" : {
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "入力した言葉をタイトルにして、管理ウィンドウの編集を開きます"
+          }
+        }
+      }
+    },
+    "Optional. Snippets can also be found by what the body means" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "なくても、本文の意味から探せます"
+          }
+        }
+      }
+    },
+    "Paste directly into the front app" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "前面のアプリに直接貼り付ける"
           }
         }
       }
@@ -729,6 +1039,26 @@
         }
       }
     },
+    "Press the new shortcut" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新しいショートカットを押してください"
+          }
+        }
+      }
+    },
+    "Privacy Policy" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "プライバシーポリシー"
+          }
+        }
+      }
+    },
     "Purchase a License…" : {
       "localizations" : {
         "ja" : {
@@ -755,6 +1085,26 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "受信"
+          }
+        }
+      }
+    },
+    "Record Shortcut" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ショートカットを記録"
+          }
+        }
+      }
+    },
+    "Record another key" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "別のキーを記録する"
           }
         }
       }
@@ -909,12 +1259,32 @@
         }
       }
     },
+    "Shortcut" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ショートカット"
+          }
+        }
+      }
+    },
     "Similar meaning" : {
       "localizations" : {
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "意味が近い"
+          }
+        }
+      }
+    },
+    "Skip" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "スキップ"
           }
         }
       }
@@ -945,6 +1315,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "スニペット"
+          }
+        }
+      }
+    },
+    "Specified Commercial Transactions Act" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "特定商取引法に基づく表記"
           }
         }
       }
@@ -1005,6 +1385,26 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Tanzaku"
+          }
+        }
+      }
+    },
+    "Tanzaku Inquiry" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tanzaku へのお問い合わせ"
+          }
+        }
+      }
+    },
+    "Terms of Use" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "利用規約"
           }
         }
       }
@@ -1099,12 +1499,52 @@
         }
       }
     },
+    "Welcome to Tanzaku" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tanzaku へようこそ"
+          }
+        }
+      }
+    },
+    "When you type a snippet group’s keyword, Tanzaku shows the menu at the text cursor and replaces the keyword with the snippet you choose. What you type is used only to find keywords, and is never saved or sent." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "スニペットグループのキーワードを打つと、入力欄のカーソルの位置にメニューを出し、選んだスニペットでキーワードを置き換えます。打った内容はキーワードの判定だけに使い、保存も送信もしません。"
+          }
+        }
+      }
+    },
+    "Write your first snippet" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最初の短冊を書きます"
+          }
+        }
+      }
+    },
     "You can allow deletion without confirmation in Settings › AI Agents" : {
       "localizations" : {
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "確認なしの削除は 設定 › AI エージェント で許可できます"
+          }
+        }
+      }
+    },
+    "You can also connect later in Settings › AI Agents" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "あとからでも 設定 › AI エージェント でつなげます"
           }
         }
       }
@@ -1129,12 +1569,52 @@
         }
       }
     },
+    "esc Close" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "esc 閉じる"
+          }
+        }
+      }
+    },
     "“%@”" : {
       "localizations" : {
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "「%@」"
+          }
+        }
+      }
+    },
+    "↑↓ Select" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "↑↓ 選択"
+          }
+        }
+      }
+    },
+    "↩ Insert" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "↩ 入力"
+          }
+        }
+      }
+    },
+    "⌘Return pastes into the app you were using before opening the launcher." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "⌘Return で、ランチャーを開く前に使っていたアプリへ貼り付けます。"
           }
         }
       }

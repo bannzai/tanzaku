@@ -16,11 +16,12 @@ struct TanzakuApp: App {
     }
     // デザインの管理ウィンドウの大きさ (`documents/design/Manager.dc.html` の 1280×800)。
     .defaultSize(width: 1280, height: 800)
-    #if DEBUG
-      .commands {
+    .commands {
+      HelpCommands()
+      #if DEBUG
         DeveloperCommands(appDelegate: appDelegate)
-      }
-    #endif
+      #endif
+    }
 
     Settings {
       SettingsRoot(appDelegate: appDelegate)
@@ -28,9 +29,9 @@ struct TanzakuApp: App {
   }
 }
 
-/// 設定のウィンドウの中身。タブは「AI エージェント」だけで、「一般」は #15 で足す。
+/// 設定のウィンドウの中身。タブはデザイン (`documents/design/Settings.dc.html`) の「一般」と「AI エージェント」。
 private struct SettingsRoot: View {
-  /// ストアと MCP のサーバーを持つ delegate。
+  /// ストア・MCP のサーバー・ランチャーのショートカットを持つ delegate。
   let appDelegate: AppDelegate
 
   var body: some View {
@@ -38,6 +39,10 @@ private struct SettingsRoot: View {
       switch (appDelegate.modelContainerResult, appDelegate.mcpServerController) {
       case (.success(let modelContainer), .some(let mcpServerController)):
         TabView {
+          GeneralSettingsView()
+            .tabItem {
+              Label("General", systemImage: "gearshape")
+            }
           AgentSettingsView()
             .tabItem {
               Label("AI Agents", systemImage: "cpu")
@@ -45,6 +50,7 @@ private struct SettingsRoot: View {
         }
         .modelContainer(modelContainer)
         .environment(mcpServerController)
+        .environment(appDelegate.launcherShortcutController)
       case (.failure(let error), _):
         // ストアを開けなかった理由をユーザーが知れるよう、管理ウィンドウと同じくアプリを落とさずに出す。
         Text(verbatim: error.localizedDescription)
