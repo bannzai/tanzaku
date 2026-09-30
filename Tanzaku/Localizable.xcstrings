@@ -119,6 +119,16 @@
         }
       }
     },
+    "Accessibility" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "アクセシビリティ"
+          }
+        }
+      }
+    },
     "Action" : {
       "localizations" : {
         "ja" : {
@@ -185,6 +195,26 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "すべてのスニペット"
+          }
+        }
+      }
+    },
+    "Allow keyboard access to use snippet groups" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "スニペットグループを使うにはキーボードの許可が必要です"
+          }
+        }
+      }
+    },
+    "Allowed" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "許可済み"
           }
         }
       }
@@ -489,12 +519,32 @@
         }
       }
     },
+    "If the menu doesn’t appear after you allow access, quit and reopen Tanzaku." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "許可してもメニューが出ない時は、Tanzaku を終了して開き直してください。"
+          }
+        }
+      }
+    },
     "Indigo" : {
       "localizations" : {
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "藍"
+          }
+        }
+      }
+    },
+    "Input Monitoring" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "入力監視"
           }
         }
       }
@@ -685,6 +735,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "OK"
+          }
+        }
+      }
+    },
+    "Open System Settings" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "システム設定を開く"
           }
         }
       }
@@ -1099,6 +1159,16 @@
         }
       }
     },
+    "When you type a snippet group’s keyword, Tanzaku shows the menu at the text cursor and replaces the keyword with the snippet you choose. What you type is used only to find keywords, and is never saved or sent." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "スニペットグループのキーワードを打つと、入力欄のカーソルの位置にメニューを出し、選んだスニペットでキーワードを置き換えます。打った内容はキーワードの判定だけに使い、保存も送信もしません。"
+          }
+        }
+      }
+    },
     "You can allow deletion without confirmation in Settings › AI Agents" : {
       "localizations" : {
         "ja" : {
@@ -1129,12 +1199,42 @@
         }
       }
     },
+    "esc Close" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "esc 閉じる"
+          }
+        }
+      }
+    },
     "“%@”" : {
       "localizations" : {
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "「%@」"
+          }
+        }
+      }
+    },
+    "↑↓ Select" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "↑↓ 選択"
+          }
+        }
+      }
+    },
+    "↩ Insert" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "↩ 入力"
           }
         }
       }
