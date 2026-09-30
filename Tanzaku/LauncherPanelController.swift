@@ -182,7 +182,8 @@ final class LauncherPanelController: NSObject, NSWindowDelegate {
     if (panel.firstResponder as? NSTextView)?.hasMarkedText() == true {
       return false
     }
-    let modifierFlags = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
+    // Caps Lock と Fn は押しているかに関係なく立つため、ショートカットの判定に使う修飾キーだけを見る。
+    let modifierFlags = event.modifierFlags.intersection([.command, .option, .control, .shift])
     switch Int(event.keyCode) {
     case kVK_Escape:
       close()
