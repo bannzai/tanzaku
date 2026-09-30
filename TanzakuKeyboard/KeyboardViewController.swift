@@ -64,6 +64,12 @@ final class KeyboardViewController: UIInputViewController {
     super.textDidChange(textInput)
     keyboardHostState.textChangeCount += 1
   }
+
+  /// カーソルや選んだ範囲が変わったことを画面へ知らせる。カーソルの移動は `textDidChange(_:)` を伴わずにこれだけで届くことがあり、移動した先のキーワードでメニューを出し直す・閉じるため。
+  override func selectionDidChange(_ textInput: (any UITextInput)?) {
+    super.selectionDidChange(textInput)
+    keyboardHostState.textChangeCount += 1
+  }
 }
 
 /// キーボードの画面が入口 (`KeyboardViewController`) から受け取る状態。`UIInputViewController` が持つ値と通知を SwiftUI の画面の描き直しにつなぐため、観測できるクラスにする。
@@ -73,6 +79,6 @@ final class KeyboardHostState {
   var needsInputModeSwitchKey = false
   /// ユーザーがフルアクセスを許可したか (`UIInputViewController.hasFullAccess`)。
   var hasFullAccess = false
-  /// 入力欄の文字やカーソルが変わった回数 (`textDidChange(_:)`)。変わったことだけを画面へ知らせるため、入力欄の文字は持たない。
+  /// 入力欄の文字やカーソルが変わった回数 (`textDidChange(_:)`・`selectionDidChange(_:)`)。変わったことだけを画面へ知らせるため、入力欄の文字は持たない。
   var textChangeCount = 0
 }
