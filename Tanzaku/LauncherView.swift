@@ -399,7 +399,8 @@ private struct LauncherKeyHint: View {
 
 /// 結果なしの画面の短冊のアイコン (`documents/design/Main.dc.html` の 36px の SVG と同じ形)。
 private struct LauncherTanzakuIcon: Shape {
-  func path(in rect: CGRect) -> Path {
+  /// `Shape` は `path(in:)` をメインアクターの外からも呼ぶため nonisolated にする。既定のメインアクターのままだと、Xcode 27 の Release のアーカイブ (`make dmg`) が「conformance of 'LauncherTanzakuIcon' to protocol 'Shape' crosses into main actor-isolated code」で失敗した。
+  nonisolated func path(in rect: CGRect) -> Path {
     // SVG の viewBox (36 x 36) の座標を rect の大きさに合わせる。
     let scale = min(rect.width, rect.height) / 36
     var path = Path()
