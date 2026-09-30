@@ -36,7 +36,7 @@ CI はランナーに署名 ID が無いため `SIGNING_FLAGS` を ad-hoc 署名
 - 公開サイト: `WEBTUNNEL_REPO=bannzai/tanzaku ~/ghq/github.com/bannzai/webtunnel/local/webtunnel up <セッション名> --ref <ブランチ> --wait` で `.github/workflows/browser-session.yml` を起動し、`/webtunnel` skill の手順で agent-browser から操作・撮影する
 - セッション名は `tanzaku-<worktree 名>` (macOS アプリは末尾に `-mac`、iOS アプリは `-ios`、公開サイトは `-web`)。セッション名は tailnet のホスト名になり、別リポジトリのセッションと衝突させない
 - 確認が終わったら `up` と同じ環境変数で `down <セッション名>` を実行して閉じる。macOS ランナーの並列数は CI と共有する
-- 到達しにくい状態 (課金状態・大量のスニペット・認証の失敗) は Debug ビルドの開発者メニューで作る。iOS アプリの開発者メニューは一覧の右上のメニューにあり、見本のスニペットの投入・全削除・ライトとダークの切り替えと、Spotlight の索引の中身の表示 (simtunnel の Simulator の Spotlight の画面にはアプリの項目が出ないため) を持つ。ロケールの切り替えのように起動前に効かせる設定は `macos-wda.sh session` / `ios-wda.sh launch` の `--arg` (例: `--arg -AppleLanguages --arg '(ja)'`) で渡す
+- 到達しにくい状態 (課金状態・大量のスニペット・認証の失敗) は Debug ビルドの開発者メニューで作る。iOS アプリの開発者メニューは一覧の右上のメニューにあり、見本のスニペットの投入・全削除・ライトとダークの切り替えを持つ。ロケールの切り替えのように起動前に効かせる設定は `macos-wda.sh session` / `ios-wda.sh launch` の `--arg` (例: `--arg -AppleLanguages --arg '(ja)'`) で渡す
 
 ### ローカルで実行してよい場合
 
