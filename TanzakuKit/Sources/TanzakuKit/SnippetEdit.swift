@@ -12,7 +12,7 @@ public func applySnippetEdit(
   body: String,
   title: String,
   keyword: String,
-  language: SnippetLanguage?,
+  language: String?,
   color: SnippetColor?,
   folder: Folder?,
   tagNames: [String],
@@ -25,7 +25,7 @@ public func applySnippetEdit(
   snippet.body = body
   snippet.title = title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : title
   snippet.keyword = optionalKeyword
-  snippet.language = language?.rawValue
+  snippet.language = language
   snippet.colorRawValue = color?.rawValue
   snippet.updatedAt = now
   snippet.updatedByKind = "user"

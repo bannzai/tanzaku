@@ -25,8 +25,8 @@ struct SnippetEditorView: View {
   @State private var title: String
   /// 入力中のキーワード。
   @State private var keyword: String
-  /// 選んでいる言語。`nil` はプレーンテキスト。
-  @State private var language: SnippetLanguage?
+  /// 選んでいる言語 (`Snippet.language` の値)。`nil` はプレーンテキスト。
+  @State private var language: String?
   /// 選んでいる色。`nil` は色なし。
   @State private var color: SnippetColor?
   /// 選んでいるフォルダの識別子。編集中にフォルダが消されても消したモデルを参照しないよう、モデルではなく識別子で持ち、`folders` から引く。
@@ -59,7 +59,7 @@ struct SnippetEditorView: View {
     _bodyText = State(initialValue: snippet?.body ?? initialBody)
     _title = State(initialValue: snippet?.title ?? "")
     _keyword = State(initialValue: snippet?.keyword ?? "")
-    _language = State(initialValue: snippet?.language.flatMap(SnippetLanguage.init(rawValue:)))
+    _language = State(initialValue: snippetLanguagePickerSelection(language: snippet?.language, highlightLanguageNames: snippetHighlightLanguageNames()))
     _color = State(initialValue: snippet?.color)
     _tagNames = State(initialValue: (snippet?.tags ?? []).map(\.name).sorted())
     switch (snippet, initialSidebarItem) {
@@ -82,20 +82,28 @@ struct SnippetEditorView: View {
     NavigationStack {
       Form {
         Section("Body") {
-          TextEditor(text: $bodyText)
-            .font(.callout.monospaced())
-            .textInputAutocapitalization(.never)
-            .autocorrectionDisabled()
+          SnippetBodyEditor(text: $bodyText, language: language)
             .frame(minHeight: 160)
-            .accessibilityLabel(Text("Body"))
+          // highlight.js の言語を全部 (約 190) 並べるため、メニューではなく一覧の画面で選ばせる。
           Picker("Language", selection: $language) {
-            Text("Plain Text")
-              .tag(SnippetLanguage?.none)
-            ForEach(SnippetLanguage.allCases, id: \.self) { language in
-              Text(verbatim: language.displayName)
-                .tag(SnippetLanguage?.some(language))
+            Section {
+              Text("Plain Text")
+                .tag(String?.none)
+            }
+            Section {
+              ForEach(SnippetLanguage.allCases, id: \.self) { snippetLanguage in
+                Text(verbatim: snippetLanguage.displayName)
+                  .tag(String?.some(snippetLanguage.rawValue))
+              }
+            }
+            Section {
+              ForEach(snippetLanguagePickerOtherLanguageNames(highlightLanguageNames: snippetHighlightLanguageNames()), id: \.self) { languageName in
+                Text(verbatim: languageName)
+                  .tag(String?.some(languageName))
+              }
             }
           }
+          .pickerStyle(.navigationLink)
         }
         Section {
           TextField("Title", text: $title, prompt: Text("Uses the first line of the body"))
