@@ -50,8 +50,10 @@ if [ -z "${p12_password}" ]; then
   exit 2
 fi
 
-sparkle_private_key_file="$(mktemp)"
-trap 'rm -f "${sparkle_private_key_file}"' EXIT
+# generate_keys -x は既にあるファイルへ書き出さないため、自分だけが読めるディレクトリの中のまだ無いファイルを渡す。
+sparkle_private_key_directory="$(mktemp -d)"
+trap 'rm -rf "${sparkle_private_key_directory}"' EXIT
+sparkle_private_key_file="${sparkle_private_key_directory}/sparkle_private_key"
 "${sparkle_generate_keys}" --account "${SPARKLE_ACCOUNT}" -x "${sparkle_private_key_file}" > /dev/null
 if [ ! -s "${sparkle_private_key_file}" ]; then
   echo "Error: Sparkle の秘密鍵を書き出せなかった" >&2

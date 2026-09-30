@@ -100,15 +100,19 @@ jobs:
           ASC_API_KEY_P8_BASE64: ${{ secrets.ASC_API_KEY_P8_BASE64 }}
         run: make dmg
 
-      # 同じ tag で workflow を再実行した時は、失敗させずに asset を置き換える。
+      # 同じ tag で workflow を再実行した時は、公開済みの DMG を置き換えずに取得し直し、appcast にもその DMG を使う。
+      # 作り直した DMG は署名のタイムスタンプなどでバイト列が変わり、公開中の appcast の EdDSA の署名と合わなくなるため。
       - name: Publish the release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           version="${GITHUB_REF_NAME#v}"
-          dmg_path="tmp/distribution/Tanzaku-${version}.dmg"
-          if gh release view "${GITHUB_REF_NAME}" > /dev/null 2>&1; then
-            gh release upload "${GITHUB_REF_NAME}" "${dmg_path}" --clobber
+          dmg_name="Tanzaku-${version}.dmg"
+          dmg_path="tmp/distribution/${dmg_name}"
+          if gh release view "${GITHUB_REF_NAME}" --json assets --jq '.assets[].name' 2> /dev/null | grep -qxF "${dmg_name}"; then
+            gh release download "${GITHUB_REF_NAME}" --pattern "${dmg_name}" --dir tmp/distribution --clobber
+          elif gh release view "${GITHUB_REF_NAME}" > /dev/null 2>&1; then
+            gh release upload "${GITHUB_REF_NAME}" "${dmg_path}"
           else
             gh release create "${GITHUB_REF_NAME}" "${dmg_path}" \
               --verify-tag --title "Tanzaku ${version}" --generate-notes
