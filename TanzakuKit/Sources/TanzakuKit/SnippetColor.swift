@@ -13,3 +13,10 @@ public enum SnippetColor: String, CaseIterable, Sendable {
   /// 紫。
   case murasaki
 }
+
+extension Snippet {
+  /// 色の帯の色。raw value が無いか、知らない値 (新しい版のアプリが足した色) の時は色なしとして扱う。
+  public var color: SnippetColor? {
+    colorRawValue.flatMap(SnippetColor.init(rawValue:))
+  }
+}

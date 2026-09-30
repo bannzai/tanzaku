@@ -7,6 +7,12 @@ import os
 final class AppDelegate: NSObject, NSApplicationDelegate {
   /// ランチャーから新規作成に進んだ時の下書き。管理ウィンドウが読む。
   let newSnippetDraft = NewSnippetDraft()
+  /// ランチャーと管理ウィンドウが共有するストア。
+  ///
+  /// 管理ウィンドウの scene の中身が `applicationDidFinishLaunching` より先に作られても同じストアを渡せるよう、起動の完了を待たずに delegate を作る時に開く。
+  let modelContainerResult = Result { try makeMacModelContainer() }
+  /// 意味検索のベクトルを作り直した回数。管理ウィンドウが読む。
+  let snippetEmbeddingRevision = SnippetEmbeddingRevision()
   /// 管理ウィンドウを開く。SwiftUI の `openWindow` はビューの中でしか取れないため、管理ウィンドウのビューが表示された時に入れる。
   var openManagerWindow: (() -> Void)?
   /// ランチャー。ストアを開けなかった時は `nil` で、ランチャーは開かない。
@@ -20,12 +26,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
   func applicationDidFinishLaunching(_ notification: Notification) {
     let launcherPanelController: LauncherPanelController
     do {
-      launcherPanelController = LauncherPanelController(modelContainer: try makeMacModelContainer()) { [weak self] draftTitle in
+      launcherPanelController = LauncherPanelController(modelContainer: try modelContainerResult.get()) { [weak self] draftTitle in
         self?.openNewSnippetEditor(draftTitle: draftTitle)
       }
     } catch {
       logger.error("Failed to open the store: \(String(describing: error))")
       return
+    }
+    launcherPanelController.onSnippetEmbeddingsUpdate = { [weak self] in
+      self?.snippetEmbeddingRevision.value += 1
     }
     self.launcherPanelController = launcherPanelController
     do {

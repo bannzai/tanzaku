@@ -24,6 +24,8 @@ final class LauncherPanelController: NSObject, NSWindowDelegate {
   private var snippetEmbeddingIndexer: SnippetEmbeddingIndexer?
   /// 用意できた埋め込みモデルの `modelIdentifier`。検索の入力のベクトルを作ったモデルと、保存したベクトルのモデルを揃えるのに使う。
   private var snippetEmbeddingModelIdentifier: String?
+  /// 意味検索のベクトルを作り直した後に呼ぶ。管理ウィンドウが今の入力で検索し直すのに使う。
+  var onSnippetEmbeddingsUpdate: (() -> Void)?
   /// 実行中の意味検索。入力が変わったら古い入力の意味検索を取り消す。
   private var semanticSearchTask: Task<Void, Never>?
   /// 画面の状態。
@@ -166,16 +168,39 @@ final class LauncherPanelController: NSObject, NSWindowDelegate {
     launcherSelectedSnippet(searchResult: state.searchResult, selectedSnippetIndex: state.selectedSnippetIndex)?.id
   }
 
+  /// 管理ウィンドウの検索に渡す埋め込みモデル。入力のベクトルを `SnippetEmbeddingIndexer` でメインスレッドの外で作り、それを返すだけの埋め込みモデルにして返す。
+  ///
+  /// 埋め込みモデルを管理ウィンドウでもう 1 つ読み込むと、同じモデルをメモリに 2 つ持ち、推論がメインスレッドで動くため、ランチャーと同じ actor を使う。
+  /// 埋め込みモデルを用意できていない時・入力のベクトルを作れなかった時・取り消された時は `nil` を返し、呼び出し側は意味検索なしで検索する。
+  func semanticQueryEmbedder(query: String) async -> SnippetTextEmbedder? {
+    guard let snippetEmbeddingIndexer, let snippetEmbeddingModelIdentifier else {
+      return nil
+    }
+    do {
+      guard let queryVector = try await snippetEmbeddingIndexer.queryVector(query: query) else {
+        return nil
+      }
+      return SnippetTextEmbedder(modelIdentifier: snippetEmbeddingModelIdentifier) { _ in queryVector }
+    } catch is CancellationError {
+      return nil
+    } catch {
+      logger.error("Failed to embed the manager query: \(String(describing: error))")
+      return nil
+    }
+  }
+
   /// 意味検索のベクトルを今のスニペットに合わせ、パネルが開いていれば今の入力で検索し直す。管理ウィンドウ・MCP で変わったスニペットを、開くたびに意味検索へ反映するため。
   ///
   /// ベクトルは `SnippetEmbeddingIndexer` がメインスレッドの外で作る。変わっていないベクトルは作り直さないため、推論が走るのは追加・更新されたスニペットだけになる。
-  private func refreshSnippetEmbeddingsAndSearch() {
+  /// 管理ウィンドウがスニペットを保存・削除した後にも呼ぶため private にしない。
+  func refreshSnippetEmbeddingsAndSearch() {
     guard let snippetEmbeddingIndexer else {
       return
     }
     Task { [weak self] in
       do {
         try await snippetEmbeddingIndexer.updateEmbeddings()
+        self?.onSnippetEmbeddingsUpdate?()
       } catch {
         self?.logger.error("Failed to update snippet embeddings: \(String(describing: error))")
       }

@@ -14,6 +14,8 @@ struct TanzakuApp: App {
     Window("Tanzaku", id: managerWindowID) {
       ManagerWindowRoot(appDelegate: appDelegate)
     }
+    // デザインの管理ウィンドウの大きさ (`documents/design/Manager.dc.html` の 1280×800)。
+    .defaultSize(width: 1280, height: 800)
     #if DEBUG
       .commands {
         DeveloperCommands(appDelegate: appDelegate)
@@ -24,18 +26,36 @@ struct TanzakuApp: App {
 
 /// 管理ウィンドウの中身を包み、ランチャーから管理ウィンドウを開けるよう `openWindow` を delegate に渡す。
 private struct ManagerWindowRoot: View {
-  /// `openWindow` と新規作成の下書きを受け渡す delegate。
+  /// ストア・`openWindow`・新規作成の下書きを受け渡す delegate。
   let appDelegate: AppDelegate
   /// 管理ウィンドウを開く SwiftUI の操作。
   @Environment(\.openWindow) private var openWindow
 
   var body: some View {
-    ContentView()
-      .environment(appDelegate.newSnippetDraft)
-      .onAppear {
-        appDelegate.openManagerWindow = {
-          openWindow(id: managerWindowID)
-        }
+    Group {
+      switch appDelegate.modelContainerResult {
+      case .success(let modelContainer):
+        ManagerView(
+          semanticQueryEmbedder: { query in
+            await appDelegate.launcherPanelController?.semanticQueryEmbedder(query: query)
+          },
+          onSnippetsChange: {
+            appDelegate.launcherPanelController?.refreshSnippetEmbeddingsAndSearch()
+          }
+        )
+        .modelContainer(modelContainer)
+      case .failure(let error):
+        // ストアを開けなかった理由をユーザーが知れるよう、アプリを落とさずに出す。
+        Text(verbatim: error.localizedDescription)
+          .frame(minWidth: 480, minHeight: 320)
       }
+    }
+    .environment(appDelegate.newSnippetDraft)
+    .environment(appDelegate.snippetEmbeddingRevision)
+    .onAppear {
+      appDelegate.openManagerWindow = {
+        openWindow(id: managerWindowID)
+      }
+    }
   }
 }
