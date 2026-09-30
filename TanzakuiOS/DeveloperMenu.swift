@@ -119,13 +119,13 @@
     let itemDescriptions = OSAllocatedUnfairLock(initialState: [String]())
     let result = await withCheckedContinuation { (continuation: CheckedContinuation<Result<[String], any Error>, Never>) in
       query.foundItemsHandler = { searchableItems in
-        itemDescriptions.withLock { descriptions in
-          descriptions += searchableItems.map { searchableItem in
-            let attributeSet = searchableItem.attributeSet
-            return
-              "title=\(attributeSet.title ?? "nil") keywords=\(attributeSet.keywords ?? []) description=\(attributeSet.contentDescription ?? "nil") textContent=\(attributeSet.textContent == nil ? "nil" : "set")"
-          }
+        // `CSSearchableItem` は Sendable でなく、ロックの閉包へ持ち込めないため、先に文字列にする。
+        let foundItemDescriptions = searchableItems.map { searchableItem in
+          let attributeSet = searchableItem.attributeSet
+          return
+            "title=\(attributeSet.title ?? "nil") keywords=\(attributeSet.keywords ?? []) description=\(attributeSet.contentDescription ?? "nil") textContent=\(attributeSet.textContent == nil ? "nil" : "set")"
         }
+        itemDescriptions.withLock { $0 += foundItemDescriptions }
       }
       query.completionHandler = { error in
         continuation.resume(returning: error.map { .failure($0) } ?? .success(itemDescriptions.withLock { $0 }))
