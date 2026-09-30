@@ -46,6 +46,8 @@ struct SnippetGroupListView: View {
         }
       }
     }
+    // 足した行が 1 行分に潰れて描かれるのを防ぐため、件数が変わったら List を作り直す (理由は `SnippetListView` と同じ。simtunnel で新規グループの保存の直後に再現)。
+    .id(snippetGroups.count)
     .onDeleteCommand {
       if case .snippetGroup(let snippetGroupID) = selection {
         deletingSnippetGroup = snippetGroups.first { $0.id == snippetGroupID }
