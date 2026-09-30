@@ -50,10 +50,28 @@ let semanticSearchFixtureSnippets: [SemanticSearchFixtureSnippet] = [
   ),
 ]
 
-/// fixture のどのスニペットとも関係の無いクエリ。意味検索の最低の類似度を決めるため、関係の無いクエリの類似度を測るのに使う。
+/// fixture のどのスニペットとも関係の無いクエリ。関係の無いクエリで意味検索の結果を出さずに済むかを測るのに使う。
+///
+/// 0 件になる割合を 1 件あたり 5% の刻みで測れるよう 20 件にし、fixture の言語の比率に合わせて日本語を多くする。
 let semanticSearchFixtureUnrelatedQueries = [
   "明日の天気は晴れるかな",
   "近所のおいしいラーメン屋",
   "猫の写真を見たい",
   "what should I cook for dinner",
+  "週末に行く温泉を探す",
+  "子どもの誕生日プレゼント",
+  "肩こりに効くストレッチ",
+  "カレーの隠し味",
+  "富士山の標高",
+  "昨日の野球の試合結果",
+  "観葉植物の水やりの頻度",
+  "おすすめの推理小説",
+  "引っ越し業者の比較",
+  "電車の遅延情報",
+  "犬の散歩に良い公園",
+  "花粉症の薬",
+  "紅葉の見頃",
+  "how tall is mount everest",
+  "best hiking trails nearby",
+  "funny cat videos",
 ]

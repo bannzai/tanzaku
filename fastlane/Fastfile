@@ -1,6 +1,6 @@
-default_platform(:mac)
+default_platform(:ios)
 
-platform :mac do
+platform :ios do
   # fastlane/metadata と fastlane/screenshots を App Store Connect へ同期する。バイナリは別に
   # アップロードするため、この lane はビルドの提出も審査への提出もしない。
   lane :metadata_upload do
@@ -25,7 +25,7 @@ platform :mac do
       )
     end
     upload_to_app_store(
-      platform: 'osx',
+      platform: 'ios',
       force: true,
       sync_screenshots: true,
       run_precheck_before_submit: false,
