@@ -1449,6 +1449,16 @@
         }
       }
     },
+    "Welcome to Tanzaku" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tanzaku へようこそ"
+          }
+        }
+      }
+    },
     "Write your first snippet" : {
       "localizations" : {
         "ja" : {

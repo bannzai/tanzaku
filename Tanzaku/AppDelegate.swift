@@ -84,27 +84,32 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     let window =
       onboardingWindow
       ?? {
-        let window = NSWindow(
-          contentViewController: NSHostingController(
-            rootView: OnboardingView(
-              onSnippetsChange: { [weak self] in
-                self?.launcherPanelController?.refreshSnippetEmbeddingsAndSearch()
-              },
-              onFinish: { [weak self] in
-                self?.onboardingWindow?.close()
-              }
-            )
-            .modelContainer(modelContainer)
-            .environment(mcpServerController)
-            .environment(launcherShortcutController)
+        let hostingController = NSHostingController(
+          rootView: OnboardingView(
+            onSnippetsChange: { [weak self] in
+              self?.launcherPanelController?.refreshSnippetEmbeddingsAndSearch()
+            },
+            onFinish: { [weak self] in
+              self?.onboardingWindow?.close()
+            }
           )
+          .modelContainer(modelContainer)
+          .environment(mcpServerController)
+          .environment(launcherShortcutController)
         )
-        window.styleMask = [.titled, .closable, .fullSizeContentView]
+        // 大きさを SwiftUI に決めさせると、ウィンドウを作った時点では幅が 0 のまま `center()` が走り、画面の右へはみ出したため (simtunnel の 1024 x 768 の画面で確認)、内容の大きさを先に決める。
+        hostingController.sizingOptions = []
+        let window = NSWindow(contentViewController: hostingController)
+        window.styleMask = [.titled, .closable]
+        window.title = String(localized: "Welcome to Tanzaku")
         window.titleVisibility = .hidden
         window.titlebarAppearsTransparent = true
+        // 透明にしたタイトルバーの色を内容の背景と揃え、デザインの 1 枚の白いウィンドウに見せるため。
+        window.backgroundColor = NSColor(LauncherColors.panel)
         window.isReleasedWhenClosed = false
         window.delegate = self
         window.setAccessibilityIdentifier("onboardingWindow")
+        window.setContentSize(NSSize(width: onboardingContentWidth, height: onboardingContentHeight))
         window.center()
         onboardingWindow = window
         return window

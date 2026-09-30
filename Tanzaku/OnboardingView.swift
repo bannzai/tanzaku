@@ -2,6 +2,11 @@ import SwiftData
 import SwiftUI
 import TanzakuKit
 
+/// 初回起動のウィンドウの内容の幅。デザイン (`documents/design/Onboarding.dc.html`) の 760。
+let onboardingContentWidth: CGFloat = 760
+/// 初回起動のウィンドウの内容の高さ。デザインは 560 で、上の 40 はウィンドウの閉じるボタンの帯。帯はタイトルバーが受け持つため、内容はその下の高さにする。
+let onboardingContentHeight: CGFloat = 520
+
 /// 初回起動の 3 つの手順 (`documents/design/Onboarding.dc.html`)。ランチャーを開くキー・最初のスニペット・AI エージェントの接続を順に案内する。
 struct OnboardingView: View {
   /// 最初のスニペットを保存した後に呼ぶ。ランチャーの意味検索のベクトルを作り直す。
@@ -86,8 +91,7 @@ struct OnboardingView: View {
       .padding(.horizontal, 20)
       .frame(height: 60)
     }
-    // デザインは 760 x 560 で、上の 40 はウィンドウの閉じるボタンの帯。帯はタイトルバー (安全領域) が受け持つため、内容はその下の高さにする。
-    .frame(width: 760, height: 520)
+    .frame(width: onboardingContentWidth, height: onboardingContentHeight)
     .background(LauncherColors.panel)
   }
 
