@@ -16,6 +16,21 @@ public func snippetGroupMatchingTypedText(typedText: String, snippetGroups: [Sni
     .max { ($0.keyword ?? "").count < ($1.keyword ?? "").count }
 }
 
+/// iOS のカスタムキーボードでメニューを出すスニペットグループ。出さない時は `nil`。
+///
+/// `documentContextBeforeInput` は入力欄のカーソルより前の文字 (`UITextDocumentProxy.documentContextBeforeInput`)。Mac のようにキー入力を積み上げず、入力欄の文字で判定する。キーボードは入力欄の文字を読めるため、カーソルを動かした後や別のキーボードで打った後も正しく判定できる。
+/// `dismissedDocumentContextBeforeInput` はメニューを閉じた時のカーソルより前の文字。閉じてもキーワードは入力欄に残るため、同じ文字の間は出し直さない。続けて打つかカーソルを動かすと文字が変わり、また判定する。
+public func snippetGroupMatchingDocumentContext(
+  documentContextBeforeInput: String?,
+  dismissedDocumentContextBeforeInput: String?,
+  snippetGroups: [SnippetGroup]
+) -> SnippetGroup? {
+  guard let documentContextBeforeInput, documentContextBeforeInput != dismissedDocumentContextBeforeInput else {
+    return nil
+  }
+  return snippetGroupMatchingTypedText(typedText: documentContextBeforeInput, snippetGroups: snippetGroups)
+}
+
 /// スニペットグループのメニューに並べるスニペット。メニューの並び順で、消されたスニペットの項目は除く。
 public func snippetGroupMenuSnippets(snippetGroup: SnippetGroup) -> [Snippet] {
   sortedSnippetGroupItems(snippetGroup: snippetGroup).compactMap(\.snippet)
