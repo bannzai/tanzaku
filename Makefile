@@ -9,7 +9,7 @@ SIGNING_FLAGS ?= -allowProvisioningUpdates
 IOS_SCHEME := TanzakuiOS
 PACKAGE_DIR := TanzakuKit
 
-.PHONY: build-macos build-ios test clean
+.PHONY: build-macos build-ios test dmg clean
 
 build-macos:
 	xcodebuild -project $(XCODEPROJ) -scheme $(SCHEME) -configuration $(CONFIGURATION) -derivedDataPath $(DERIVED_DATA) -destination 'generic/platform=macOS' $(SIGNING_FLAGS) build
@@ -21,6 +21,10 @@ build-ios:
 test:
 	xcodebuild -project $(XCODEPROJ) -scheme $(SCHEME) -configuration $(CONFIGURATION) -derivedDataPath $(DERIVED_DATA) -destination 'platform=macOS' $(SIGNING_FLAGS) test
 	cd $(PACKAGE_DIR) && xcodebuild -scheme TanzakuKit -derivedDataPath $(CURDIR)/$(DERIVED_DATA) -destination 'platform=macOS' $(SIGNING_FLAGS) test
+
+# Developer ID で署名・公証・staple した Mac 版の DMG を tmp/distribution/Tanzaku-<版>.dmg に作る。必要な環境変数と証明書は AGENTS.md「Mac 版のリリース」。
+dmg:
+	bash scripts/macos/build_notarized_dmg.sh
 
 clean:
 	rm -rf $(DERIVED_DATA)
