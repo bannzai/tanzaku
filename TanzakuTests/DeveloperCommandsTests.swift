@@ -14,7 +14,7 @@
       let snippet = Snippet(body: "export API_TOKEN=dummy-token-for-test")
       modelContext.insert(snippet)
       snippet.folder = Folder(name: "dummy folder")
-      snippet.tags = [Tag(name: "shell"), Tag(name: "auth")]
+      snippet.tags = [TanzakuKit.Tag(name: "shell"), TanzakuKit.Tag(name: "auth")]
       let snippetGroup = SnippetGroup(name: "dummy group")
       modelContext.insert(snippetGroup)
       let snippetGroupItem = SnippetGroupItem(sortIndex: 0)
@@ -29,7 +29,7 @@
 
       #expect(try modelContext.fetchCount(FetchDescriptor<Snippet>()) == 0)
       #expect(try modelContext.fetchCount(FetchDescriptor<Folder>()) == 0)
-      #expect(try modelContext.fetchCount(FetchDescriptor<Tag>()) == 0)
+      #expect(try modelContext.fetchCount(FetchDescriptor<TanzakuKit.Tag>()) == 0)
       #expect(try modelContext.fetchCount(FetchDescriptor<SnippetGroupItem>()) == 0)
       #expect(try modelContext.fetchCount(FetchDescriptor<SnippetEmbedding>()) == 0)
       #expect(try modelContext.fetchCount(FetchDescriptor<SnippetGroup>()) == 1)
