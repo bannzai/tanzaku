@@ -20,6 +20,10 @@ final class LauncherShortcutController {
   @ObservationIgnored private var action: (() -> Void)?
   /// 記録中のキー入力の監視。記録していない時は `nil`。
   @ObservationIgnored private var recordingMonitor: Any?
+  /// 記録を始めたウィンドウ。このウィンドウのキー入力だけを記録に使う。
+  @ObservationIgnored private weak var recordingWindow: NSWindow?
+  /// 記録を始めたウィンドウがキーウィンドウでなくなったことの監視。記録していない時は `nil`。
+  @ObservationIgnored private var recordingWindowObserver: NSObjectProtocol?
 
   /// 保存したショートカットを読む。登録は `start(action:)` で行う。
   ///
@@ -40,18 +44,31 @@ final class LauncherShortcutController {
     }
   }
 
-  /// 次に押したキーを記録し始める。記録中なら何もしない。
+  /// 今のキーウィンドウで次に押したキーを記録し始める。記録中か、キーウィンドウが無ければ何もしない。
   ///
   /// 記録の間は今のショートカットを解除する。解除しないと、今と同じキーを押した時に Carbon が先に受け取ってランチャーが開き、記録できないため。
+  /// 記録に使うのは記録を始めたウィンドウのキー入力だけにし、そのウィンドウがキーウィンドウでなくなったら記録を取り消す。
+  /// ほかのウィンドウ (管理ウィンドウ等) の入力を奪うと、そこで文字を打てず、保存の ⌘S がショートカットとして記録されるため。
   func startRecording() {
-    guard !isRecording else {
+    guard !isRecording, let keyWindow = NSApp.keyWindow else {
       return
     }
     isRecording = true
+    recordingWindow = keyWindow
     try? registerGlobalHotKey(launcherShortcut: nil, action: action ?? {})
     recordingMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
-      self?.record(event: event)
+      guard let self, event.window === self.recordingWindow else {
+        return event
+      }
+      self.record(event: event)
       return nil
+    }
+    recordingWindowObserver = NotificationCenter.default.addObserver(forName: NSWindow.didResignKeyNotification, object: keyWindow, queue: .main) {
+      [weak self] _ in
+      // `queue: .main` を渡しているため、通知はメインスレッドで届く。
+      MainActor.assumeIsolated {
+        self?.cancelRecording()
+      }
     }
   }
 
@@ -84,12 +101,17 @@ final class LauncherShortcutController {
     apply(launcherShortcut: recordedShortcut)
   }
 
-  /// 記録のキー入力の監視を外す。
+  /// 記録のキー入力とウィンドウの監視を外す。
   private func finishRecording() {
     if let recordingMonitor {
       NSEvent.removeMonitor(recordingMonitor)
     }
+    if let recordingWindowObserver {
+      NotificationCenter.default.removeObserver(recordingWindowObserver)
+    }
     recordingMonitor = nil
+    recordingWindowObserver = nil
+    recordingWindow = nil
     isRecording = false
   }
 
