@@ -1,4 +1,4 @@
-/// 設定の「一般」の「前面のアプリに直接貼り付ける」を入れる `UserDefaults` のキー。設定画面 (#15) が書き込み、ランチャーは読むだけ。
+/// 設定の「一般」の「前面のアプリに直接貼り付ける」を入れる `UserDefaults` のキー。設定の「一般」(`GeneralSettingsView`) が書き込み、ランチャーは読むだけ。
 let directPasteEnabledUserDefaultsKey = "directPasteEnabled"
 
 /// ランチャーで選んだスニペットの出し方。

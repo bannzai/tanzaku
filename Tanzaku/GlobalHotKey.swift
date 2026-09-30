@@ -14,47 +14,58 @@ struct GlobalHotKeyError: Error, CustomStringConvertible {
   }
 }
 
-/// ランチャーのショートカットの既定のキー (Space)。`documents/DIRECTION.md`「決めたこと」の既定 ⌥Space。変更は設定の「一般」(#15) で行う。
-let launcherHotKeyCode = UInt32(kVK_Space)
-/// ランチャーのショートカットの既定の修飾キー (⌥)。
-let launcherHotKeyModifiers = UInt32(optionKey)
-
 /// 登録したショートカットが押された時に呼ぶ処理。Carbon のイベントハンドラは値を捕まえられない C の関数ポインタのため、ここに置いて参照する。
 private var globalHotKeyAction: (() -> Void)?
-/// 登録したショートカット。2 回目の呼び出しで重ねて登録しないために持つ。
+/// 登録したショートカット。登録し直す時に前のものを解除するために持つ。
 private var globalHotKeyRef: EventHotKeyRef?
+/// ショートカットが押されたイベントを受け取るハンドラを入れたか。ハンドラはアプリの終了まで 1 つだけ入れる。
+private var isGlobalHotKeyHandlerInstalled = false
 
-/// グローバルショートカットを登録し、押された時に `action` を呼ぶ。
+/// 前に登録したグローバルショートカットを解除し、`launcherShortcut` を登録し直す。押された時に `action` を呼ぶ。`launcherShortcut` が `nil` なら解除だけする。
 ///
 /// Carbon の `RegisterEventHotKey` を使う。アクセシビリティ・入力監視の許可が要らず、App Sandbox の中でも使えるため (ショートカットを受け取るだけで、ほかのキー入力は見ない)。
-/// 登録はアプリの終了まで解除しない。登録済みなら `action` だけを差し替えて何もしないため、何度呼んでも登録は 1 つになる。
-func registerGlobalHotKey(keyCode: UInt32, modifiers: UInt32, action: @escaping () -> Void) throws {
+/// 同じ引数で何度呼んでも、登録は `launcherShortcut` の 1 つになる。登録に失敗した時は何も登録していない状態で throw する。
+func registerGlobalHotKey(launcherShortcut: LauncherShortcut?, action: @escaping () -> Void) throws {
   globalHotKeyAction = action
-  if globalHotKeyRef != nil {
-    return
+  if !isGlobalHotKeyHandlerInstalled {
+    var eventType = EventTypeSpec(eventClass: OSType(kEventClassKeyboard), eventKind: UInt32(kEventHotKeyPressed))
+    let installStatus = InstallEventHandler(
+      GetApplicationEventTarget(),
+      { _, _, _ in
+        // アプリのイベントターゲットのハンドラはメインスレッドで呼ばれる。
+        MainActor.assumeIsolated {
+          globalHotKeyAction?()
+        }
+        return noErr
+      },
+      1,
+      &eventType,
+      nil,
+      nil
+    )
+    guard installStatus == noErr else {
+      throw GlobalHotKeyError(functionName: "InstallEventHandler", status: installStatus)
+    }
+    isGlobalHotKeyHandlerInstalled = true
   }
-  var eventType = EventTypeSpec(eventClass: OSType(kEventClassKeyboard), eventKind: UInt32(kEventHotKeyPressed))
-  let installStatus = InstallEventHandler(
-    GetApplicationEventTarget(),
-    { _, _, _ in
-      // アプリのイベントターゲットのハンドラはメインスレッドで呼ばれる。
-      MainActor.assumeIsolated {
-        globalHotKeyAction?()
-      }
-      return noErr
-    },
-    1,
-    &eventType,
-    nil,
-    nil
-  )
-  guard installStatus == noErr else {
-    throw GlobalHotKeyError(functionName: "InstallEventHandler", status: installStatus)
+  if let registeredHotKeyRef = globalHotKeyRef {
+    UnregisterEventHotKey(registeredHotKeyRef)
+    globalHotKeyRef = nil
+  }
+  guard let launcherShortcut else {
+    return
   }
   // 識別子はこのアプリで登録するショートカットが 1 つだけのため、区別に使わない固定の値にする。
   let hotKeyID = EventHotKeyID(signature: OSType(0x544E_5A4B), id: 1)
   var hotKeyRef: EventHotKeyRef?
-  let registerStatus = RegisterEventHotKey(keyCode, modifiers, hotKeyID, GetApplicationEventTarget(), 0, &hotKeyRef)
+  let registerStatus = RegisterEventHotKey(
+    launcherShortcut.keyCode,
+    launcherShortcut.carbonModifiers,
+    hotKeyID,
+    GetApplicationEventTarget(),
+    0,
+    &hotKeyRef
+  )
   guard registerStatus == noErr else {
     throw GlobalHotKeyError(functionName: "RegisterEventHotKey", status: registerStatus)
   }

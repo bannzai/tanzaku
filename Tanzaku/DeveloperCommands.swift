@@ -160,6 +160,13 @@
           Text(verbatim: "Show Sample Deletion Request")
         }
         Divider()
+        // 初回起動は終えると次の起動から出ないため、simtunnel で 3 つの手順を撮り直せるようにする。
+        Button {
+          appDelegate.showOnboardingWindow()
+        } label: {
+          Text(verbatim: "Show Onboarding")
+        }
+        Divider()
         Button {
           NSApp.appearance = NSAppearance(named: .aqua)
         } label: {
