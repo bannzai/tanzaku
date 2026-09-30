@@ -148,6 +148,22 @@ struct SnippetSearchTests {
     #expect(!(try searchSnippets(query: "query", modelContext: modelContext, embedder: embedder).semanticMatches.map(\.id).contains(orthogonalSnippet.id)))
   }
 
+  @Test("検索の意味検索は、クエリとの類似度が semanticMatchMinimumSimilarity 以下のスニペットを返さない")
+  func searchDropsSnippetsAtOrBelowMinimumSimilarity() throws {
+    let modelContext = ModelContext(try makeTanzakuModelContainer(storeLocation: .inMemory, syncedStoreCloudKitDatabase: .none))
+    let aboveSnippet = insertSnippet(modelContext: modelContext, body: "above dummy")
+    _ = insertSnippet(modelContext: modelContext, body: "below dummy")
+    let unitVector: (Float) -> [Float] = { similarity in [similarity, (1 - similarity * similarity).squareRoot(), 0] }
+    let embedder = lookupEmbedder(vectorsByText: [
+      "query": [1, 0, 0],
+      "above dummy": unitVector(semanticMatchMinimumSimilarity + 0.05),
+      "below dummy": unitVector(semanticMatchMinimumSimilarity - 0.05),
+    ])
+    try updateSnippetEmbeddings(modelContext: modelContext, embedder: embedder)
+
+    #expect(try searchSnippets(query: "query", modelContext: modelContext, embedder: embedder).semanticMatches.map(\.id) == [aboveSnippet.id])
+  }
+
   @Test("意味検索の結果は最大 3 件で、最低の類似度に届かないものは返さない")
   func semanticMatchesAreLimited() throws {
     let modelContext = ModelContext(try makeTanzakuModelContainer(storeLocation: .inMemory, syncedStoreCloudKitDatabase: .none))
