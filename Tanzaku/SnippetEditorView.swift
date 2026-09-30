@@ -23,8 +23,8 @@ struct SnippetEditorView: View {
   @State private var title: String
   /// 入力中のキーワード。
   @State private var keyword: String
-  /// 選んでいる言語。`nil` はプレーンテキスト。
-  @State private var language: SnippetLanguage?
+  /// 選んでいる言語 (`Snippet.language` の値)。`nil` はプレーンテキスト。
+  @State private var language: String?
   /// 選んでいる色。`nil` は色なし。
   @State private var color: SnippetColor?
   /// 選んでいるフォルダの識別子。サイドバーでフォルダを消しても消したモデルを参照しないよう、モデルではなく識別子で持ち、`folders` から引く。
@@ -53,7 +53,7 @@ struct SnippetEditorView: View {
     _bodyText = State(initialValue: snippet?.body ?? "")
     _title = State(initialValue: snippet?.title ?? draftTitle)
     _keyword = State(initialValue: snippet?.keyword ?? "")
-    _language = State(initialValue: snippet?.language.flatMap(SnippetLanguage.init(rawValue:)))
+    _language = State(initialValue: snippetLanguagePickerSelection(language: snippet?.language, highlightLanguageNames: snippetHighlightLanguageNames()))
     _color = State(initialValue: snippet?.color)
     _folderID = State(initialValue: snippet?.folder?.id)
     _tagNames = State(initialValue: (snippet?.tags ?? []).map(\.name).sorted())
@@ -93,10 +93,14 @@ struct SnippetEditorView: View {
           Text("Body")
             .foregroundStyle(.secondary)
           Picker("Language", selection: $language) {
-            Text("Plain Text").tag(SnippetLanguage?.none)
+            Text("Plain Text").tag(String?.none)
             Divider()
-            ForEach(SnippetLanguage.allCases, id: \.self) { language in
-              Text(verbatim: language.displayName).tag(SnippetLanguage?.some(language))
+            ForEach(SnippetLanguage.allCases, id: \.self) { snippetLanguage in
+              Text(verbatim: snippetLanguage.displayName).tag(String?.some(snippetLanguage.rawValue))
+            }
+            Divider()
+            ForEach(snippetLanguagePickerOtherLanguageNames(highlightLanguageNames: snippetHighlightLanguageNames()), id: \.self) { languageName in
+              Text(verbatim: languageName).tag(String?.some(languageName))
             }
           }
           .labelsHidden()
@@ -107,14 +111,11 @@ struct SnippetEditorView: View {
             NSPasteboard.general.setString(bodyText, forType: .string)
           }
         }
-        TextEditor(text: $bodyText)
-          .font(.system(size: 13, design: .monospaced))
-          .scrollContentBackground(.hidden)
+        SnippetBodyEditor(text: $bodyText, language: language)
           .padding(10)
           // 本文の背景はデザインの code の値 (`documents/design/Manager.dc.html` の LIGHT / DARK)。
           .background(appearanceAdaptiveColor(lightHex: 0xF6F7F9, darkHex: 0x19191B), in: RoundedRectangle(cornerRadius: 8))
           .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color(nsColor: .separatorColor)))
-          .accessibilityIdentifier("snippet-body-editor")
       }
       if let errorMessage {
         Text(verbatim: errorMessage)

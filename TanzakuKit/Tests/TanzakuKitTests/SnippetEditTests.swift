@@ -56,7 +56,7 @@ struct SnippetEditTests {
     let snippet = Snippet(body: "")
 
     try applySnippetEdit(
-      snippet: snippet, body: "echo dummy-token-for-test", title: "Dummy title", keyword: ";dummy", language: .shell, color: .ai,
+      snippet: snippet, body: "echo dummy-token-for-test", title: "Dummy title", keyword: ";dummy", language: SnippetLanguage.shell.rawValue, color: .ai,
       folder: folder, tagNames: [], modelContext: modelContext, now: now
     )
 

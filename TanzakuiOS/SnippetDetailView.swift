@@ -17,6 +17,8 @@ struct SnippetDetailView: View {
   @State private var snippetEditor: SnippetEditorTarget?
   /// 削除の保存の失敗。
   @State private var errorMessage: String?
+  /// 本文のハイライトの配色をライト・ダークで切り替える。
+  @Environment(\.colorScheme) private var colorScheme
 
   var body: some View {
     Form {
@@ -43,15 +45,16 @@ struct SnippetDetailView: View {
           }
         }
         LabeledContent("Language") {
-          if let language = snippet.language.flatMap(SnippetLanguage.init(rawValue:)) {
-            Text(verbatim: language.displayName)
+          // 編集画面の Picker と同じく、Picker に並ばない値はハイライトしないためプレーンテキストと出す。
+          if let language = snippetLanguagePickerSelection(language: snippet.language, highlightLanguageNames: snippetHighlightLanguageNames()) {
+            Text(verbatim: snippetLanguageDisplayName(language: language))
           } else {
             Text("Plain Text")
           }
         }
       }
       Section("Body") {
-        Text(verbatim: snippet.body)
+        Text(highlightedSnippetBody(body: snippet.body, language: snippet.language, colorScheme: colorScheme))
           .font(.callout.monospaced())
           .textSelection(.enabled)
           .frame(maxWidth: .infinity, alignment: .leading)
