@@ -107,6 +107,9 @@
 		7F1500000000000000000007 /* LauncherShortcutTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F1500000000000000000107 /* LauncherShortcutTests.swift */; };
 		7F1500000000000000000008 /* OnboardingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F1500000000000000000108 /* OnboardingTests.swift */; };
 		7F1500000000000000000009 /* HelpCommandsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F1500000000000000000109 /* HelpCommandsTests.swift */; };
+		7F2100000000000000000001 /* UpdateCommands.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F2100000000000000000101 /* UpdateCommands.swift */; };
+		7F2100000000000000000002 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = 7F2100000000000000000301 /* Sparkle */; };
+		7F2100000000000000000003 /* UpdateCommandsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F2100000000000000000103 /* UpdateCommandsTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -228,6 +231,9 @@
 		7F1500000000000000000107 /* LauncherShortcutTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LauncherShortcutTests.swift; sourceTree = "<group>"; };
 		7F1500000000000000000108 /* OnboardingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingTests.swift; sourceTree = "<group>"; };
 		7F1500000000000000000109 /* HelpCommandsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HelpCommandsTests.swift; sourceTree = "<group>"; };
+		7F2100000000000000000101 /* UpdateCommands.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateCommands.swift; sourceTree = "<group>"; };
+		7F2100000000000000000102 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		7F2100000000000000000103 /* UpdateCommandsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateCommandsTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -236,6 +242,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				7A1000000000000000000002 /* TanzakuKit in Frameworks */,
+				7F2100000000000000000002 /* Sparkle in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -353,6 +360,8 @@
 				7F1500000000000000000104 /* OnboardingView.swift */,
 				7F1500000000000000000105 /* GeneralSettingsView.swift */,
 				7F1500000000000000000106 /* HelpCommands.swift */,
+				7F2100000000000000000101 /* UpdateCommands.swift */,
+				7F2100000000000000000102 /* Info.plist */,
 				490F39DA27F8967A83114754 /* Localizable.xcstrings */,
 				AB8FE1D8A6D581E6DF71B10D /* Tanzaku.entitlements */,
 				8A6FB295041B82E946869DF6 /* TanzakuApp.swift */,
@@ -387,6 +396,7 @@
 				7F1500000000000000000107 /* LauncherShortcutTests.swift */,
 				7F1500000000000000000108 /* OnboardingTests.swift */,
 				7F1500000000000000000109 /* HelpCommandsTests.swift */,
+				7F2100000000000000000103 /* UpdateCommandsTests.swift */,
 			);
 			path = TanzakuTests;
 			sourceTree = "<group>";
@@ -427,6 +437,7 @@
 			name = Tanzaku;
 			packageProductDependencies = (
 				7A1000000000000000000081 /* TanzakuKit */,
+				7F2100000000000000000301 /* Sparkle */,
 			);
 			productName = Tanzaku;
 			productReference = E804D807AB678D0394017B55 /* Tanzaku.app */;
@@ -514,6 +525,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				7A1000000000000000000071 /* XCLocalSwiftPackageReference "TanzakuKit" */,
+				7F2100000000000000000201 /* XCRemoteSwiftPackageReference "Sparkle" */,
 			);
 			preferredProjectObjectVersion = 77;
 			projectDirPath = "";
@@ -573,6 +585,7 @@
 				7F1500000000000000000007 /* LauncherShortcutTests.swift in Sources */,
 				7F1500000000000000000008 /* OnboardingTests.swift in Sources */,
 				7F1500000000000000000009 /* HelpCommandsTests.swift in Sources */,
+				7F2100000000000000000003 /* UpdateCommandsTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -628,6 +641,7 @@
 				7F1500000000000000000004 /* OnboardingView.swift in Sources */,
 				7F1500000000000000000005 /* GeneralSettingsView.swift in Sources */,
 				7F1500000000000000000006 /* HelpCommands.swift in Sources */,
+				7F2100000000000000000001 /* UpdateCommands.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -770,8 +784,10 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Tanzaku/Tanzaku.entitlements;
 				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = "$(MARKETING_VERSION)";
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Tanzaku/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Tanzaku;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
@@ -864,8 +880,10 @@
 				CODE_SIGNING_ALLOWED = NO;
 				CODE_SIGN_ENTITLEMENTS = Tanzaku/Tanzaku.entitlements;
 				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = "$(MARKETING_VERSION)";
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Tanzaku/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Tanzaku;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
@@ -886,8 +904,10 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Tanzaku/Tanzaku.entitlements;
 				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = "$(MARKETING_VERSION)";
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Tanzaku/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Tanzaku;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
@@ -1218,6 +1238,17 @@
 		};
 /* End XCLocalSwiftPackageReference section */
 
+/* Begin XCRemoteSwiftPackageReference section */
+		7F2100000000000000000201 /* XCRemoteSwiftPackageReference "Sparkle" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/sparkle-project/Sparkle";
+			requirement = {
+				kind = exactVersion;
+				version = 2.10.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
 /* Begin XCSwiftPackageProductDependency section */
 		7A1000000000000000000081 /* TanzakuKit */ = {
 			isa = XCSwiftPackageProductDependency;
@@ -1230,6 +1261,11 @@
 		7F1000000000000000000083 /* TanzakuKit */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = TanzakuKit;
+		};
+		7F2100000000000000000301 /* Sparkle */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 7F2100000000000000000201 /* XCRemoteSwiftPackageReference "Sparkle" */;
+			productName = Sparkle;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

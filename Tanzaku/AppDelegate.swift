@@ -1,4 +1,5 @@
 import AppKit
+import Sparkle
 import SwiftData
 import SwiftUI
 import TanzakuKit
@@ -38,6 +39,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
   }
   /// ランチャーのショートカット。設定の「一般」と初回起動が変える。
   let launcherShortcutController = LauncherShortcutController(userDefaults: .standard)
+  /// Sparkle の更新の確認。アプリのメニューの「アップデートを確認…」が使う。
+  ///
+  /// 自動の確認は Info.plist の `SUEnableAutomaticChecks` でオンにし、Sparkle が 2 回目の起動で出す「自動で確認しますか」のダイアログを出さない。ユニットテストはこのアプリを起動して走るため、起動時のダイアログを避ける (`applicationDidFinishLaunching` と同じ理由)。
+  let updaterController = SPUStandardUpdaterController(startingUpdater: true, updaterDelegate: nil, userDriverDelegate: nil)
   /// 初回起動のウィンドウ。出していない時は `nil`。
   private var onboardingWindow: NSWindow?
   /// 起動時の準備の失敗の記録。

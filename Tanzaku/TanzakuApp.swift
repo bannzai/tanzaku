@@ -17,6 +17,7 @@ struct TanzakuApp: App {
     // デザインの管理ウィンドウの大きさ (`documents/design/Manager.dc.html` の 1280×800)。
     .defaultSize(width: 1280, height: 800)
     .commands {
+      UpdateCommands(updater: appDelegate.updaterController.updater)
       HelpCommands()
       #if DEBUG
         DeveloperCommands(appDelegate: appDelegate)
