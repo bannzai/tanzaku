@@ -94,6 +94,10 @@ macOS の画面デザインは `documents/design/` (Claude の Design キャン�
 | 2026-09-28 | 実装 | iOS の一覧は行のタップで本文をコピーする (iPad はタップした行を詳細の列にも出す)。ほかのアプリの入力欄へ貼るのが主な使い方のため。編集・削除は行のスワイプと長押しのメニュー、追加と編集は sheet に置く。iPhone は起動した時に「すべてのスニペット」の一覧から始める。編集の保存と検査は Mac の管理ウィンドウと同じく、入力を画面の状態に持ち `applySnippetEdit` / `applySnippetGroupEdit` を通った時だけ書き込む | agent |
 | 2026-09-28 | 実装 | iOS のサイドバーはスニペットグループを絞り込みの 1 つとして並べ、選ぶとグループのメニューの順でスニペットを出す (`documents/PROJECT.md`「iOS > 本体アプリ」の「スニペットグループで絞り込む」)。グループの追加・編集・削除はサイドバーの行から行う。Mac の管理ウィンドウのようにグループの一覧と編集の列を分けると、iPhone では画面が 1 段深くなるため | agent |
 | 2026-09-28 | 実装 | iOS の意味検索のベクトルと検索の入力のベクトルは、Mac と同じ `SnippetEmbeddingIndexer` (メインスレッドの外の actor) で作る | agent |
+| 2026-09-30 | 実装 | iOS の共有シートの拡張は、本体と同じ編集画面 (`SnippetEditorView`) に共有された文字列 (URL は文字列にし、複数あれば改行でつなぐ) を本文の初期値にして出し、本体と同じ共有コンテナのストアへ保存する。拡張では意味検索の埋め込みモデルを読み込まず、ベクトルは本体を開いた時に作る。共有シートの拡張はメモリの上限が小さく、ベクトルは本文から作り直せるため | agent |
+| 2026-09-30 | 実装 | Spotlight の索引には、タイトル (無ければキーワード) を項目の名前、キーワードを説明と検索語として入れ、タイトルもキーワードも無いスニペットは入れない。本文の 1 行目を名前にすると本文が索引に入るため。索引は本体の一覧のスニペットが変わるたびに、スニペットの項目をすべて消してから入れ直す (消したスニペットを残さず、何度入れ直しても同じになるため)。Spotlight で選んだスニペットは、iPad は詳細の列、iPhone は詳細を sheet で開く。iPhone の画面には詳細の列が無いため | agent |
+| 2026-09-30 | 実装 | CI と simtunnel の iOS のビルドは、アプリと共有シートの拡張を ad-hoc 署名 (`CODE_SIGN_IDENTITY = -`) にし、App Group の entitlement を入れる。CI は Debug 構成に `make` の `SIGNING_FLAGS` で、simtunnel は `DebugUnsigned` 構成の build settings で指定する (simtunnel の reusable workflow は署名のフラグを渡せないため)。`DebugUnsigned` を署名しない (`CODE_SIGNING_ALLOWED = NO`) ままにすると、simtunnel の Simulator で `containerURL(forSecurityApplicationGroupIdentifier:)` が `nil` を返し、ストアを開けなかった (2026-09-30 に撮影で確かめた) | agent |
+| 2026-09-30 | 実装 | App Intents (スニペットを選んでコピーする intent) は拡張を作らず本体のアプリのプロセスで動かし、本体と同じ `ModelContainer` を使う。ショートカットの選択肢の検索は文字列の一致だけにし、意味検索は使わない。埋め込みモデルの用意に数秒かかり、選択肢の入力のたびに待たせるため | agent |
 
 ## agent に任せること
 
