@@ -51,15 +51,16 @@ nonisolated struct SnippetAppEntityQuery: EntityStringQuery {
 /// スニペットを選んで本文をクリップボードへコピーする intent。ショートカット・アクションボタンから使う (`documents/PROJECT.md`「iOS > Spotlight・App Intents」)。
 ///
 /// アプリを前面に出さずにコピーだけ済ませるため、アプリを開かない (`openAppWhenRun` の既定の `false`)。
-/// `@Parameter` の可変のプロパティは nonisolated の型に置けないため、ほかの App Intents の型と違い nonisolated にしない。`perform()` はメインスレッドの外から呼ばれるため、ストアとクリップボードはメインスレッドの関数に任せる。
-struct CopySnippetIntent: AppIntent {
+/// `@Parameter` の可変のプロパティは nonisolated の型に置けないため、型は nonisolated にせず、App Intents が呼ぶ要素と準拠を nonisolated にする。
+/// App Intents はメインスレッドの外でこの型を作り、名前を読み、`perform()` を呼ぶ。メインスレッドに縛った準拠のままでは、ショートカットから実行すると「Unable to run App Shortcut」で失敗したため (2026-09-30 に simtunnel の Simulator で確かめた)。ストアとクリップボードはメインスレッドの関数に任せる。
+struct CopySnippetIntent: nonisolated AppIntent {
   /// ショートカットの画面に出す名前。
-  static var title: LocalizedStringResource {
+  nonisolated static var title: LocalizedStringResource {
     "Copy Snippet"
   }
 
   /// ショートカットの画面に出す説明。
-  static var description: IntentDescription {
+  nonisolated static var description: IntentDescription {
     IntentDescription("Copies the body of the selected snippet to the clipboard.")
   }
 
@@ -67,15 +68,18 @@ struct CopySnippetIntent: AppIntent {
   @Parameter(title: "Snippet")
   var snippet: SnippetAppEntity
 
+  /// App Intents がメインスレッドの外から作るため nonisolated にする。値はショートカットが `snippet` に入れる。
+  nonisolated init() {}
+
   /// 選んだスニペットの本文をコピーし、コピーしたスニペットの名前を伝える。
-  func perform() async throws -> some IntentResult & ProvidesDialog {
+  nonisolated func perform() async throws -> some IntentResult & ProvidesDialog {
     let copiedSnippetTitle = try await copySnippetBodyForIntent(snippetID: snippet.id)
     return .result(dialog: "Copied “\(copiedSnippetTitle)”")
   }
 }
 
-/// ショートカットのアプリに、設定なしで出す intent。`CopySnippetIntent` を作るため、それと同じくメインスレッドに置く。
-struct TanzakuAppShortcuts: AppShortcutsProvider {
+/// ショートカットのアプリに、設定なしで出す intent。App Intents がメインスレッドの外から読むため nonisolated にする。
+nonisolated struct TanzakuAppShortcuts: AppShortcutsProvider {
   /// スニペットをコピーする intent。
   static var appShortcuts: [AppShortcut] {
     AppShortcut(

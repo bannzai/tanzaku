@@ -1,4 +1,5 @@
 #if DEBUG
+  import CoreSpotlight
   import SwiftData
   import SwiftUI
   import TanzakuKit
@@ -39,9 +40,18 @@
     @Environment(SnippetEmbeddingController.self) private var snippetEmbeddingController
     /// 選んでいる外観。
     @AppStorage(developerAppearanceUserDefaultsKey) private var developerAppearance = DeveloperAppearance.system
+    /// Spotlight の索引を調べた結果。表示している間だけ値を持つ。
+    @State private var spotlightIndexReport: String?
 
     var body: some View {
       Menu {
+        Button {
+          Task {
+            spotlightIndexReport = await snippetSpotlightIndexReport()
+          }
+        } label: {
+          Text(verbatim: "Check Spotlight Index")
+        }
         Button {
           insertSampleSnippets(modelContext: modelContext)
           Task {
@@ -73,7 +83,58 @@
         }
       }
       .accessibilityIdentifier("developerMenu")
+      .alert(
+        Text(verbatim: "Spotlight Index"),
+        isPresented: Binding(get: { spotlightIndexReport != nil }, set: { _ in spotlightIndexReport = nil })
+      ) {
+        Button {
+        } label: {
+          Text(verbatim: "OK")
+        }
+      } message: {
+        Text(verbatim: spotlightIndexReport ?? "")
+      }
     }
+  }
+
+  /// このアプリが Spotlight の索引に入れた項目を読み、件数と項目ごとのタイトル・キーワード・説明・本文の属性 (`textContent`) の有無を並べた文言を返す。
+  ///
+  /// simtunnel の Simulator の Spotlight の画面はこのアプリ自体も検索結果に出さず、画面では索引の中身を確かめられなかったため、アプリの中から索引を読む。
+  private func snippetSpotlightIndexReport() async -> String {
+    switch await snippetSpotlightIndexedItemDescriptions() {
+    case .success(let itemDescriptions):
+      (["\(itemDescriptions.count) items"] + itemDescriptions).joined(separator: "\n")
+    case .failure(let error):
+      "Failed: \(error)"
+    }
+  }
+
+  /// `CSSearchQuery` でこのアプリが索引に入れた項目 (どれもタイトルを持つ) をすべて読み、項目ごとの説明の文字列を返す。
+  ///
+  /// `CSSearchQuery` の結果の通知はメインスレッドの外で呼ばれるため、メインスレッドに縛らないよう nonisolated にする。
+  private nonisolated func snippetSpotlightIndexedItemDescriptions() async -> Result<[String], any Error> {
+    let queryContext = CSSearchQueryContext()
+    queryContext.fetchAttributes = ["title", "keywords", "contentDescription", "textContent"]
+    let query = CSSearchQuery(queryString: "title == \"*\"", queryContext: queryContext)
+    let itemDescriptions = OSAllocatedUnfairLock(initialState: [String]())
+    let result = await withCheckedContinuation { (continuation: CheckedContinuation<Result<[String], any Error>, Never>) in
+      query.foundItemsHandler = { searchableItems in
+        itemDescriptions.withLock { descriptions in
+          descriptions += searchableItems.map { searchableItem in
+            let attributeSet = searchableItem.attributeSet
+            return
+              "title=\(attributeSet.title ?? "nil") keywords=\(attributeSet.keywords ?? []) description=\(attributeSet.contentDescription ?? "nil") textContent=\(attributeSet.textContent == nil ? "nil" : "set")"
+          }
+        }
+      }
+      query.completionHandler = { error in
+        continuation.resume(returning: error.map { .failure($0) } ?? .success(itemDescriptions.withLock { $0 }))
+      }
+      query.start()
+    }
+    // 結果が届くまで問い合わせを解放しないため。
+    withExtendedLifetime(query) {}
+    return result
   }
 
   /// デザイン (`documents/design/Manager.dc.html`) の例と同じスニペット・フォルダ・タグ・スニペットグループを入れる。同じキーワードのスニペットがあれば入れないため、何度押しても増えない。
