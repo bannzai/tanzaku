@@ -21,11 +21,18 @@ struct SnippetListView: View {
   @Query private var tags: [Tag]
   /// 削除の確認を出しているスニペット。
   @State private var deletingSnippet: Snippet?
+  /// 検索欄に入力がある時の検索の結果の識別子 (一致の強い順)。
+  ///
+  /// 検索は意味検索の推論を含み重いため、描画のたびではなく `.task(id:)` で入力が止まった時だけ行い、結果をここに持つ。
+  /// 検索の後に消されたスニペットを参照しないよう、モデルではなく識別子で持ち、描画の時に `snippets` から引く。
+  @State private var searchedSnippetIDs: [UUID] = []
 
   var body: some View {
-    // 検索に失敗した時 (ストアの読み込みの失敗) は、誤った結果を出さないよう空の一覧にする。
+    let isSearching = !searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     let listedSnippets =
-      (try? filteredSnippets(query: searchText, filter: filter, snippets: snippets, modelContext: modelContext, embedder: embedder)) ?? []
+      isSearching
+      ? searchedSnippetIDs.compactMap { snippetID in snippets.first { $0.id == snippetID } }
+      : snippets.filter { snippetMatchesLibraryFilter(snippet: $0, filter: filter) }
     List(selection: $selection) {
       ForEach(Array(listedSnippets.enumerated()), id: \.element.id) { index, snippet in
         SnippetRow(snippet: snippet)
@@ -39,8 +46,33 @@ struct SnippetListView: View {
       }
     }
     // macOS の List は足した行の高さを 1 行分に潰して描き、測り直さなかった (ローカルの Debug ビルドで新規作成した直後に再現。
-    // 行の中身をそろえる・選ぶ時機をずらすのでは直らなかった)。スニペットの件数が変わったら List を作り直して、すべての行を測り直させる。
-    .id(snippets.count)
+    // 行の中身をそろえる・選ぶ時機をずらすのでは直らなかった)。出す行が変わったら List を作り直して、すべての行を測り直させる。
+    // 検索の結果も描画の後に届いて行が変わるため、件数ではなく出す行の並びで作り直す。
+    .id(listedSnippets.map(\.id))
+    .task(
+      id: SnippetSearchTaskID(
+        query: searchText,
+        filter: filter,
+        snippetIDs: snippets.map(\.id),
+        snippetUpdatedAts: snippets.map(\.updatedAt),
+        embedderModelIdentifier: embedder?.modelIdentifier
+      )
+    ) {
+      guard isSearching else {
+        searchedSnippetIDs = []
+        return
+      }
+      // 入力の 1 文字ごとに意味検索の推論を走らせないよう、入力が止まってから検索する。250 ミリ秒は、打鍵の間隔 (1 文字あたりおよそ 100〜200 ミリ秒) より長く、止めてから結果が出るまでの遅れに気づきにくい長さ。
+      do {
+        try await Task.sleep(for: .milliseconds(250))
+      } catch {
+        return
+      }
+      // 検索に失敗した時 (ストアの読み込みの失敗) は、誤った結果を出さないよう空の一覧にする。
+      searchedSnippetIDs =
+        ((try? filteredSnippets(query: searchText, filter: filter, snippets: snippets, modelContext: modelContext, embedder: embedder)) ?? [])
+        .map(\.id)
+    }
     .onDeleteCommand {
       if case .snippet(let snippetID) = selection {
         deletingSnippet = snippets.first { $0.id == snippetID }
@@ -64,6 +96,20 @@ struct SnippetListView: View {
       Text(verbatim: tags.first { $0.id == tagID }?.name ?? "")
     }
   }
+}
+
+/// 一覧の検索をやり直す条件。入力・絞り込み・スニペットの追加と更新と削除・埋め込みモデルのどれかが変わったら検索し直す。
+private struct SnippetSearchTaskID: Hashable {
+  /// 検索欄に入力した文字列。
+  let query: String
+  /// サイドバーで選んだ絞り込み。
+  let filter: SnippetLibraryFilter
+  /// すべてのスニペットの識別子。追加・削除で変わる。
+  let snippetIDs: [UUID]
+  /// すべてのスニペットの更新日時。更新で変わる。
+  let snippetUpdatedAts: [Date]
+  /// 意味検索に使う埋め込みモデル。起動後に用意できた時に検索し直すため。
+  let embedderModelIdentifier: String?
 }
 
 /// スニペットの一覧の 1 行。色の帯・名前・更新日・本文の 1 行目・キーワード (`documents/design/Manager.dc.html`)。
