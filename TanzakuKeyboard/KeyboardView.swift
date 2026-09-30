@@ -204,11 +204,15 @@ struct KeyboardView: View {
   /// メニューで選んだスニペットを、打ったキーワードを消してから入れる。
   ///
   /// メニューを出した後に入力欄の文字がキーワードで終わらなくなっていたら (ほかの操作で変わった)、関係の無い文字を消さないよう何もせずメニューを閉じる。
+  /// 文字を選んでいる時も何もしない。最初の `deleteBackward()` がキーワードではなく選んだ文字を消すため。
   private func insertSnippetGroupItem(snippet: Snippet, snippetGroup: SnippetGroup) {
     defer {
       matchedSnippetGroup = nil
     }
-    guard let keyword = snippetGroup.keyword, textDocumentProxy.documentContextBeforeInput?.hasSuffix(keyword) == true else {
+    guard let keyword = snippetGroup.keyword,
+      textDocumentProxy.documentContextBeforeInput?.hasSuffix(keyword) == true,
+      textDocumentProxy.selectedText?.isEmpty ?? true
+    else {
       return
     }
     for _ in 0..<snippetGroupKeywordBackspaceCount(keyword: keyword) {
@@ -220,13 +224,18 @@ struct KeyboardView: View {
   /// 入力欄のカーソルより前の文字から、メニューを出すスニペットグループを決め直す。スニペットの一覧を出している間とストアを読めない時は出さない。
   ///
   /// スニペットグループはキー入力のたびにストアから読む (Mac と同じ。`documents/DIRECTION.md`「決めたこと」)。
+  /// 入力欄の文字がメニューを閉じた時から変わったら、閉じた時の文字を捨てる。捨てないと、閉じた後に打ち直して同じ文字に戻った時もメニューを出さないため。
   private func refreshMatchedSnippetGroup() {
     guard !isShowingSnippets, case .success(let modelContainer) = keyboardModelContainerResult else {
       matchedSnippetGroup = nil
       return
     }
+    let documentContextBeforeInput = textDocumentProxy.documentContextBeforeInput
+    if documentContextBeforeInput != dismissedDocumentContextBeforeInput {
+      dismissedDocumentContextBeforeInput = nil
+    }
     matchedSnippetGroup = snippetGroupMatchingDocumentContext(
-      documentContextBeforeInput: textDocumentProxy.documentContextBeforeInput,
+      documentContextBeforeInput: documentContextBeforeInput,
       dismissedDocumentContextBeforeInput: dismissedDocumentContextBeforeInput,
       snippetGroups: (try? modelContainer.mainContext.fetch(FetchDescriptor<SnippetGroup>())) ?? []
     )
