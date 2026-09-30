@@ -8,6 +8,8 @@ final class LauncherState {
   var query = ""
   /// `query` で検索した結果。
   var searchResult = SnippetSearchResult(keywordMatches: [], semanticMatches: [])
+  /// `query` の意味検索 (入力のベクトルの推論) が終わっていないか。
+  var isSemanticSearchPending = false
   /// ↑↓ で選んでいるスニペットの `launcherSelectableSnippets(searchResult:)` での位置。結果が無ければ `nil`。
   var selectedSnippetIndex: Int?
   /// パネルを開いた回数。開くたびに検索欄へフォーカスを戻すきっかけに使う。

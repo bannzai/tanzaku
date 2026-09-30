@@ -89,9 +89,19 @@ struct LauncherResultListTests {
     let emptySearchResult = SnippetSearchResult(keywordMatches: [], semanticMatches: [])
     let searchResult = SnippetSearchResult(keywordMatches: [], semanticMatches: [makeSnippet(body: "echo dummy")])
 
-    #expect(launcherContentState(query: " \n", searchResult: searchResult) == .idle)
-    #expect(launcherContentState(query: "env", searchResult: searchResult) == .results)
-    #expect(launcherContentState(query: "ステージングの DB につなぐ", searchResult: emptySearchResult) == .empty)
+    #expect(launcherContentState(query: " \n", searchResult: searchResult, isSemanticSearchPending: false) == .idle)
+    #expect(launcherContentState(query: "env", searchResult: searchResult, isSemanticSearchPending: false) == .results)
+    #expect(launcherContentState(query: "ステージングの DB につなぐ", searchResult: emptySearchResult, isSemanticSearchPending: false) == .empty)
+  }
+
+  @Test("結果が無くても意味検索を待っている間は結果なしの案内を出さず、結果があれば待っていても結果の欄を出す")
+  func contentStateWaitsForSemanticSearch() {
+    let emptySearchResult = SnippetSearchResult(keywordMatches: [], semanticMatches: [])
+    let searchResult = SnippetSearchResult(keywordMatches: [SnippetKeywordMatch(snippet: makeSnippet(body: "echo dummy", keyword: "env"), kind: .keywordExact)], semanticMatches: [])
+
+    #expect(launcherContentState(query: "ステージングの DB につなぐ", searchResult: emptySearchResult, isSemanticSearchPending: true) == .searching)
+    #expect(launcherContentState(query: "env", searchResult: searchResult, isSemanticSearchPending: true) == .results)
+    #expect(launcherContentState(query: " ", searchResult: emptySearchResult, isSemanticSearchPending: true) == .idle)
   }
 
   @Test("キーワードの完全一致・前方一致は入力の文字数だけ先頭を太字にし、タイトル・本文の一致は太字にしない")
@@ -122,7 +132,7 @@ struct LauncherResultListTests {
 
     let searchResult = try searchSnippets(query: "env", modelContext: modelContext, embedder: nil)
 
-    #expect(launcherContentState(query: "env", searchResult: searchResult) == .results)
+    #expect(launcherContentState(query: "env", searchResult: searchResult, isSemanticSearchPending: false) == .results)
     #expect(
       launcherSelectableSnippets(searchResult: searchResult).map(\.id) == [exactMatchedSnippet.id, prefixMatchedSnippet.id, bodyMatchedSnippet.id]
     )

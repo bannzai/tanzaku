@@ -99,6 +99,7 @@ final class LauncherPanelController: NSObject, NSWindowDelegate {
     semanticSearchTask?.cancel()
     state.query = ""
     state.searchResult = SnippetSearchResult(keywordMatches: [], semanticMatches: [])
+    state.isSemanticSearchPending = false
     state.selectedSnippetIndex = nil
   }
 
@@ -115,27 +116,36 @@ final class LauncherPanelController: NSObject, NSWindowDelegate {
     let query = state.query
     semanticSearchTask?.cancel()
     guard let snippetEmbeddingIndexer, let snippetEmbeddingModelIdentifier else {
+      state.isSemanticSearchPending = false
       applySearchResult(query: query, embedder: nil, selectedSnippetID: keepsSelection ? selectedSnippetID() : nil)
       return
     }
+    state.isSemanticSearchPending = true
     if !keepsSelection {
       applySearchResult(query: query, embedder: nil, selectedSnippetID: nil)
     }
     semanticSearchTask = Task { [weak self] in
+      let queryVector: [Float]?
       do {
-        guard let queryVector = try await snippetEmbeddingIndexer.queryVector(query: query), !Task.isCancelled, let self, self.state.query == query else {
-          return
-        }
+        queryVector = try await snippetEmbeddingIndexer.queryVector(query: query)
+      } catch is CancellationError {
+        return
+      } catch {
+        self?.logger.error("Failed to embed the query: \(String(describing: error))")
+        queryVector = nil
+      }
+      // 入力が変わって取り消された検索は、新しい入力の検索が待ちの状態を持つため、何もしない。
+      guard !Task.isCancelled, let self, self.state.query == query else {
+        return
+      }
+      self.state.isSemanticSearchPending = false
+      if let queryVector {
         // 入力のベクトルは作り終えているため、検索にはそれを返すだけの埋め込みモデルを渡す。
         self.applySearchResult(
           query: query,
           embedder: SnippetTextEmbedder(modelIdentifier: snippetEmbeddingModelIdentifier) { _ in queryVector },
           selectedSnippetID: self.selectedSnippetID()
         )
-      } catch is CancellationError {
-        return
-      } catch {
-        self?.logger.error("Failed to embed the query: \(String(describing: error))")
       }
     }
   }
@@ -227,7 +237,7 @@ final class LauncherPanelController: NSObject, NSWindowDelegate {
 
   /// 結果なしの時だけ、入力した言葉を下書きにして管理ウィンドウの編集を開く (`documents/design/LauncherEmpty.dc.html`)。
   private func createSnippetFromQuery() {
-    guard launcherContentState(query: state.query, searchResult: state.searchResult) == .empty else {
+    guard launcherContentState(query: state.query, searchResult: state.searchResult, isSemanticSearchPending: state.isSemanticSearchPending) == .empty else {
       return
     }
     // close() が入力を空にするため、閉じる前に下書きのタイトルを取っておく。

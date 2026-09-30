@@ -19,8 +19,8 @@ struct LauncherView: View {
     VStack(spacing: 0) {
       queryField
       LauncherLine()
-      switch launcherContentState(query: state.query, searchResult: state.searchResult) {
-      case .idle:
+      switch contentState {
+      case .idle, .searching:
         Spacer(minLength: 0)
       case .results:
         results
@@ -57,7 +57,7 @@ struct LauncherView: View {
         .onChange(of: state.query) {
           onQueryChange()
         }
-      if launcherContentState(query: state.query, searchResult: state.searchResult) != .idle {
+      if contentState == .results || contentState == .empty {
         Text("\(launcherSelectableSnippets(searchResult: state.searchResult).count) results")
           .font(.system(size: 12))
           .foregroundStyle(LauncherColors.tertiaryForeground)
@@ -73,7 +73,10 @@ struct LauncherView: View {
       ScrollViewReader { scrollViewProxy in
         ScrollView {
           VStack(alignment: .leading, spacing: 2) {
-            LauncherSectionHeader(title: "Keyword matches", topPadding: 6)
+            // 片方の欄だけに結果がある時は、中身の無い見出しを出さない。
+            if !state.searchResult.keywordMatches.isEmpty {
+              LauncherSectionHeader(title: "Keyword matches", topPadding: 6)
+            }
             ForEach(Array(state.searchResult.keywordMatches.enumerated()), id: \.element.snippet.id) { index, keywordMatch in
               LauncherResultRow(
                 snippet: keywordMatch.snippet,
@@ -93,7 +96,9 @@ struct LauncherView: View {
                 state.selectedSnippetIndex = index
               }
             }
-            LauncherSectionHeader(title: "Similar meaning", topPadding: 12)
+            if !state.searchResult.semanticMatches.isEmpty {
+              LauncherSectionHeader(title: "Similar meaning", topPadding: state.searchResult.keywordMatches.isEmpty ? 6 : 12)
+            }
             ForEach(Array(state.searchResult.semanticMatches.enumerated()), id: \.element.id) { offset, snippet in
               LauncherResultRow(
                 snippet: snippet,
@@ -122,10 +127,12 @@ struct LauncherView: View {
           }
           .padding(8)
         }
+        // ↑↓ で選択を動かした時と、入力が変わって結果が入れ替わった時 (選択の位置が同じでも一覧は動かしてある) に、選んでいる行を見える位置に出す。
         .onChange(of: state.selectedSnippetIndex) {
-          if let selectedSnippet {
-            scrollViewProxy.scrollTo(selectedSnippet.id)
-          }
+          scrollToSelectedSnippet(scrollViewProxy: scrollViewProxy)
+        }
+        .onChange(of: launcherSelectableSnippets(searchResult: state.searchResult).map(\.id)) {
+          scrollToSelectedSnippet(scrollViewProxy: scrollViewProxy)
         }
       }
       .frame(width: 330)
@@ -182,7 +189,7 @@ struct LauncherView: View {
   /// 下の操作の案内。結果なしの時は新規作成と閉じるだけを出す。
   private var footer: some View {
     HStack(spacing: 18) {
-      if launcherContentState(query: state.query, searchResult: state.searchResult) == .empty {
+      if contentState == .empty {
         LauncherKeyHint(key: "⌘N", label: "New")
         LauncherKeyHint(key: "esc", label: "Close")
       } else {
@@ -198,6 +205,18 @@ struct LauncherView: View {
     .padding(.horizontal, 18)
     .frame(height: 40)
     .background(LauncherColors.footer)
+  }
+
+  /// 本体の欄に出すもの。
+  private var contentState: LauncherContentState {
+    launcherContentState(query: state.query, searchResult: state.searchResult, isSemanticSearchPending: state.isSemanticSearchPending)
+  }
+
+  /// 選んでいる行を一覧の見える位置に出す。選んでいなければ何もしない。
+  private func scrollToSelectedSnippet(scrollViewProxy: ScrollViewProxy) {
+    if let selectedSnippet {
+      scrollViewProxy.scrollTo(selectedSnippet.id)
+    }
   }
 
   /// 選んでいるスニペット。

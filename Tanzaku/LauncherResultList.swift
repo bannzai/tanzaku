@@ -7,16 +7,21 @@ enum LauncherContentState: Equatable {
   case idle
   /// 結果がある。キーワードが一致した欄と意味が近い欄を出す (`documents/design/Main.dc.html`)。
   case results
+  /// 文字列の一致は無く、意味検索の結果を待っている。結果なしの案内も新規作成 (⌘N) も出さない。意味検索で見つかる入力で、結果なしの案内を一瞬出したり新規作成へ進めたりしないため。
+  case searching
   /// 入力したが結果が無い。入力した言葉で新規作成する案内を出す (`documents/design/LauncherEmpty.dc.html`)。
   case empty
 }
 
 /// 入力と検索の結果から、本体の欄に出すものを決める。空白だけの入力は検索しないため (`searchSnippets(query:modelContext:embedder:)`)、何も入力していないのと同じに扱う。
-func launcherContentState(query: String, searchResult: SnippetSearchResult) -> LauncherContentState {
+func launcherContentState(query: String, searchResult: SnippetSearchResult, isSemanticSearchPending: Bool) -> LauncherContentState {
   if query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
     return .idle
   }
-  return launcherSelectableSnippets(searchResult: searchResult).isEmpty ? .empty : .results
+  if !launcherSelectableSnippets(searchResult: searchResult).isEmpty {
+    return .results
+  }
+  return isSemanticSearchPending ? .searching : .empty
 }
 
 /// ↑↓ で選べる順のスニペット。画面の上から、キーワードが一致した欄、意味が近い欄の順に並ぶため、この順につなげる。
