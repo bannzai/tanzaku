@@ -1,6 +1,194 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "%lld results" : {
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld result"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld results"
+                }
+              }
+            }
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld 件"
+          }
+        }
+      }
+    },
+    "Close" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "閉じる"
+          }
+        }
+      }
+    },
+    "Copy" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "コピー"
+          }
+        }
+      }
+    },
+    "Create a new snippet “%@”" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "「%@」で新しいスニペットを作成"
+          }
+        }
+      }
+    },
+    "Folder %@" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "フォルダ %@"
+          }
+        }
+      }
+    },
+    "Keyword %@" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "キーワード %@"
+          }
+        }
+      }
+    },
+    "Keyword matches" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "キーワードが一致"
+          }
+        }
+      }
+    },
+    "New" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新規作成"
+          }
+        }
+      }
+    },
+    "New snippet: %@" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新しいスニペット: %@"
+          }
+        }
+      }
+    },
+    "No snippets close to “%@”" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "「%@」に近いスニペットはありません"
+          }
+        }
+      }
+    },
+    "Opens the editor in the manager window with your words as the title" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "入力した言葉をタイトルにして、管理ウィンドウの編集を開きます"
+          }
+        }
+      }
+    },
+    "Paste to the front app" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "前面のアプリに貼り付け"
+          }
+        }
+      }
+    },
+    "Search snippets" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "スニペットを検索"
+          }
+        }
+      }
+    },
+    "Searched by the meaning of keywords, titles, and bodies.\nIf you use it often, you can make a snippet from here." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "キーワード・タイトル・本文の意味から探しました。\nよく使う内容なら、ここから短冊を 1 枚作っておけます。"
+          }
+        }
+      }
+    },
+    "Select" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "選択"
+          }
+        }
+      }
+    },
+    "Similar meaning" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "意味が近い"
+          }
+        }
+      }
+    },
+    "Tags %@" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "タグ %@"
+          }
+        }
+      }
+    },
     "Tanzaku" : {
       "localizations" : {
         "ja" : {
