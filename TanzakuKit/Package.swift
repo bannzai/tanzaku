@@ -19,7 +19,8 @@ let package = Package(
     .target(
       name: "TanzakuKit",
       dependencies: [.product(name: "Highlightr", package: "Highlightr")],
-      resources: [.process("Localizable.xcstrings")]
+      // Licenses/ は Highlightr (MIT) と highlight.js (BSD-3-Clause) のライセンス全文。どちらも配布物に著作権表示を含めることを求め、Highlightr のパッケージはどちらの LICENSE もリソースに入れないため、アプリに同梱する。
+      resources: [.process("Localizable.xcstrings"), .copy("Licenses")]
     ),
     // highlight.js の読み込みの時間をテストで測るため、テストからも Highlightr を使う。
     .testTarget(name: "TanzakuKitTests", dependencies: ["TanzakuKit", .product(name: "Highlightr", package: "Highlightr")]),
