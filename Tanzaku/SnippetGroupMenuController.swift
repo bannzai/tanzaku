@@ -17,6 +17,16 @@ nonisolated private func keyboardEventCharacters(event: CGEvent) -> String {
   return String(utf16CodeUnits: utf16Characters, count: characterCount)
 }
 
+/// 今のキーボードの入力ソースが、キーの文字をそのまま入力欄に入れるもの (英字のキーボード配列・日本語入力の英数) か。取れなければ `false` にし、キーワードを判定しない側に倒す。
+private func isKeyboardInputSourceASCIICapable() -> Bool {
+  guard let inputSource = TISCopyCurrentKeyboardInputSource()?.takeRetainedValue(),
+    let isASCIICapable = TISGetInputSourceProperty(inputSource, kTISPropertyInputSourceIsASCIICapable)
+  else {
+    return false
+  }
+  return CFBooleanGetValue(Unmanaged<CFBoolean>.fromOpaque(isASCIICapable).takeUnretainedValue())
+}
+
 /// スニペットグループのキーワードの入力の監視・メニューのパネル・選んだ本文の入力をまとめる。
 ///
 /// キー入力は CGEventTap で見る。メニューはフォーカスを奪わないパネルに出し、入力中のアプリを前面のまま残すため、メニューの ↑↓・Return・Esc はパネルではなく CGEventTap で受け取り、入力欄へ渡さない。
@@ -188,6 +198,8 @@ final class SnippetGroupMenuController {
       insertSelectedSnippet()
       return true
     case kVK_Escape:
+      // 閉じた直後のバックスペースで同じキーワードに戻った時に、閉じたメニューを出し直さないため。
+      typedText = ""
       closeMenu()
       return true
     default:
@@ -199,6 +211,11 @@ final class SnippetGroupMenuController {
   ///
   /// スニペットグループはキー入力のたびにストアから読む。グループは管理ウィンドウ・開発者メニュー・同期 (#19) のどこからでも変わり、読んだ結果を持つと変更の通知を漏れなく受け取る仕組みが要るため。キーワードを持つグループだけを読むため、読む量はグループの数に比例して小さい。
   private func updateTypedTextAndOpenMenu(keyCode: Int, modifierFlags: CGEventFlags, characters: String) {
+    // 日本語などの入力ソースでは、キー入力の文字 (ローマ字) と入力欄に入る文字 (かな) が違い、変換の確定の Return をメニューの選択として奪い、消すバックスペースの数もずれるため判定しない。
+    guard isKeyboardInputSourceASCIICapable() else {
+      typedText = ""
+      return
+    }
     let snippetGroups: [SnippetGroup]
     do {
       snippetGroups = try modelContainer.mainContext.fetch(FetchDescriptor<SnippetGroup>(predicate: #Predicate { $0.keyword != nil }))
@@ -215,12 +232,10 @@ final class SnippetGroupMenuController {
       characters: characters,
       maxLength: snippetGroups.map { ($0.keyword ?? "").count }.max() ?? 0
     )
-    guard let snippetGroup = snippetGroupMatchingTypedText(typedText: typedText, snippetGroups: snippetGroups) else {
-      return
+    // 打った文字は開いた後も残す。短いキーワード (`;dev`) のメニューを出した後に長いキーワード (`;dev-env`) を打ち続けた時に、長い方のメニューを出すため。
+    if let snippetGroup = snippetGroupMatchingTypedText(typedText: typedText, snippetGroups: snippetGroups) {
+      openMenu(snippetGroup: snippetGroup)
     }
-    // メニューを Esc で閉じた後に続けて打った文字で、同じキーワードのメニューを出し直さないため。
-    typedText = ""
-    openMenu(snippetGroup: snippetGroup)
   }
 
   /// 選んでいるスニペットを入れる。打ったキーワードをバックスペースで消し、本文をクリップボードに入れて ⌘V で貼り付ける。
