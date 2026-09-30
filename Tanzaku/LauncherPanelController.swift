@@ -58,13 +58,10 @@ final class LauncherPanelController: NSObject, NSWindowDelegate {
     }
   }
 
-  /// 入力と結果を空にしてパネルを画面の中央に開く。
+  /// パネルを画面の中央に開く。入力と結果は閉じた時に空にしてある。
   func show() {
     let frontmostApplication = NSWorkspace.shared.frontmostApplication
     previousApplication = frontmostApplication?.processIdentifier == ProcessInfo.processInfo.processIdentifier ? nil : frontmostApplication
-    state.query = ""
-    state.searchResult = SnippetSearchResult(keywordMatches: [], semanticMatches: [])
-    state.selectedSnippetIndex = nil
     state.presentationCount += 1
     let panel = panel ?? makePanel()
     self.panel = panel
@@ -93,9 +90,16 @@ final class LauncherPanelController: NSObject, NSWindowDelegate {
     }
   }
 
-  /// パネルを閉じる。閉じていれば何もしない。
+  /// パネルを閉じ、入力と結果を空にする。閉じていても空にするだけで、何度呼んでも同じ状態になる。
+  ///
+  /// 閉じたパネルの画面は残るため、結果のスニペットを持ったままにしない。管理ウィンドウ・MCP・開発者メニューがそのスニペットを消した後に、閉じた画面が消えたスニペットを読み直さないようにするため。
+  /// simtunnel で、結果を出したまま閉じた後に開発者メニューの「Delete All Snippets」を押すと、削除は保存されたうえでアプリが落ちた。落ちた箇所のログは取れておらず、原因がこの読み直しだというのは推定。
   func close() {
     panel?.orderOut(nil)
+    semanticSearchTask?.cancel()
+    state.query = ""
+    state.searchResult = SnippetSearchResult(keywordMatches: [], semanticMatches: [])
+    state.selectedSnippetIndex = nil
   }
 
   /// パネルがキーウィンドウでなくなった (ほかのウィンドウをクリックした) ら閉じる。Spotlight と同じく、ランチャーを使い終えたら残さないため。
@@ -225,8 +229,10 @@ final class LauncherPanelController: NSObject, NSWindowDelegate {
     guard launcherContentState(query: state.query, searchResult: state.searchResult) == .empty else {
       return
     }
+    // close() が入力を空にするため、閉じる前に下書きのタイトルを取っておく。
+    let draftTitle = state.query.trimmingCharacters(in: .whitespacesAndNewlines)
     close()
-    openNewSnippetEditor(state.query.trimmingCharacters(in: .whitespacesAndNewlines))
+    openNewSnippetEditor(draftTitle)
   }
 
   /// ランチャーのパネルを作る。デザインのパネル (720 x 480) の角丸と縁は SwiftUI で描くため、ウィンドウは枠なし・透明にする。
