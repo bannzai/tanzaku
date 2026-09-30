@@ -329,10 +329,12 @@ private struct LauncherKeywordChip: View {
   }
 }
 
-/// 選んでいるスニペットのプレビュー。名前・キーワード・タグ・フォルダと本文を出す。
+/// 選んでいるスニペットのプレビュー。名前・キーワード・タグ・フォルダと本文を出す。本文は言語を選んでいればハイライトする。
 private struct LauncherSnippetPreview: View {
   /// プレビューするスニペット。
   var snippet: Snippet
+  /// 本文のハイライトの配色をライト・ダークで切り替える。
+  @Environment(\.colorScheme) private var colorScheme
 
   var body: some View {
     VStack(alignment: .leading, spacing: 12) {
@@ -357,7 +359,7 @@ private struct LauncherSnippetPreview: View {
       .foregroundStyle(LauncherColors.secondaryForeground)
       .lineLimit(1)
       ScrollView {
-        Text(verbatim: snippet.body)
+        Text(highlightedSnippetBody(body: snippet.body, language: snippet.language, colorScheme: colorScheme))
           .font(.system(size: 12, design: .monospaced))
           .lineSpacing(7)
           .frame(maxWidth: .infinity, alignment: .leading)

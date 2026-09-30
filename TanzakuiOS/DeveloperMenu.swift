@@ -106,7 +106,7 @@
           body: sampleSnippet.body,
           title: sampleSnippet.title,
           keyword: sampleSnippet.keyword,
-          language: sampleSnippet.language,
+          language: sampleSnippet.language?.rawValue,
           color: sampleSnippet.color,
           folder: try sampleFolder(name: sampleSnippet.folderName, modelContext: modelContext),
           tagNames: sampleSnippet.tagNames,

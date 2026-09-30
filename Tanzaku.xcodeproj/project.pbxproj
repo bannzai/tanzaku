@@ -38,6 +38,7 @@
 		7A2000000000000000000006 /* SnippetGroupListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A2000000000000000000106 /* SnippetGroupListView.swift */; };
 		7A2000000000000000000007 /* SnippetListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A2000000000000000000107 /* SnippetListView.swift */; };
 		7A2000000000000000000008 /* SnippetEmbeddingRevision.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A2000000000000000000108 /* SnippetEmbeddingRevision.swift */; };
+		7A2000000000000000000009 /* SnippetBodyEditor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A2000000000000000000109 /* SnippetBodyEditor.swift */; };
 		7C3000000000000000000001 /* AgentDeleteConfirmationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C4000000000000000000001 /* AgentDeleteConfirmationView.swift */; };
 		7C3000000000000000000002 /* AgentSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C4000000000000000000002 /* AgentSettingsView.swift */; };
 		7C3000000000000000000003 /* MCPClientAccess.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C4000000000000000000003 /* MCPClientAccess.swift */; };
@@ -64,6 +65,7 @@
 		7D1000000000000000000011 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 7D1000000000000000001011 /* Localizable.xcstrings */; };
 		7D1000000000000000000013 /* SnippetEmbeddingIndexer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B2000000000000000000030 /* SnippetEmbeddingIndexer.swift */; };
 		7D1000000000000000000014 /* SnippetColorAppearance.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A2000000000000000000103 /* SnippetColorAppearance.swift */; };
+		7D1000000000000000000015 /* SnippetBodyEditor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D1000000000000000001015 /* SnippetBodyEditor.swift */; };
 		7E1000000000000000000001 /* FocusedTextCaret.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E2000000000000000000001 /* FocusedTextCaret.swift */; };
 		7E1000000000000000000002 /* SnippetGroupKeywordPermission.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E2000000000000000000002 /* SnippetGroupKeywordPermission.swift */; };
 		7E1000000000000000000003 /* SnippetGroupKeywordTypedText.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E2000000000000000000003 /* SnippetGroupKeywordTypedText.swift */; };
@@ -131,6 +133,7 @@
 		7A2000000000000000000106 /* SnippetGroupListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnippetGroupListView.swift; sourceTree = "<group>"; };
 		7A2000000000000000000107 /* SnippetListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnippetListView.swift; sourceTree = "<group>"; };
 		7A2000000000000000000108 /* SnippetEmbeddingRevision.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnippetEmbeddingRevision.swift; sourceTree = "<group>"; };
+		7A2000000000000000000109 /* SnippetBodyEditor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnippetBodyEditor.swift; sourceTree = "<group>"; };
 		7C4000000000000000000001 /* AgentDeleteConfirmationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentDeleteConfirmationView.swift; sourceTree = "<group>"; };
 		7C4000000000000000000002 /* AgentSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentSettingsView.swift; sourceTree = "<group>"; };
 		7C4000000000000000000003 /* MCPClientAccess.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MCPClientAccess.swift; sourceTree = "<group>"; };
@@ -156,6 +159,7 @@
 		7D1000000000000000001010 /* SnippetEmbeddingController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnippetEmbeddingController.swift; sourceTree = "<group>"; };
 		7D1000000000000000001011 /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
 		7D1000000000000000001012 /* TanzakuiOS.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = TanzakuiOS.entitlements; sourceTree = "<group>"; };
+		7D1000000000000000001015 /* SnippetBodyEditor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnippetBodyEditor.swift; sourceTree = "<group>"; };
 		7E2000000000000000000001 /* FocusedTextCaret.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusedTextCaret.swift; sourceTree = "<group>"; };
 		7E2000000000000000000002 /* SnippetGroupKeywordPermission.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnippetGroupKeywordPermission.swift; sourceTree = "<group>"; };
 		7E2000000000000000000003 /* SnippetGroupKeywordTypedText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnippetGroupKeywordTypedText.swift; sourceTree = "<group>"; };
@@ -220,6 +224,7 @@
 				7D1000000000000000001005 /* SnippetListView.swift */,
 				7D1000000000000000001006 /* SnippetDetailView.swift */,
 				7D1000000000000000001007 /* SnippetEditorView.swift */,
+				7D1000000000000000001015 /* SnippetBodyEditor.swift */,
 				7D1000000000000000001008 /* SnippetGroupEditorView.swift */,
 				7D1000000000000000001009 /* DeveloperMenu.swift */,
 				7D1000000000000000001010 /* SnippetEmbeddingController.swift */,
@@ -247,6 +252,7 @@
 				7A2000000000000000000102 /* ManagerView.swift */,
 				7A2000000000000000000103 /* SnippetColorAppearance.swift */,
 				7A2000000000000000000104 /* SnippetEditorView.swift */,
+				7A2000000000000000000109 /* SnippetBodyEditor.swift */,
 				7A2000000000000000000105 /* SnippetGroupEditorView.swift */,
 				7A2000000000000000000106 /* SnippetGroupListView.swift */,
 				7A2000000000000000000107 /* SnippetListView.swift */,
@@ -478,6 +484,7 @@
 				7A2000000000000000000006 /* SnippetGroupListView.swift in Sources */,
 				7A2000000000000000000007 /* SnippetListView.swift in Sources */,
 				7A2000000000000000000008 /* SnippetEmbeddingRevision.swift in Sources */,
+				7A2000000000000000000009 /* SnippetBodyEditor.swift in Sources */,
 				3FDD0285687CAEA6E170EAC6 /* TanzakuApp.swift in Sources */,
 				7C3000000000000000000001 /* AgentDeleteConfirmationView.swift in Sources */,
 				7C3000000000000000000002 /* AgentSettingsView.swift in Sources */,
@@ -537,6 +544,7 @@
 				7D1000000000000000000010 /* SnippetEmbeddingController.swift in Sources */,
 				7D1000000000000000000013 /* SnippetEmbeddingIndexer.swift in Sources */,
 				7D1000000000000000000014 /* SnippetColorAppearance.swift in Sources */,
+				7D1000000000000000000015 /* SnippetBodyEditor.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
