@@ -5,12 +5,23 @@ import UIKit
 
 /// 上の端の帯 (スニペットの一覧を開くボタン・検索の入力・スニペットグループの名前) の高さ。44pt はタップできる領域の最小の大きさ (Human Interface Guidelines)。
 private let keyboardBarHeight: CGFloat = 44
-/// 文字のキーの 4 段の高さ。216pt は iPhone の縦向きの標準のキーボードのキーの領域の高さで、ほかのキーボードから切り替えた時に入力欄の見える範囲を変えないため。
-private let keyboardKeysHeight: CGFloat = 216
-/// スニペットの一覧・スニペットグループのメニューの高さ。44pt の行を 3 行半見せ、続きがあることをスクロールの前に分からせるため。
-private let keyboardPanelHeight: CGFloat = 154
-/// 文字を打つ時のキーボードの高さ。
-let keyboardTypingHeight = keyboardBarHeight + keyboardKeysHeight
+/// 文字のキーの 4 段の高さ。高さの狭い画面 (iPhone の横向き) では低くする。
+///
+/// 216pt は iPhone の縦向きの標準のキーボードのキーの領域の高さで、ほかのキーボードから切り替えた時に入力欄の見える範囲を変えないため。
+/// 高さの狭い画面の 170pt は、スニペットの一覧を出しても帯と一覧を合わせて iPhone SE の横向きの画面の高さ 375pt に収め、入力欄を残すため。
+private func keyboardKeysHeight(isCompactHeight: Bool) -> CGFloat {
+  isCompactHeight ? 170 : 216
+}
+
+/// スニペットの一覧・スニペットグループのメニューの高さ。高さの狭い画面 (iPhone の横向き) では低くする。
+///
+/// 154pt は 44pt の行を 3 行半見せ、続きがあることをスクロールの前に分からせるため。高さの狭い画面の 110pt は同じく 2 行半を見せるため。
+private func keyboardPanelHeight(isCompactHeight: Bool) -> CGFloat {
+  isCompactHeight ? 110 : 154
+}
+
+/// 文字を打つ時のキーボードの高さ (高さの狭くない画面)。画面の大きさが決まる前の最初の高さに使う。
+let keyboardTypingHeight = keyboardBarHeight + keyboardKeysHeight(isCompactHeight: false)
 
 /// キーボードが読むストア。開けなかった時・読めなかった時はその理由。
 ///
@@ -48,15 +59,21 @@ struct KeyboardView: View {
   @State private var matchedSnippetGroup: SnippetGroup?
   /// メニューを閉じた時の入力欄のカーソルより前の文字。同じ文字の間はメニューを出し直さないために、キーボードを出している間だけメモリに持つ。
   @State private var dismissedDocumentContextBeforeInput: String?
+  /// 画面の高さの広さ。iPhone の横向きでは `.compact` になり、キーと一覧を低くする。
+  @Environment(\.verticalSizeClass) private var verticalSizeClass
 
   var body: some View {
     let isShowingPanel = isShowingSnippets || matchedSnippetGroup != nil
+    let isCompactHeight = verticalSizeClass == .compact
+    let keysHeight = keyboardKeysHeight(isCompactHeight: isCompactHeight)
+    let panelHeight = keyboardPanelHeight(isCompactHeight: isCompactHeight)
+    let keyboardHeight = keyboardBarHeight + keysHeight + (isShowingPanel ? panelHeight : 0)
     VStack(spacing: 0) {
       keyboardBar
         .frame(height: keyboardBarHeight)
       if isShowingPanel {
         keyboardPanel
-          .frame(height: keyboardPanelHeight)
+          .frame(height: panelHeight)
       }
       KeyboardKeysView(
         keyPage: keyPage,
@@ -73,10 +90,10 @@ struct KeyboardView: View {
         onReturn: pressReturn,
         onAdvanceToNextInputMode: advanceToNextInputMode
       )
-      .frame(height: keyboardKeysHeight)
+      .frame(height: keysHeight)
     }
-    .onChange(of: isShowingPanel, initial: true) {
-      setKeyboardHeight(isShowingPanel ? keyboardTypingHeight + keyboardPanelHeight : keyboardTypingHeight)
+    .onChange(of: keyboardHeight, initial: true) {
+      setKeyboardHeight(keyboardHeight)
     }
     .onChange(of: keyboardHostState.textChangeCount, initial: true) {
       refreshMatchedSnippetGroup()
