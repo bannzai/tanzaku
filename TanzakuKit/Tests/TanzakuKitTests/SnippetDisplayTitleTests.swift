@@ -1,23 +1,38 @@
-import Foundation
+import SwiftData
 import Testing
 
 @testable import TanzakuKit
 
-/// `snippetDisplayTitle(snippet:)` のタイトルと本文の 1 行目の出し分けを確かめる。
+/// `snippetDisplayTitle(snippet:)` と `snippetBodyFirstLine(body:)` が、タイトルが無いスニペットを本文の 1 行目で代えることを確かめる。
 struct SnippetDisplayTitleTests {
-  @Test("タイトルがあればタイトルを出す")
-  func titleIsUsed() {
-    let snippet = Snippet(body: "echo dummy")
-    snippet.title = "Dummy title"
-
-    #expect(snippetDisplayTitle(snippet: snippet) == "Dummy title")
+  /// タイトルと本文を持つスニペットをインメモリのストアに入れる。ほかのテストと同じく、ストアに入れたモデルで確かめる。
+  private func insertSnippet(modelContext: ModelContext, body: String, title: String?) -> Snippet {
+    let snippet = Snippet(body: body)
+    snippet.title = title
+    modelContext.insert(snippet)
+    return snippet
   }
 
-  @Test("タイトルが無いか空白だけなら、本文の空白だけではない最初の行を出す", arguments: [nil, "", "  "] as [String?])
-  func firstBodyLineIsUsedWithoutTitle(title: String?) {
-    let snippet = Snippet(body: "\n  \nexport API_TOKEN=dummy-token-for-test\necho done")
-    snippet.title = title
+  @Test("タイトルがあればタイトルを返す")
+  func titleIsUsed() throws {
+    let modelContext = ModelContext(try makeTanzakuModelContainer(storeLocation: .inMemory, syncedStoreCloudKitDatabase: .none))
 
-    #expect(snippetDisplayTitle(snippet: snippet) == "export API_TOKEN=dummy-token-for-test")
+    #expect(snippetDisplayTitle(snippet: insertSnippet(modelContext: modelContext, body: "echo dummy", title: "ダミーの挨拶")) == "ダミーの挨拶")
+  }
+
+  @Test("タイトルが無い・空白だけの時は本文の最初の空でない行を返す")
+  func bodyFirstLineIsUsedWithoutTitle() throws {
+    let modelContext = ModelContext(try makeTanzakuModelContainer(storeLocation: .inMemory, syncedStoreCloudKitDatabase: .none))
+
+    #expect(
+      snippetDisplayTitle(snippet: insertSnippet(modelContext: modelContext, body: "export API_TOKEN=dummy-token-for-test\ncurl https://api.example.com", title: nil))
+        == "export API_TOKEN=dummy-token-for-test"
+    )
+    #expect(snippetDisplayTitle(snippet: insertSnippet(modelContext: modelContext, body: "\n\n  echo dummy  \nsecond", title: "  ")) == "echo dummy")
+  }
+
+  @Test("本文が空白だけなら空文字を返す")
+  func blankBodyIsEmpty() {
+    #expect(snippetBodyFirstLine(body: " \n\t\n") == "")
   }
 }

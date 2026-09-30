@@ -1,33 +1,60 @@
-import SwiftData
 import SwiftUI
+
+/// 管理ウィンドウの scene の識別子。ランチャーから `openWindow(id:)` で開くのに使う。
+let managerWindowID = "manager"
 
 /// アプリのエントリポイント。
 @main
 struct TanzakuApp: App {
-  /// アプリ全体で使うストア。作れなかった時はウィンドウにエラーを出す (アプリを落とすと理由をユーザーが知れないため)。
-  private let modelContainerResult = Result { try makeMacModelContainer() }
+  /// ストア・ランチャー・グローバルショートカットを用意する delegate。
+  @NSApplicationDelegateAdaptor private var appDelegate: AppDelegate
 
   var body: some Scene {
-    WindowGroup {
-      switch modelContainerResult {
-      case .success(let modelContainer):
-        ManagerView()
-          .modelContainer(modelContainer)
-      case .failure(let error):
-        Text(error.localizedDescription)
-          .frame(minWidth: 480, minHeight: 320)
-      }
+    // ランチャーから開いた時に既に開いている管理ウィンドウを前に出すため、複数のウィンドウを作る WindowGroup ではなく 1 つだけの Window にする。
+    Window("Tanzaku", id: managerWindowID) {
+      ManagerWindowRoot(appDelegate: appDelegate)
     }
     // デザインの管理ウィンドウの大きさ (`documents/design/Manager.dc.html` の 1280×800)。
     .defaultSize(width: 1280, height: 800)
-    .commands {
-      // 管理ウィンドウは 1 つで足りるため「新規ウインドウ」を外し、⌘N を新規スニペット (`ManagerView` のツールバー) に使う。閉じたウインドウは Dock のアイコンで開き直せる。
-      CommandGroup(replacing: .newItem) {}
-      #if DEBUG
-        if case .success(let modelContainer) = modelContainerResult {
-          DebugCommands(modelContainer: modelContainer)
-        }
-      #endif
+    #if DEBUG
+      .commands {
+        DeveloperCommands(appDelegate: appDelegate)
+      }
+    #endif
+  }
+}
+
+/// 管理ウィンドウの中身を包み、ランチャーから管理ウィンドウを開けるよう `openWindow` を delegate に渡す。
+private struct ManagerWindowRoot: View {
+  /// ストア・`openWindow`・新規作成の下書きを受け渡す delegate。
+  let appDelegate: AppDelegate
+  /// 管理ウィンドウを開く SwiftUI の操作。
+  @Environment(\.openWindow) private var openWindow
+
+  var body: some View {
+    Group {
+      switch appDelegate.modelContainerResult {
+      case .success(let modelContainer):
+        ManagerView(
+          semanticQueryEmbedder: { query in
+            await appDelegate.launcherPanelController?.semanticQueryEmbedder(query: query)
+          },
+          onSnippetsChange: {
+            appDelegate.launcherPanelController?.refreshSnippetEmbeddingsAndSearch()
+          }
+        )
+        .modelContainer(modelContainer)
+      case .failure(let error):
+        // ストアを開けなかった理由をユーザーが知れるよう、アプリを落とさずに出す。
+        Text(verbatim: error.localizedDescription)
+          .frame(minWidth: 480, minHeight: 320)
+      }
+    }
+    .environment(appDelegate.newSnippetDraft)
+    .onAppear {
+      appDelegate.openManagerWindow = {
+        openWindow(id: managerWindowID)
+      }
     }
   }
 }

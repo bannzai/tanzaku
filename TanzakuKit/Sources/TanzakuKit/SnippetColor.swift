@@ -1,8 +1,6 @@
-import Foundation
-
-/// スニペットの色の帯の色。`Snippet.colorRawValue` にこの raw value を入れる。
+/// スニペットの色の帯の色 (`documents/DIRECTION.md`「決めたこと」の 5 色)。`Snippet.colorRawValue` に raw value を入れる。
 ///
-/// 短冊のモチーフの 5 色に限る (`documents/DIRECTION.md`「デザインの方向」「決めたこと」)。raw value は同期するストアに残るため、変えない。
+/// raw value は同期するストアに入り、本番の CloudKit スキーマに残るため変えない。表示の色 (ライト・ダーク) は各アプリが持つ。
 public enum SnippetColor: String, CaseIterable, Sendable {
   /// 朱。
   case shu

@@ -3,3 +3,10 @@
 title: Tanzaku
 description: 略語を忘れても内容で探せる Mac のスニペット管理アプリ
 lang: ja
+# GitHub Pages が既定で有効にするテーマ・プラグインのうち、front matter の無い Markdown の HTML 化に要るもの。
+# 本番では書かなくても同じ挙動になり、browser-session.yml の jekyll serve で本番と同じに配信するために明示する。
+theme: jekyll-theme-primer
+plugins:
+  - jekyll-optional-front-matter
+  - jekyll-default-layout
+  - jekyll-titles-from-headings
