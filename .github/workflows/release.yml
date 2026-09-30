@@ -1,0 +1,150 @@
+name: Release
+
+# tag (v<版>) の push で、Developer ID で署名・公証した Mac 版の DMG を GitHub Releases に置き、
+# Sparkle の appcast (docs/appcast.xml) にその版を足して main に push する。
+# 手順と必要な Secrets: AGENTS.md「Mac 版のリリース」。
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+
+concurrency:
+  # appcast の main への push どうしが競合しないよう、リリースを 1 つずつ走らせる。
+  group: release
+  cancel-in-progress: false
+
+defaults:
+  run:
+    # 既定のシェルの設定に -o pipefail を足す。
+    shell: bash
+
+jobs:
+  release:
+    # public リポジトリのため GitHub-hosted の macOS ランナーは無料。
+    runs-on: macos-26
+    # 公証はふつう数分で終わるが上限が無いため、5 分ほどのビルドの後に公証の待ちが長引いても収まる 1 時間にする。
+    timeout-minutes: 60
+    permissions:
+      # リリースの作成と asset の upload、appcast の main への push。
+      contents: write
+      # appcast を push した後に GitHub Pages のビルドを求める。
+      pages: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # DMG を公開した後に appcast だけ更新できずに終わらないよう、ビルドの前にすべての Secrets を確かめる。
+      - name: Check the secrets
+        env:
+          DEVELOPER_ID_APPLICATION_P12_BASE64: ${{ secrets.DEVELOPER_ID_APPLICATION_P12_BASE64 }}
+          DEVELOPER_ID_APPLICATION_P12_PASSWORD: ${{ secrets.DEVELOPER_ID_APPLICATION_P12_PASSWORD }}
+          ASC_API_KEY_ID: ${{ secrets.ASC_API_KEY_ID }}
+          ASC_API_KEY_ISSUER_ID: ${{ secrets.ASC_API_KEY_ISSUER_ID }}
+          ASC_API_KEY_P8_BASE64: ${{ secrets.ASC_API_KEY_P8_BASE64 }}
+          SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
+        run: |
+          missing_secret_names=()
+          for secret_name in DEVELOPER_ID_APPLICATION_P12_BASE64 DEVELOPER_ID_APPLICATION_P12_PASSWORD ASC_API_KEY_ID ASC_API_KEY_ISSUER_ID ASC_API_KEY_P8_BASE64 SPARKLE_PRIVATE_KEY; do
+            if [ -z "${!secret_name}" ]; then
+              missing_secret_names+=("${secret_name}")
+            fi
+          done
+          if [ "${#missing_secret_names[@]}" -ne 0 ]; then
+            echo "::error::Secrets が未登録: ${missing_secret_names[*]} (AGENTS.md「Mac 版のリリース」)"
+            exit 1
+          fi
+
+      # DMG の名前と appcast の版はアプリの版から作るため、tag と食い違うと tag の Releases に別の版を置くことになる。
+      - name: Check that the tag matches the app version
+        run: |
+          marketing_version="$(xcodebuild -project Tanzaku.xcodeproj -target Tanzaku -configuration Release -showBuildSettings -json | jq -er '.[0].buildSettings.MARKETING_VERSION')"
+          if [ "${GITHUB_REF_NAME}" != "v${marketing_version}" ]; then
+            echo "::error::tag ${GITHUB_REF_NAME} が MARKETING_VERSION ${marketing_version} と一致しない"
+            exit 1
+          fi
+
+      # https://docs.github.com/en/actions/how-tos/deploy/deploy-to-third-party-platforms/sign-xcode-applications に従う。
+      # キーチェーンのパスワードはこの job の一時的なキーチェーンを守るだけのため、Secrets に置かずここで作る。
+      - name: Import the Developer ID Application certificate
+        env:
+          DEVELOPER_ID_APPLICATION_P12_BASE64: ${{ secrets.DEVELOPER_ID_APPLICATION_P12_BASE64 }}
+          DEVELOPER_ID_APPLICATION_P12_PASSWORD: ${{ secrets.DEVELOPER_ID_APPLICATION_P12_PASSWORD }}
+        run: |
+          keychain_path="${RUNNER_TEMP}/developer-id.keychain-db"
+          certificate_path="${RUNNER_TEMP}/developer-id-application.p12"
+          keychain_password="$(openssl rand -base64 32)"
+          echo "::add-mask::${keychain_password}"
+
+          printf '%s' "${DEVELOPER_ID_APPLICATION_P12_BASE64}" | base64 --decode > "${certificate_path}"
+          security create-keychain -p "${keychain_password}" "${keychain_path}"
+          security set-keychain-settings -lut 21600 "${keychain_path}"
+          security unlock-keychain -p "${keychain_password}" "${keychain_path}"
+          security import "${certificate_path}" -P "${DEVELOPER_ID_APPLICATION_P12_PASSWORD}" -A -t cert -f pkcs12 -k "${keychain_path}"
+          rm -f "${certificate_path}"
+          # codesign は証明書の連鎖を作るのに中間認証局の証明書が要る。ランナーのイメージは G2 の認証局しか入れておらず、
+          # 前の認証局が発行した証明書もまだ有効なため、両方を入れる。
+          for intermediate_certificate in DeveloperIDCA.cer DeveloperIDG2CA.cer; do
+            curl -fsSL "https://www.apple.com/certificateauthority/${intermediate_certificate}" -o "${RUNNER_TEMP}/${intermediate_certificate}"
+            security import "${RUNNER_TEMP}/${intermediate_certificate}" -k "${keychain_path}"
+          done
+          security set-key-partition-list -S apple-tool:,apple: -k "${keychain_password}" "${keychain_path}"
+          security list-keychain -d user -s "${keychain_path}"
+
+      # xcrun stapler validate と spctl --assess の結果はこの step のログに出る (scripts/macos/build_notarized_dmg.sh)。
+      - name: Build, notarize, and staple the DMG
+        env:
+          ASC_API_KEY_ID: ${{ secrets.ASC_API_KEY_ID }}
+          ASC_API_KEY_ISSUER_ID: ${{ secrets.ASC_API_KEY_ISSUER_ID }}
+          ASC_API_KEY_P8_BASE64: ${{ secrets.ASC_API_KEY_P8_BASE64 }}
+        run: make dmg
+
+      # 同じ tag で workflow を再実行した時は、公開済みの DMG を置き換えずに取得し直し、appcast にもその DMG を使う。
+      # 作り直した DMG は署名のタイムスタンプなどでバイト列が変わり、公開中の appcast の EdDSA の署名と合わなくなるため。
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          dmg_name="Tanzaku-${version}.dmg"
+          dmg_path="tmp/distribution/${dmg_name}"
+          if gh release view "${GITHUB_REF_NAME}" --json assets --jq '.assets[].name' 2> /dev/null | grep -qxF "${dmg_name}"; then
+            gh release download "${GITHUB_REF_NAME}" --pattern "${dmg_name}" --dir tmp/distribution --clobber
+          elif gh release view "${GITHUB_REF_NAME}" > /dev/null 2>&1; then
+            gh release upload "${GITHUB_REF_NAME}" "${dmg_path}"
+          else
+            gh release create "${GITHUB_REF_NAME}" "${dmg_path}" \
+              --verify-tag --title "Tanzaku ${version}" --generate-notes
+          fi
+
+      # tag の commit の appcast ではなく main の最新の appcast に足す。tag より後に main へ入った前のリリースの版を消さないため。
+      # GITHUB_TOKEN の push は ci.yml を起動しない (appcast だけの変更のためビルドは要らない)。
+      - name: Add the version to the appcast
+        env:
+          SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          git fetch origin main
+          git checkout -B main origin/main
+          bash scripts/macos/update_appcast.sh "tmp/distribution/Tanzaku-${version}.dmg" "${GITHUB_REF_NAME}"
+          if git diff --quiet -- docs/appcast.xml; then
+            echo "docs/appcast.xml に変更が無い"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/appcast.xml
+          git commit -m "chore: appcast に ${version} を足す"
+          git push origin HEAD:main
+
+      # GITHUB_TOKEN の push で GitHub Pages が作り直されるかは確かめていないため、作り直しを明示的に求める。
+      # 前回の実行で push した後にここで失敗した時も、再実行で appcast を公開できるよう、appcast に変更が無くても求める。
+      - name: Request a GitHub Pages build
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api -X POST "repos/${GITHUB_REPOSITORY}/pages/builds"
+
+      - name: Delete the temporary keychain
+        if: always()
+        run: security delete-keychain "${RUNNER_TEMP}/developer-id.keychain-db" || true
