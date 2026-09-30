@@ -2,7 +2,7 @@ import SwiftData
 import SwiftUI
 import TanzakuKit
 
-/// スニペットグループの編集画面。名前・キーワードと、メニューに並べるスニペットの選択と並べ替え。
+/// スニペットグループの編集画面。名前・キーワードと、メニューに並べるスニペットの選択と並べ替え。メニューに要る許可が無ければ、その案内を上に出す。
 ///
 /// 入力を画面の状態に持ち、「保存」で検査を通った時だけ書き込む理由は `SnippetEditorView` と同じ。
 struct SnippetGroupEditorView: View {
@@ -37,6 +37,7 @@ struct SnippetGroupEditorView: View {
 
   var body: some View {
     VStack(alignment: .leading, spacing: 16) {
+      SnippetGroupPermissionGuide()
       Grid(alignment: .leading, horizontalSpacing: 14, verticalSpacing: 12) {
         GridRow {
           Text("Name")
