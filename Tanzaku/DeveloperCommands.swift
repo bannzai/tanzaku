@@ -110,7 +110,7 @@
       }
     }
 
-    /// スニペット・フォルダ・タグをすべて消す。結果なしの画面を出すため (意味検索のベクトルがあると、関係の無い入力でも意味が近い欄が埋まる。`documents/DIRECTION.md`「決めたこと」)。
+    /// スニペット・フォルダ・タグをすべて消す。どの入力でも結果なしの画面を出すため (意味検索の類似度の下限 0.65 を超える英語の入力は、関係が無くても意味が近い欄に出る。`documents/DIRECTION.md`「決めたこと」)。
     func deleteAllSnippets() {
       do {
         try deleteAllSnippetData(modelContext: modelContainer.mainContext)

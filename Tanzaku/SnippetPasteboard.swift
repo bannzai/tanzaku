@@ -22,7 +22,7 @@ func pasteToApplication(application: NSRunningApplication?) {
   }
   application.activate()
   // 前面に戻したアプリがキーウィンドウを取り戻してから ⌘V を受け取るよう、少し待ってから送る。
-  // 待ち時間は実測していない。App Sandbox の中ではアクセシビリティの許可を得られず確かめられないため (App Sandbox を外す #7 の後に実機で確かめる)。
+  // 待ち時間は実測していない。アクセシビリティの許可を与えた実機でしか確かめられず、実機の確認は公開前チェックリスト (#4) に移したため。
   Task {
     try? await Task.sleep(for: .milliseconds(100))
     guard !application.isTerminated, NSWorkspace.shared.frontmostApplication?.processIdentifier == application.processIdentifier else {
