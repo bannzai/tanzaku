@@ -38,6 +38,19 @@
 		7A2000000000000000000006 /* SnippetGroupListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A2000000000000000000106 /* SnippetGroupListView.swift */; };
 		7A2000000000000000000007 /* SnippetListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A2000000000000000000107 /* SnippetListView.swift */; };
 		7A2000000000000000000008 /* SnippetEmbeddingRevision.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A2000000000000000000108 /* SnippetEmbeddingRevision.swift */; };
+		7C3000000000000000000001 /* AgentDeleteConfirmationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C4000000000000000000001 /* AgentDeleteConfirmationView.swift */; };
+		7C3000000000000000000002 /* AgentSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C4000000000000000000002 /* AgentSettingsView.swift */; };
+		7C3000000000000000000003 /* MCPClientAccess.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C4000000000000000000003 /* MCPClientAccess.swift */; };
+		7C3000000000000000000004 /* MCPHTTPListener.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C4000000000000000000004 /* MCPHTTPListener.swift */; };
+		7C3000000000000000000005 /* MCPHTTPMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C4000000000000000000005 /* MCPHTTPMessage.swift */; };
+		7C3000000000000000000006 /* MCPServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C4000000000000000000006 /* MCPServer.swift */; };
+		7C3000000000000000000007 /* MCPServerController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C4000000000000000000007 /* MCPServerController.swift */; };
+		7C3000000000000000000008 /* MCPTokenStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C4000000000000000000008 /* MCPTokenStore.swift */; };
+		7C3000000000000000000009 /* MCPTools.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C4000000000000000000009 /* MCPTools.swift */; };
+		7C300000000000000000000A /* SnippetDeletionAuthentication.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C400000000000000000000A /* SnippetDeletionAuthentication.swift */; };
+		7C300000000000000000000B /* MCPHTTPMessageTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C400000000000000000000B /* MCPHTTPMessageTests.swift */; };
+		7C300000000000000000000C /* MCPServerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C400000000000000000000C /* MCPServerTests.swift */; };
+		7C300000000000000000000D /* MCPTokenStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C400000000000000000000D /* MCPTokenStoreTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -84,6 +97,19 @@
 		7A2000000000000000000106 /* SnippetGroupListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnippetGroupListView.swift; sourceTree = "<group>"; };
 		7A2000000000000000000107 /* SnippetListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnippetListView.swift; sourceTree = "<group>"; };
 		7A2000000000000000000108 /* SnippetEmbeddingRevision.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnippetEmbeddingRevision.swift; sourceTree = "<group>"; };
+		7C4000000000000000000001 /* AgentDeleteConfirmationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentDeleteConfirmationView.swift; sourceTree = "<group>"; };
+		7C4000000000000000000002 /* AgentSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentSettingsView.swift; sourceTree = "<group>"; };
+		7C4000000000000000000003 /* MCPClientAccess.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MCPClientAccess.swift; sourceTree = "<group>"; };
+		7C4000000000000000000004 /* MCPHTTPListener.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MCPHTTPListener.swift; sourceTree = "<group>"; };
+		7C4000000000000000000005 /* MCPHTTPMessage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MCPHTTPMessage.swift; sourceTree = "<group>"; };
+		7C4000000000000000000006 /* MCPServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MCPServer.swift; sourceTree = "<group>"; };
+		7C4000000000000000000007 /* MCPServerController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MCPServerController.swift; sourceTree = "<group>"; };
+		7C4000000000000000000008 /* MCPTokenStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MCPTokenStore.swift; sourceTree = "<group>"; };
+		7C4000000000000000000009 /* MCPTools.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MCPTools.swift; sourceTree = "<group>"; };
+		7C400000000000000000000A /* SnippetDeletionAuthentication.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnippetDeletionAuthentication.swift; sourceTree = "<group>"; };
+		7C400000000000000000000B /* MCPHTTPMessageTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MCPHTTPMessageTests.swift; sourceTree = "<group>"; };
+		7C400000000000000000000C /* MCPServerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MCPServerTests.swift; sourceTree = "<group>"; };
+		7C400000000000000000000D /* MCPTokenStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MCPTokenStoreTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -128,6 +154,16 @@
 			isa = PBXGroup;
 			children = (
 				819D3AB10EDF53500854ED1E /* Assets.xcassets */,
+				7C4000000000000000000001 /* AgentDeleteConfirmationView.swift */,
+				7C4000000000000000000002 /* AgentSettingsView.swift */,
+				7C4000000000000000000003 /* MCPClientAccess.swift */,
+				7C4000000000000000000004 /* MCPHTTPListener.swift */,
+				7C4000000000000000000005 /* MCPHTTPMessage.swift */,
+				7C4000000000000000000006 /* MCPServer.swift */,
+				7C4000000000000000000007 /* MCPServerController.swift */,
+				7C4000000000000000000008 /* MCPTokenStore.swift */,
+				7C4000000000000000000009 /* MCPTools.swift */,
+				7C400000000000000000000A /* SnippetDeletionAuthentication.swift */,
 				7A2000000000000000000101 /* ManagerSidebar.swift */,
 				7A2000000000000000000102 /* ManagerView.swift */,
 				7A2000000000000000000103 /* SnippetColorAppearance.swift */,
@@ -170,6 +206,9 @@
 			isa = PBXGroup;
 			children = (
 				696013EBD8A305FE612B27B7 /* TanzakuTests.swift */,
+				7C400000000000000000000B /* MCPHTTPMessageTests.swift */,
+				7C400000000000000000000C /* MCPServerTests.swift */,
+				7C400000000000000000000D /* MCPTokenStoreTests.swift */,
 				7B2000000000000000000032 /* DeveloperCommandsTests.swift */,
 				7B2000000000000000000026 /* LauncherOutputActionTests.swift */,
 				7B2000000000000000000028 /* LauncherResultListTests.swift */,
@@ -311,6 +350,9 @@
 			buildActionMask = 2147483647;
 			files = (
 				F3D1C21226DC1199B58783CB /* TanzakuTests.swift in Sources */,
+				7C300000000000000000000B /* MCPHTTPMessageTests.swift in Sources */,
+				7C300000000000000000000C /* MCPServerTests.swift in Sources */,
+				7C300000000000000000000D /* MCPTokenStoreTests.swift in Sources */,
 				7B2000000000000000000031 /* DeveloperCommandsTests.swift in Sources */,
 				7B2000000000000000000025 /* LauncherOutputActionTests.swift in Sources */,
 				7B2000000000000000000027 /* LauncherResultListTests.swift in Sources */,
@@ -330,6 +372,16 @@
 				7A2000000000000000000007 /* SnippetListView.swift in Sources */,
 				7A2000000000000000000008 /* SnippetEmbeddingRevision.swift in Sources */,
 				3FDD0285687CAEA6E170EAC6 /* TanzakuApp.swift in Sources */,
+				7C3000000000000000000001 /* AgentDeleteConfirmationView.swift in Sources */,
+				7C3000000000000000000002 /* AgentSettingsView.swift in Sources */,
+				7C3000000000000000000003 /* MCPClientAccess.swift in Sources */,
+				7C3000000000000000000004 /* MCPHTTPListener.swift in Sources */,
+				7C3000000000000000000005 /* MCPHTTPMessage.swift in Sources */,
+				7C3000000000000000000006 /* MCPServer.swift in Sources */,
+				7C3000000000000000000007 /* MCPServerController.swift in Sources */,
+				7C3000000000000000000008 /* MCPTokenStore.swift in Sources */,
+				7C3000000000000000000009 /* MCPTools.swift in Sources */,
+				7C300000000000000000000A /* SnippetDeletionAuthentication.swift in Sources */,
 				7B2000000000000000000029 /* SnippetEmbeddingIndexer.swift in Sources */,
 				7B2000000000000000000001 /* AppDelegate.swift in Sources */,
 				7B2000000000000000000003 /* DeveloperCommands.swift in Sources */,

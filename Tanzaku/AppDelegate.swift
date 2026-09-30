@@ -17,6 +17,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
   var openManagerWindow: (() -> Void)?
   /// ランチャー。ストアを開けなかった時は `nil` で、ランチャーは開かない。
   private(set) var launcherPanelController: LauncherPanelController?
+  /// 内蔵の MCP のサーバー。ストアを開けなかった時は `nil` で、サーバーは起動しない。
+  ///
+  /// 設定のウィンドウの scene が `applicationDidFinishLaunching` より先に読んでも同じものを渡せるよう、最初に読まれた時に作る (作るとサーバーが起動する)。
+  /// 意味検索はランチャーと同じ埋め込みモデルを使う。ランチャーを作る前に届いた検索は意味検索なしになる。
+  private(set) lazy var mcpServerController: MCPServerController? = (try? modelContainerResult.get()).map { modelContainer in
+    MCPServerController(
+      modelContainer: modelContainer,
+      tokenStore: keychainMCPTokenStore(),
+      semanticQueryEmbedder: { [weak self] query in
+        await self?.launcherPanelController?.semanticQueryEmbedder(query: query)
+      },
+      snippetsDidChange: { [weak self] in
+        self?.launcherPanelController?.refreshSnippetEmbeddingsAndSearch()
+      }
+    )
+  }
   /// 起動時の準備の失敗の記録。
   private let logger = Logger(subsystem: "com.bannzai.tanzaku", category: "AppDelegate")
 
@@ -37,6 +53,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
       self?.snippetEmbeddingRevision.value += 1
     }
     self.launcherPanelController = launcherPanelController
+    // 設定のウィンドウを開かなくても AI エージェントが接続できるよう、起動時にサーバーを起動する (`documents/DIRECTION.md`「決めたこと」)。
+    _ = mcpServerController
     do {
       try registerGlobalHotKey(keyCode: launcherHotKeyCode, modifiers: launcherHotKeyModifiers) {
         launcherPanelController.toggle()

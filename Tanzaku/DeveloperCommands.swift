@@ -132,6 +132,27 @@
           Text(verbatim: "Delete All Snippets")
         }
         Divider()
+        // MCP のクライアントを実際に接続しなくても、設定の「AI エージェント」と削除の確認の画面を確かめられるようにするため。
+        Button {
+          do {
+            try addSampleMCPClients(modelContext: try appDelegate.modelContainerResult.get().mainContext, now: .now)
+          } catch {
+            developerCommandsLogger.error("Failed to add sample MCP clients: \(String(describing: error), privacy: .public)")
+          }
+        } label: {
+          Text(verbatim: "Add Sample MCP Clients")
+        }
+        Button {
+          guard let mcpServerController = appDelegate.mcpServerController else {
+            return
+          }
+          Task {
+            await showSampleDeletionRequest(controller: mcpServerController)
+          }
+        } label: {
+          Text(verbatim: "Show Sample Deletion Request")
+        }
+        Divider()
         Button {
           NSApp.appearance = NSAppearance(named: .aqua)
         } label: {
@@ -196,6 +217,71 @@
       } catch {
         developerCommandsLogger.error("Failed to delete snippets: \(String(describing: error), privacy: .public)")
       }
+    }
+  }
+
+  /// 接続済みのクライアントの見本を入れる。名前と最後のアクセスはデザイン (`documents/design/Settings.dc.html`) の見本に合わせる。
+  ///
+  /// 押すたびにクライアントが増える (冪等ではない)。取り消しの操作を何度でも確かめられるようにするため。
+  func addSampleMCPClients(modelContext: ModelContext, now: Date) throws {
+    for (name, lastUsedAt) in [
+      ("Claude Code", now.addingTimeInterval(-2 * 60)),
+      ("Claude Desktop", now.addingTimeInterval(-24 * 60 * 60)),
+      ("Codex CLI", now.addingTimeInterval(-7 * 24 * 60 * 60)),
+    ] {
+      let client = MCPClient(id: UUID(), name: name, createdAt: lastUsedAt)
+      client.lastUsedAt = lastUsedAt
+      modelContext.insert(client)
+    }
+    try modelContext.save()
+  }
+
+  /// 見本のスニペットを作り、その削除の依頼を確認の画面に出す。内容はデザイン (`documents/design/AgentDelete.dc.html`) の見本に合わせ、本文は偽の値にする。許可されたら見本を消す。
+  ///
+  /// キーワード `envrc` は「Insert Sample Snippets」の見本も使うため、使われていない時だけ付ける (キーワードはスニペットの間で一意)。
+  func showSampleDeletionRequest(controller: MCPServerController) async {
+    let modelContext = controller.modelContainer.mainContext
+    let snippet = Snippet(body: "export API_TOKEN=dummy-token-for-test\nexport DATABASE_URL=postgres://localhost:5432/app_dev\nexport LOG_LEVEL=debug\n\ndotenv_if_exists .env.local")
+    snippet.title = String(localized: ".envrc template")
+    snippet.colorRawValue = SnippetColor.matsuba.rawValue
+    let folder = Folder(name: String(localized: "Dev environment"))
+    do {
+      let sampleKeyword: String? = "envrc"
+      if try modelContext.fetchCount(FetchDescriptor<Snippet>(predicate: #Predicate { $0.keyword == sampleKeyword })) == 0 {
+        snippet.keyword = sampleKeyword
+      }
+      modelContext.insert(snippet)
+      modelContext.insert(folder)
+      snippet.folder = folder
+      snippet.tags = ["shell", "direnv"].map { tagName in
+        let tag = Tag(name: tagName)
+        modelContext.insert(tag)
+        return tag
+      }
+      try modelContext.save()
+    } catch {
+      developerCommandsLogger.error("Failed to insert the sample snippet to delete: \(String(describing: error), privacy: .public)")
+      return
+    }
+    let isApproved = await controller.confirmSnippetDeletion(
+      request: SnippetDeletionRequest(
+        // 見本の依頼はどの接続済みのクライアントにも属さないため、取り消しで拒否されない新しい識別子にする。
+        clientID: UUID(),
+        rpcRequestID: "sample",
+        clientName: "Claude Code",
+        reason: String(localized: "direnv is no longer used, so this template is not needed anymore."),
+        snippet: snippet,
+        receivedAt: .now
+      )
+    )
+    guard isApproved else {
+      return
+    }
+    modelContext.delete(snippet)
+    do {
+      try modelContext.save()
+    } catch {
+      developerCommandsLogger.error("Failed to delete the sample snippet: \(String(describing: error), privacy: .public)")
     }
   }
 #endif

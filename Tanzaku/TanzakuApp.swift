@@ -21,6 +21,40 @@ struct TanzakuApp: App {
         DeveloperCommands(appDelegate: appDelegate)
       }
     #endif
+
+    Settings {
+      SettingsRoot(appDelegate: appDelegate)
+    }
+  }
+}
+
+/// 設定のウィンドウの中身。タブは「AI エージェント」だけで、「一般」は #15 で足す。
+private struct SettingsRoot: View {
+  /// ストアと MCP のサーバーを持つ delegate。
+  let appDelegate: AppDelegate
+
+  var body: some View {
+    Group {
+      switch (appDelegate.modelContainerResult, appDelegate.mcpServerController) {
+      case (.success(let modelContainer), .some(let mcpServerController)):
+        TabView {
+          AgentSettingsView()
+            .tabItem {
+              Label("AI Agents", systemImage: "cpu")
+            }
+        }
+        .modelContainer(modelContainer)
+        .environment(mcpServerController)
+      case (.failure(let error), _):
+        // ストアを開けなかった理由をユーザーが知れるよう、管理ウィンドウと同じくアプリを落とさずに出す。
+        Text(verbatim: error.localizedDescription)
+      case (.success, .none):
+        // ストアを開けた時は MCP のサーバーも作るため (`AppDelegate.mcpServerController`)、ここには来ない。
+        EmptyView()
+      }
+    }
+    .frame(width: 600)
+    .frame(minHeight: 640)
   }
 }
 
