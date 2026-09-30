@@ -74,6 +74,8 @@
 		7E1000000000000000000008 /* SnippetGroupPermissionGuide.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E2000000000000000000008 /* SnippetGroupPermissionGuide.swift */; };
 		7E1000000000000000000009 /* SnippetGroupKeywordTypedTextTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E2000000000000000000009 /* SnippetGroupKeywordTypedTextTests.swift */; };
 		7E100000000000000000000A /* SnippetGroupMenuPositionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E200000000000000000000A /* SnippetGroupMenuPositionTests.swift */; };
+		7E100000000000000000000B /* SnippetGroupMenuKey.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E200000000000000000000B /* SnippetGroupMenuKey.swift */; };
+		7E100000000000000000000C /* SnippetGroupMenuKeyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E200000000000000000000C /* SnippetGroupMenuKeyTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -155,6 +157,8 @@
 		7E2000000000000000000008 /* SnippetGroupPermissionGuide.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnippetGroupPermissionGuide.swift; sourceTree = "<group>"; };
 		7E2000000000000000000009 /* SnippetGroupKeywordTypedTextTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnippetGroupKeywordTypedTextTests.swift; sourceTree = "<group>"; };
 		7E200000000000000000000A /* SnippetGroupMenuPositionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnippetGroupMenuPositionTests.swift; sourceTree = "<group>"; };
+		7E200000000000000000000B /* SnippetGroupMenuKey.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnippetGroupMenuKey.swift; sourceTree = "<group>"; };
+		7E200000000000000000000C /* SnippetGroupMenuKeyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnippetGroupMenuKeyTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -246,6 +250,7 @@
 				7E2000000000000000000002 /* SnippetGroupKeywordPermission.swift */,
 				7E2000000000000000000003 /* SnippetGroupKeywordTypedText.swift */,
 				7E2000000000000000000004 /* SnippetGroupMenuController.swift */,
+				7E200000000000000000000B /* SnippetGroupMenuKey.swift */,
 				7E2000000000000000000005 /* SnippetGroupMenuPosition.swift */,
 				7E2000000000000000000006 /* SnippetGroupMenuState.swift */,
 				7E2000000000000000000007 /* SnippetGroupMenuView.swift */,
@@ -279,6 +284,7 @@
 				7B2000000000000000000028 /* LauncherResultListTests.swift */,
 				7E2000000000000000000009 /* SnippetGroupKeywordTypedTextTests.swift */,
 				7E200000000000000000000A /* SnippetGroupMenuPositionTests.swift */,
+				7E200000000000000000000C /* SnippetGroupMenuKeyTests.swift */,
 			);
 			path = TanzakuTests;
 			sourceTree = "<group>";
@@ -426,6 +432,7 @@
 				7B2000000000000000000027 /* LauncherResultListTests.swift in Sources */,
 				7E1000000000000000000009 /* SnippetGroupKeywordTypedTextTests.swift in Sources */,
 				7E100000000000000000000A /* SnippetGroupMenuPositionTests.swift in Sources */,
+				7E100000000000000000000C /* SnippetGroupMenuKeyTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -469,6 +476,7 @@
 				7E1000000000000000000002 /* SnippetGroupKeywordPermission.swift in Sources */,
 				7E1000000000000000000003 /* SnippetGroupKeywordTypedText.swift in Sources */,
 				7E1000000000000000000004 /* SnippetGroupMenuController.swift in Sources */,
+				7E100000000000000000000B /* SnippetGroupMenuKey.swift in Sources */,
 				7E1000000000000000000005 /* SnippetGroupMenuPosition.swift in Sources */,
 				7E1000000000000000000006 /* SnippetGroupMenuState.swift in Sources */,
 				7E1000000000000000000007 /* SnippetGroupMenuView.swift in Sources */,

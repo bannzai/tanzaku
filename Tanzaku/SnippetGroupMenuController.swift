@@ -165,7 +165,7 @@ final class SnippetGroupMenuController {
         return false
       }
       if isMenuOpen {
-        if handleMenuKeyDown(keyCode: keyCode) {
+        if isSnippetGroupMenuKeyModifierFree(modifierFlags: modifierFlags), handleMenuKeyDown(keyCode: keyCode) {
           return true
         }
         // メニューの操作以外のキーは入力欄へ渡し、メニューは閉じる。キーワードの後に続けて打つ時にメニューを残さないため。
