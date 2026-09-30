@@ -64,6 +64,18 @@
 		7D1000000000000000000011 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 7D1000000000000000001011 /* Localizable.xcstrings */; };
 		7D1000000000000000000013 /* SnippetEmbeddingIndexer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B2000000000000000000030 /* SnippetEmbeddingIndexer.swift */; };
 		7D1000000000000000000014 /* SnippetColorAppearance.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A2000000000000000000103 /* SnippetColorAppearance.swift */; };
+		7E1000000000000000000001 /* FocusedTextCaret.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E2000000000000000000001 /* FocusedTextCaret.swift */; };
+		7E1000000000000000000002 /* SnippetGroupKeywordPermission.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E2000000000000000000002 /* SnippetGroupKeywordPermission.swift */; };
+		7E1000000000000000000003 /* SnippetGroupKeywordTypedText.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E2000000000000000000003 /* SnippetGroupKeywordTypedText.swift */; };
+		7E1000000000000000000004 /* SnippetGroupMenuController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E2000000000000000000004 /* SnippetGroupMenuController.swift */; };
+		7E1000000000000000000005 /* SnippetGroupMenuPosition.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E2000000000000000000005 /* SnippetGroupMenuPosition.swift */; };
+		7E1000000000000000000006 /* SnippetGroupMenuState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E2000000000000000000006 /* SnippetGroupMenuState.swift */; };
+		7E1000000000000000000007 /* SnippetGroupMenuView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E2000000000000000000007 /* SnippetGroupMenuView.swift */; };
+		7E1000000000000000000008 /* SnippetGroupPermissionGuide.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E2000000000000000000008 /* SnippetGroupPermissionGuide.swift */; };
+		7E1000000000000000000009 /* SnippetGroupKeywordTypedTextTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E2000000000000000000009 /* SnippetGroupKeywordTypedTextTests.swift */; };
+		7E100000000000000000000A /* SnippetGroupMenuPositionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E200000000000000000000A /* SnippetGroupMenuPositionTests.swift */; };
+		7E100000000000000000000B /* SnippetGroupMenuKey.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E200000000000000000000B /* SnippetGroupMenuKey.swift */; };
+		7E100000000000000000000C /* SnippetGroupMenuKeyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E200000000000000000000C /* SnippetGroupMenuKeyTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -135,6 +147,18 @@
 		7D1000000000000000001010 /* SnippetEmbeddingController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnippetEmbeddingController.swift; sourceTree = "<group>"; };
 		7D1000000000000000001011 /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
 		7D1000000000000000001012 /* TanzakuiOS.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = TanzakuiOS.entitlements; sourceTree = "<group>"; };
+		7E2000000000000000000001 /* FocusedTextCaret.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusedTextCaret.swift; sourceTree = "<group>"; };
+		7E2000000000000000000002 /* SnippetGroupKeywordPermission.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnippetGroupKeywordPermission.swift; sourceTree = "<group>"; };
+		7E2000000000000000000003 /* SnippetGroupKeywordTypedText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnippetGroupKeywordTypedText.swift; sourceTree = "<group>"; };
+		7E2000000000000000000004 /* SnippetGroupMenuController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnippetGroupMenuController.swift; sourceTree = "<group>"; };
+		7E2000000000000000000005 /* SnippetGroupMenuPosition.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnippetGroupMenuPosition.swift; sourceTree = "<group>"; };
+		7E2000000000000000000006 /* SnippetGroupMenuState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnippetGroupMenuState.swift; sourceTree = "<group>"; };
+		7E2000000000000000000007 /* SnippetGroupMenuView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnippetGroupMenuView.swift; sourceTree = "<group>"; };
+		7E2000000000000000000008 /* SnippetGroupPermissionGuide.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnippetGroupPermissionGuide.swift; sourceTree = "<group>"; };
+		7E2000000000000000000009 /* SnippetGroupKeywordTypedTextTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnippetGroupKeywordTypedTextTests.swift; sourceTree = "<group>"; };
+		7E200000000000000000000A /* SnippetGroupMenuPositionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnippetGroupMenuPositionTests.swift; sourceTree = "<group>"; };
+		7E200000000000000000000B /* SnippetGroupMenuKey.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnippetGroupMenuKey.swift; sourceTree = "<group>"; };
+		7E200000000000000000000C /* SnippetGroupMenuKeyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnippetGroupMenuKeyTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -222,6 +246,15 @@
 				7B2000000000000000000020 /* MacModelContainer.swift */,
 				7B2000000000000000000022 /* NewSnippetDraft.swift */,
 				7B2000000000000000000024 /* SnippetPasteboard.swift */,
+				7E2000000000000000000001 /* FocusedTextCaret.swift */,
+				7E2000000000000000000002 /* SnippetGroupKeywordPermission.swift */,
+				7E2000000000000000000003 /* SnippetGroupKeywordTypedText.swift */,
+				7E2000000000000000000004 /* SnippetGroupMenuController.swift */,
+				7E200000000000000000000B /* SnippetGroupMenuKey.swift */,
+				7E2000000000000000000005 /* SnippetGroupMenuPosition.swift */,
+				7E2000000000000000000006 /* SnippetGroupMenuState.swift */,
+				7E2000000000000000000007 /* SnippetGroupMenuView.swift */,
+				7E2000000000000000000008 /* SnippetGroupPermissionGuide.swift */,
 				490F39DA27F8967A83114754 /* Localizable.xcstrings */,
 				AB8FE1D8A6D581E6DF71B10D /* Tanzaku.entitlements */,
 				8A6FB295041B82E946869DF6 /* TanzakuApp.swift */,
@@ -249,6 +282,9 @@
 				7B2000000000000000000032 /* DeveloperCommandsTests.swift */,
 				7B2000000000000000000026 /* LauncherOutputActionTests.swift */,
 				7B2000000000000000000028 /* LauncherResultListTests.swift */,
+				7E2000000000000000000009 /* SnippetGroupKeywordTypedTextTests.swift */,
+				7E200000000000000000000A /* SnippetGroupMenuPositionTests.swift */,
+				7E200000000000000000000C /* SnippetGroupMenuKeyTests.swift */,
 			);
 			path = TanzakuTests;
 			sourceTree = "<group>";
@@ -394,6 +430,9 @@
 				7B2000000000000000000031 /* DeveloperCommandsTests.swift in Sources */,
 				7B2000000000000000000025 /* LauncherOutputActionTests.swift in Sources */,
 				7B2000000000000000000027 /* LauncherResultListTests.swift in Sources */,
+				7E1000000000000000000009 /* SnippetGroupKeywordTypedTextTests.swift in Sources */,
+				7E100000000000000000000A /* SnippetGroupMenuPositionTests.swift in Sources */,
+				7E100000000000000000000C /* SnippetGroupMenuKeyTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -433,6 +472,15 @@
 				7B2000000000000000000019 /* MacModelContainer.swift in Sources */,
 				7B2000000000000000000021 /* NewSnippetDraft.swift in Sources */,
 				7B2000000000000000000023 /* SnippetPasteboard.swift in Sources */,
+				7E1000000000000000000001 /* FocusedTextCaret.swift in Sources */,
+				7E1000000000000000000002 /* SnippetGroupKeywordPermission.swift in Sources */,
+				7E1000000000000000000003 /* SnippetGroupKeywordTypedText.swift in Sources */,
+				7E1000000000000000000004 /* SnippetGroupMenuController.swift in Sources */,
+				7E100000000000000000000B /* SnippetGroupMenuKey.swift in Sources */,
+				7E1000000000000000000005 /* SnippetGroupMenuPosition.swift in Sources */,
+				7E1000000000000000000006 /* SnippetGroupMenuState.swift in Sources */,
+				7E1000000000000000000007 /* SnippetGroupMenuView.swift in Sources */,
+				7E1000000000000000000008 /* SnippetGroupPermissionGuide.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
