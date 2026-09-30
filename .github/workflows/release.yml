@@ -122,7 +122,6 @@ jobs:
       # GITHUB_TOKEN の push は ci.yml を起動しない (appcast だけの変更のためビルドは要らない)。
       - name: Add the version to the appcast
         env:
-          GH_TOKEN: ${{ github.token }}
           SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
         run: |
           version="${GITHUB_REF_NAME#v}"
@@ -138,8 +137,13 @@ jobs:
           git add docs/appcast.xml
           git commit -m "chore: appcast に ${version} を足す"
           git push origin HEAD:main
-          # GITHUB_TOKEN の push で GitHub Pages が作り直されるかは確かめていないため、作り直しを明示的に求める。
-          gh api -X POST "repos/${GITHUB_REPOSITORY}/pages/builds"
+
+      # GITHUB_TOKEN の push で GitHub Pages が作り直されるかは確かめていないため、作り直しを明示的に求める。
+      # 前回の実行で push した後にここで失敗した時も、再実行で appcast を公開できるよう、appcast に変更が無くても求める。
+      - name: Request a GitHub Pages build
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api -X POST "repos/${GITHUB_REPOSITORY}/pages/builds"
 
       - name: Delete the temporary keychain
         if: always()
