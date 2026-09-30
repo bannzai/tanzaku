@@ -90,6 +90,10 @@ macOS の画面デザインは `documents/design/` (Claude の Design キャン�
 | 2026-09-28 | 実装 | MCP のツールは `search_snippets`・`get_snippet`・`create_snippet`・`update_snippet`・`delete_snippet` の 5 つで、属性は本文・タイトル・キーワード・言語を扱う (色・フォルダ・タグは管理ウィンドウで扱う)。引数の誤り・見つからないスニペット・保存前の検査の失敗は、エージェントが直して呼び直せるようツールのエラー (`isError`) で返す | agent |
 | 2026-09-28 | 実装 | 削除の確認は、アプリを前面に出して依頼元・理由・全文を見せる画面を出し、「Touch ID で削除」を押した時に `LAContext` の `.deviceOwnerAuthentication` で認証する。Touch ID の無い Mac ではログインのパスワードで認証する。Touch ID だけにすると、その Mac では MCP から削除できなくなるため。確認を待つ間、MCP のリクエストは応答を保留する | agent |
 | 2026-09-28 | 実装 | MCP サーバーは既定で動かす。初回起動の最後の手順で AI エージェントを接続するため (`documents/PROJECT.md`「設定・初回起動」)。トークンが無いリクエストは受け付けないため、動かしていても認証なしに触られない | agent |
+| 2026-09-28 | 実装 | iOS アプリのストアは最初の版から App Group (`group.com.bannzai.tanzaku`) の共有コンテナの `Tanzaku/` に置き、iCloud (CloudKit) との同期は同期の issue (#19) まで切る。iCloud コンテナが未作成で、CI・simtunnel の署名しないビルドでは iCloud の entitlement を満たせないため | agent |
+| 2026-09-28 | 実装 | iOS の一覧は行のタップで本文をコピーする (iPad はタップした行を詳細の列にも出す)。ほかのアプリの入力欄へ貼るのが主な使い方のため。編集・削除は行のスワイプと長押しのメニュー、追加と編集は sheet に置く。iPhone は起動した時に「すべてのスニペット」の一覧から始める。編集の保存と検査は Mac の管理ウィンドウと同じく、入力を画面の状態に持ち `applySnippetEdit` / `applySnippetGroupEdit` を通った時だけ書き込む | agent |
+| 2026-09-28 | 実装 | iOS のサイドバーはスニペットグループを絞り込みの 1 つとして並べ、選ぶとグループのメニューの順でスニペットを出す (`documents/PROJECT.md`「iOS > 本体アプリ」の「スニペットグループで絞り込む」)。グループの追加・編集・削除はサイドバーの行から行う。Mac の管理ウィンドウのようにグループの一覧と編集の列を分けると、iPhone では画面が 1 段深くなるため | agent |
+| 2026-09-28 | 実装 | iOS の意味検索のベクトルと検索の入力のベクトルは、Mac と同じ `SnippetEmbeddingIndexer` (メインスレッドの外の actor) で作る | agent |
 
 ## agent に任せること
 
