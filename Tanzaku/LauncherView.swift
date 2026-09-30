@@ -131,7 +131,9 @@ struct LauncherView: View {
       .frame(width: 330)
       LauncherLine(axis: .vertical)
       if let selectedSnippet {
+        // スニペットごとに別の画面として作り直し、前のスニペットの本文のスクロール位置を引き継がず先頭から出すため。
         LauncherSnippetPreview(snippet: selectedSnippet)
+          .id(selectedSnippet.id)
       } else {
         Spacer(minLength: 0)
       }
