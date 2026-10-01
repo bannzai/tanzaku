@@ -10,8 +10,8 @@ struct GeneralSettingsView: View {
   /// ランチャーの ⌘Return で前面のアプリに貼り付けるか。ランチャーは押した時にこの値を読む (`LauncherPanelController`)。
   /// 既定はオフ。⌘V の送信は審査・誤操作の懸念があるため、ユーザーが許可した時だけにする (`documents/DIRECTION.md`「決めたこと」の直接貼り付けの行)。
   @AppStorage(directPasteEnabledUserDefaultsKey) private var isDirectPasteEnabled = false
-  /// アクセシビリティの許可があるか。許可はシステム設定で変わり通知が無いため、アプリが前面に戻るたびに読み直す。
-  @State private var isAccessibilityPermissionGranted = isAccessibilityTrusted()
+  /// ⌘V を送る許可 (アクセシビリティとイベント送信) があるか。許可はシステム設定で変わり通知が無いため、アプリが前面に戻るたびに読み直す。
+  @State private var isSyntheticKeyStrokePermissionGranted = isSyntheticKeyStrokeAllowed()
   /// ログイン項目の登録の状態。正はシステム (`SMAppService`) が持つため、保存せずに毎回読む。
   @State private var launchAtLoginStatus = SMAppService.mainApp.status
   /// ログイン項目の登録・解除の失敗。
@@ -37,17 +37,25 @@ struct GeneralSettingsView: View {
           Text("Paste directly into the front app")
           Text("⌘Return pastes into the app you were using before opening the launcher.")
         }
-        if isDirectPasteEnabled && !isAccessibilityPermissionGranted {
+        if isDirectPasteEnabled && !isSyntheticKeyStrokePermissionGranted {
           HStack(spacing: 12) {
             Image(systemName: "exclamationmark.triangle")
               .foregroundStyle(snippetBandColor(snippetColor: .yamabuki))
-            Text("Accessibility permission hasn't been granted yet. Until you allow it, ⌘Return only copies.")
-              .font(.callout)
-              .frame(maxWidth: .infinity, alignment: .leading)
+            VStack(alignment: .leading, spacing: 4) {
+              Text("Accessibility permission hasn't been granted yet. Until you allow it, ⌘Return only copies.")
+                .font(.callout)
+              // 許可はアプリの署名ごとに記録され、署名の違うビルド (開発中のビルドと配布版など) に入れ替えると一覧にオンのまま残っても効かないため、外して載せ直す手順も書く。
+              Text("Turn on Tanzaku in System Settings › Privacy & Security › Accessibility. If it's already on and this message stays, remove Tanzaku from the list with − and open System Settings again from here.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            }
+            .fixedSize(horizontal: false, vertical: true)
+            .frame(maxWidth: .infinity, alignment: .leading)
             Button("Open System Settings") {
-              openAccessibilitySettings()
+              requestSyntheticKeyStrokeAccess()
             }
           }
+          .accessibilityIdentifier("direct-paste-permission-guide")
         }
       }
 
@@ -79,7 +87,7 @@ struct GeneralSettingsView: View {
     }
     .formStyle(.grouped)
     .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
-      isAccessibilityPermissionGranted = isAccessibilityTrusted()
+      isSyntheticKeyStrokePermissionGranted = isSyntheticKeyStrokeAllowed()
       launchAtLoginStatus = SMAppService.mainApp.status
     }
   }
@@ -151,17 +159,5 @@ private struct LauncherShortcutRecorder: View {
     .onDisappear {
       launcherShortcutController.cancelRecording()
     }
-  }
-}
-
-/// アクセシビリティの許可を求め、システム設定のアクセシビリティの画面を開く。
-///
-/// `AXIsProcessTrustedWithOptions` の問い合わせで、このアプリをアクセシビリティの一覧に載せる。載っていないとユーザーが「+」から自分でアプリを探して足す必要があるため。
-/// 冪等ではない: 許可が無い間は呼ぶたびにシステムの確認が出る。
-func openAccessibilitySettings() {
-  // キーは `kAXTrustedCheckOptionPrompt` の値。この定数は C の書き換えられるグローバル変数として取り込まれ、Swift 6 の並行性の検査で参照できないため、同じ文字列を書く。
-  _ = AXIsProcessTrustedWithOptions(["AXTrustedCheckOptionPrompt": true] as CFDictionary)
-  if let accessibilitySettingsURL = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") {
-    NSWorkspace.shared.open(accessibilitySettingsURL)
   }
 }

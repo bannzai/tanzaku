@@ -12,7 +12,28 @@ func isAccessibilityTrusted() -> Bool {
   AXIsProcessTrusted()
 }
 
-/// `application` を前面に戻し、⌘V を送ってクリップボードの中身を貼り付ける。アクセシビリティの許可が無いとイベントは届かないため、呼ぶ前に `isAccessibilityTrusted()` を確かめる。
+/// 別のアプリへキー入力 (⌘V・バックスペース) を送る許可がすべてあるか。
+///
+/// `CGEvent.post` はアクセシビリティとは別にイベント送信 (PostEvent) の許可を求める場合がある。どちらもシステム設定の「アクセシビリティ」の一覧で与えるため、1 つにまとめて扱う。
+func isSyntheticKeyStrokeAllowed() -> Bool {
+  isAccessibilityTrusted() && CGPreflightPostEventAccess()
+}
+
+/// アクセシビリティとイベント送信の許可を求め、システム設定の「アクセシビリティ」を開く。
+///
+/// `AXIsProcessTrustedWithOptions` の問い合わせで、このアプリをアクセシビリティの一覧に載せる。載っていないとユーザーが「+」から自分でアプリを探して足す必要があるため。
+/// 許可を求めるダイアログは初めて求めた時だけ出る。起動時に呼ぶと `make test` (アプリを起動して走る) の CI でダイアログが出たままになるため、ユーザーが案内のボタンを押した時だけ呼ぶ。
+/// 冪等ではない: 許可が無い間は呼ぶたびにシステムの確認が出る。
+func requestSyntheticKeyStrokeAccess() {
+  // キーは `kAXTrustedCheckOptionPrompt` の値。この定数は C の書き換えられるグローバル変数として取り込まれ、Swift 6 の並行性の検査で参照できないため、同じ文字列を書く。
+  _ = AXIsProcessTrustedWithOptions(["AXTrustedCheckOptionPrompt": true] as CFDictionary)
+  CGRequestPostEventAccess()
+  if let accessibilitySettingsURL = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") {
+    NSWorkspace.shared.open(accessibilitySettingsURL)
+  }
+}
+
+/// `application` を前面に戻し、⌘V を送ってクリップボードの中身を貼り付ける。許可が無いとイベントは届かないため、呼ぶ前に `isSyntheticKeyStrokeAllowed()` を確かめる。
 ///
 /// ⌘V は送った時点の前面のアプリに届くため、送る直前に `application` が終了しておらず前面にあることを確かめ、違えば送らない (コピーだけで終える)。待つ間にユーザーが別のアプリへ切り替えた時に、本文を意図しない入力欄へ貼り付けないため。
 /// 冪等ではない: 呼ぶたびに貼り付けが 1 回起きる。

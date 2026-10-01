@@ -65,6 +65,11 @@ final class LauncherPanelController: NSObject, NSWindowDelegate {
     let frontmostApplication = NSWorkspace.shared.frontmostApplication
     previousApplication = frontmostApplication?.processIdentifier == ProcessInfo.processInfo.processIdentifier ? nil : frontmostApplication
     state.presentationCount += 1
+    // 設定と許可は、パネルを閉じて設定・システム設定へ移った時にしか変わらない (ほかのウィンドウへ移るとパネルは閉じる) ため、開く時だけ決める。
+    state.commandReturnAction = launcherCommandReturnAction(
+      isDirectPasteEnabled: UserDefaults.standard.bool(forKey: directPasteEnabledUserDefaultsKey),
+      isSyntheticKeyStrokeAllowed: isSyntheticKeyStrokeAllowed()
+    )
     let panel = panel ?? makePanel()
     self.panel = panel
     if let visibleFrame = (NSScreen.main ?? NSScreen.screens.first)?.visibleFrame {
@@ -231,14 +236,7 @@ final class LauncherPanelController: NSObject, NSWindowDelegate {
       )
       return true
     case kVK_Return, kVK_ANSI_KeypadEnter:
-      outputSelectedSnippet(
-        action: modifierFlags.contains(.command)
-          ? launcherCommandReturnAction(
-            isDirectPasteEnabled: UserDefaults.standard.bool(forKey: directPasteEnabledUserDefaultsKey),
-            isAccessibilityTrusted: isAccessibilityTrusted()
-          )
-          : .copy
-      )
+      outputSelectedSnippet(action: modifierFlags.contains(.command) ? state.commandReturnAction : .copy)
       return true
     case kVK_ANSI_N where modifierFlags == .command:
       createSnippetFromQuery()
