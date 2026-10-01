@@ -23,7 +23,7 @@ struct SnippetGroupPermissionGuide: View {
               "When you type a snippet group’s keyword, Tanzaku shows the menu at the text cursor and replaces the keyword with the snippet you choose. What you type is used only to find keywords, and is never saved or sent."
             )
             .foregroundStyle(.secondary)
-            .fixedSize(horizontal: false, vertical: true)
+            // `.fixedSize(horizontal: false, vertical: true)` を付けない。管理ウィンドウの最小の大きさを求める時の狭い幅で 1 文字ずつ折り返した高さが最小の高さになり、ウィンドウが画面の外まで縦に伸びてサイドバーがツールバーの下にずれたため (https://github.com/bannzai/tanzaku/issues/43 )。
             permissionRow(title: "Input Monitoring", isGranted: isInputMonitoringGranted, action: requestInputMonitoringAccess)
               .accessibilityIdentifier("snippet-group-permission-input-monitoring")
             permissionRow(title: "Accessibility", isGranted: isAccessibilityGranted, action: requestSyntheticKeyStrokeAccess)
