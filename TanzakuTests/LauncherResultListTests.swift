@@ -5,7 +5,7 @@ import Testing
 
 @testable import Tanzaku
 
-/// ランチャーの結果の並べ方・選択の動かし方・本体の欄の出し分け・キーワードの太字の範囲を確かめる。
+/// ランチャーの結果と最近使ったスニペットの並べ方・選択の動かし方・本体の欄の出し分け・キーワードの太字の範囲を確かめる。
 struct LauncherResultListTests {
   /// 結果に入れるスニペットを置くインメモリのストア。
   private let modelContext: ModelContext
@@ -38,19 +38,19 @@ struct LauncherResultListTests {
     )
 
     #expect(
-      launcherSelectableSnippets(searchResult: searchResult).map(\.id)
+      launcherSelectableSnippets(recentSnippets: [], searchResult: searchResult).map(\.id)
         == [exactMatchedSnippet.id, prefixMatchedSnippet.id, firstSemanticSnippet.id, secondSemanticSnippet.id]
     )
-    #expect(launcherSelectedSnippet(searchResult: searchResult, selectedSnippetIndex: 2)?.id == firstSemanticSnippet.id)
+    #expect(launcherSelectedSnippet(recentSnippets: [], searchResult: searchResult, selectedSnippetIndex: 2)?.id == firstSemanticSnippet.id)
   }
 
   @Test("選んでいる位置が無い・結果の範囲の外なら選んでいるスニペットは無い")
   func selectedSnippetOutOfRangeIsNil() {
     let searchResult = SnippetSearchResult(keywordMatches: [], semanticMatches: [makeSnippet(body: "echo dummy")])
 
-    #expect(launcherSelectedSnippet(searchResult: searchResult, selectedSnippetIndex: nil) == nil)
-    #expect(launcherSelectedSnippet(searchResult: searchResult, selectedSnippetIndex: 1) == nil)
-    #expect(launcherSelectedSnippet(searchResult: searchResult, selectedSnippetIndex: -1) == nil)
+    #expect(launcherSelectedSnippet(recentSnippets: [], searchResult: searchResult, selectedSnippetIndex: nil) == nil)
+    #expect(launcherSelectedSnippet(recentSnippets: [], searchResult: searchResult, selectedSnippetIndex: 1) == nil)
+    #expect(launcherSelectedSnippet(recentSnippets: [], searchResult: searchResult, selectedSnippetIndex: -1) == nil)
   }
 
   @Test("入力を変えずに結果を入れ替えた時は、選んでいたスニペットが残っていればその位置を選び、無ければ先頭を選ぶ")
@@ -66,11 +66,11 @@ struct LauncherResultListTests {
       semanticMatches: [semanticSnippet]
     )
 
-    #expect(launcherSelectionIndexAfterResultUpdate(searchResult: updatedSearchResult, selectedSnippetID: selectedSnippet.id) == 1)
-    #expect(launcherSelectionIndexAfterResultUpdate(searchResult: updatedSearchResult, selectedSnippetID: UUID()) == 0)
-    #expect(launcherSelectionIndexAfterResultUpdate(searchResult: updatedSearchResult, selectedSnippetID: nil) == 0)
+    #expect(launcherSelectionIndexAfterResultUpdate(recentSnippets: [], searchResult: updatedSearchResult, selectedSnippetID: selectedSnippet.id) == 1)
+    #expect(launcherSelectionIndexAfterResultUpdate(recentSnippets: [], searchResult: updatedSearchResult, selectedSnippetID: UUID()) == 0)
+    #expect(launcherSelectionIndexAfterResultUpdate(recentSnippets: [], searchResult: updatedSearchResult, selectedSnippetID: nil) == 0)
     #expect(
-      launcherSelectionIndexAfterResultUpdate(searchResult: SnippetSearchResult(keywordMatches: [], semanticMatches: []), selectedSnippetID: selectedSnippet.id)
+      launcherSelectionIndexAfterResultUpdate(recentSnippets: [], searchResult: SnippetSearchResult(keywordMatches: [], semanticMatches: []), selectedSnippetID: selectedSnippet.id)
         == nil
     )
   }
@@ -84,14 +84,50 @@ struct LauncherResultListTests {
     #expect(launcherMovedSelectionIndex(currentIndex: 1, offset: 1, count: 0) == nil)
   }
 
-  @Test("入力が空白だけなら何も出さず、入力があれば結果の有無で結果の欄と結果なしの案内を出し分ける")
+  @Test("入力が空白だけなら最近使ったスニペットの有無で欄と新規作成の案内を出し分け、入力があれば結果の有無で結果の欄と結果なしの案内を出し分ける")
   func contentStateDependsOnQueryAndResults() {
     let emptySearchResult = SnippetSearchResult(keywordMatches: [], semanticMatches: [])
     let searchResult = SnippetSearchResult(keywordMatches: [], semanticMatches: [makeSnippet(body: "echo dummy")])
+    let recentSnippets = [makeSnippet(body: "echo dummy recent")]
 
-    #expect(launcherContentState(query: " \n", searchResult: searchResult, isSemanticSearchPending: false) == .idle)
-    #expect(launcherContentState(query: "env", searchResult: searchResult, isSemanticSearchPending: false) == .results)
-    #expect(launcherContentState(query: "ステージングの DB につなぐ", searchResult: emptySearchResult, isSemanticSearchPending: false) == .empty)
+    #expect(launcherContentState(query: " \n", recentSnippets: recentSnippets, searchResult: emptySearchResult, isSemanticSearchPending: false) == .recentSnippets)
+    #expect(launcherContentState(query: "", recentSnippets: [], searchResult: emptySearchResult, isSemanticSearchPending: false) == .noRecentSnippets)
+    #expect(launcherContentState(query: "env", recentSnippets: [], searchResult: searchResult, isSemanticSearchPending: false) == .results)
+    #expect(launcherContentState(query: "ステージングの DB につなぐ", recentSnippets: [], searchResult: emptySearchResult, isSemanticSearchPending: false) == .empty)
+  }
+
+  @Test("最近使ったスニペットを使った順のまま選べる")
+  func recentSnippetsAreSelectableInOrder() {
+    let newerSnippet = makeSnippet(body: "echo dummy newer")
+    let olderSnippet = makeSnippet(body: "echo dummy older")
+    let emptySearchResult = SnippetSearchResult(keywordMatches: [], semanticMatches: [])
+
+    #expect(launcherSelectableSnippets(recentSnippets: [newerSnippet, olderSnippet], searchResult: emptySearchResult).map(\.id) == [newerSnippet.id, olderSnippet.id])
+    #expect(launcherSelectedSnippet(recentSnippets: [newerSnippet, olderSnippet], searchResult: emptySearchResult, selectedSnippetIndex: 1)?.id == olderSnippet.id)
+    #expect(launcherSelectionIndexAfterResultUpdate(recentSnippets: [newerSnippet, olderSnippet], searchResult: emptySearchResult, selectedSnippetID: nil) == 0)
+  }
+
+  @Test("使った後に開き直すと、使ったスニペットが最近使った欄の先頭に出て選ばれている")
+  func usedSnippetIsFirstRecentSnippetAfterReopening() throws {
+    let firstSnippet = makeSnippet(body: "echo dummy first", keyword: "first")
+    let secondSnippet = makeSnippet(body: "echo dummy second", keyword: "second")
+    try modelContext.save()
+    #expect(launcherContentState(query: "", recentSnippets: try recentlyUsedSnippets(modelContext: modelContext), searchResult: SnippetSearchResult(keywordMatches: [], semanticMatches: []), isSemanticSearchPending: false) == .noRecentSnippets)
+
+    try recordSnippetUse(snippet: firstSnippet, usedAt: Date(timeIntervalSince1970: 1_000), modelContext: modelContext)
+    try recordSnippetUse(snippet: secondSnippet, usedAt: Date(timeIntervalSince1970: 2_000), modelContext: modelContext)
+    let recentSnippets = try recentlyUsedSnippets(modelContext: modelContext)
+    let emptySearchResult = SnippetSearchResult(keywordMatches: [], semanticMatches: [])
+
+    #expect(launcherContentState(query: "", recentSnippets: recentSnippets, searchResult: emptySearchResult, isSemanticSearchPending: false) == .recentSnippets)
+    #expect(
+      launcherSelectedSnippet(
+        recentSnippets: recentSnippets,
+        searchResult: emptySearchResult,
+        selectedSnippetIndex: launcherSelectionIndexAfterResultUpdate(recentSnippets: recentSnippets, searchResult: emptySearchResult, selectedSnippetID: nil)
+      )?.id == secondSnippet.id
+    )
+    #expect(recentSnippets.map(\.id) == [secondSnippet.id, firstSnippet.id])
   }
 
   @Test("結果が無くても意味検索を待っている間は結果なしの案内を出さず、結果があれば待っていても結果の欄を出す")
@@ -99,9 +135,9 @@ struct LauncherResultListTests {
     let emptySearchResult = SnippetSearchResult(keywordMatches: [], semanticMatches: [])
     let searchResult = SnippetSearchResult(keywordMatches: [SnippetKeywordMatch(snippet: makeSnippet(body: "echo dummy", keyword: "env"), kind: .keywordExact)], semanticMatches: [])
 
-    #expect(launcherContentState(query: "ステージングの DB につなぐ", searchResult: emptySearchResult, isSemanticSearchPending: true) == .searching)
-    #expect(launcherContentState(query: "env", searchResult: searchResult, isSemanticSearchPending: true) == .results)
-    #expect(launcherContentState(query: " ", searchResult: emptySearchResult, isSemanticSearchPending: true) == .idle)
+    #expect(launcherContentState(query: "ステージングの DB につなぐ", recentSnippets: [], searchResult: emptySearchResult, isSemanticSearchPending: true) == .searching)
+    #expect(launcherContentState(query: "env", recentSnippets: [], searchResult: searchResult, isSemanticSearchPending: true) == .results)
+    #expect(launcherContentState(query: " ", recentSnippets: [], searchResult: emptySearchResult, isSemanticSearchPending: true) == .noRecentSnippets)
   }
 
   @Test("キーワードの完全一致・前方一致は入力の文字数だけ先頭を太字にし、タイトル・本文の一致は太字にしない")
@@ -132,9 +168,9 @@ struct LauncherResultListTests {
 
     let searchResult = try searchSnippets(query: "env", modelContext: modelContext, embedder: nil)
 
-    #expect(launcherContentState(query: "env", searchResult: searchResult, isSemanticSearchPending: false) == .results)
+    #expect(launcherContentState(query: "env", recentSnippets: [], searchResult: searchResult, isSemanticSearchPending: false) == .results)
     #expect(
-      launcherSelectableSnippets(searchResult: searchResult).map(\.id) == [exactMatchedSnippet.id, prefixMatchedSnippet.id, bodyMatchedSnippet.id]
+      launcherSelectableSnippets(recentSnippets: [], searchResult: searchResult).map(\.id) == [exactMatchedSnippet.id, prefixMatchedSnippet.id, bodyMatchedSnippet.id]
     )
   }
 }

@@ -60,7 +60,7 @@ final class LauncherPanelController: NSObject, NSWindowDelegate {
     }
   }
 
-  /// パネルを画面の中央に開く。入力と結果は閉じた時に空にしてある。
+  /// パネルを画面の中央に開き、最近使ったスニペットを出す。入力と結果は閉じた時に空にしてある。
   func show() {
     let frontmostApplication = NSWorkspace.shared.frontmostApplication
     previousApplication = frontmostApplication?.processIdentifier == ProcessInfo.processInfo.processIdentifier ? nil : frontmostApplication
@@ -76,6 +76,7 @@ final class LauncherPanelController: NSObject, NSWindowDelegate {
       panel.setFrameOrigin(NSPoint(x: visibleFrame.midX - panel.frame.width / 2, y: visibleFrame.midY - panel.frame.height / 2))
     }
     panel.makeKeyAndOrderFront(nil)
+    search(keepsSelection: false)
     refreshSnippetEmbeddingsAndSearch()
   }
 
@@ -106,6 +107,7 @@ final class LauncherPanelController: NSObject, NSWindowDelegate {
     semanticSearchTask?.cancel()
     state.query = ""
     state.searchResult = SnippetSearchResult(keywordMatches: [], semanticMatches: [])
+    state.recentSnippets = []
     state.isSemanticSearchPending = false
     state.selectedSnippetIndex = nil
   }
@@ -119,9 +121,23 @@ final class LauncherPanelController: NSObject, NSWindowDelegate {
   ///
   /// 文字列の一致はすぐに出し、意味検索は入力のベクトルを `SnippetEmbeddingIndexer` で作ってから足す。入力のベクトルの推論でキー入力を止めないため。
   /// `keepsSelection` が `false` (入力が変わった) なら先頭を選ぶ。`true` (入力を変えずにベクトルを作り直した) なら選んでいたスニペットを選び続け、意味検索の結果が届くまで文字列の一致だけの結果に入れ替えない (選んでいた意味検索の結果が一度消えて選択が移らないようにするため)。
+  /// 入力が空 (空白だけを含む) の時は検索せず、最近使ったスニペットを読み直して出す。文字を消して空に戻した時も、開き直した時と同じ一覧に戻すため。
   private func search(keepsSelection: Bool) {
     let query = state.query
     semanticSearchTask?.cancel()
+    guard !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+      let selectedSnippetID = keepsSelection ? selectedSnippetID() : nil
+      state.isSemanticSearchPending = false
+      state.searchResult = SnippetSearchResult(keywordMatches: [], semanticMatches: [])
+      state.recentSnippets = loadRecentSnippets()
+      state.selectedSnippetIndex = launcherSelectionIndexAfterResultUpdate(
+        recentSnippets: state.recentSnippets,
+        searchResult: state.searchResult,
+        selectedSnippetID: selectedSnippetID
+      )
+      return
+    }
+    state.recentSnippets = []
     guard let snippetEmbeddingIndexer, let snippetEmbeddingModelIdentifier else {
       state.isSemanticSearchPending = false
       applySearchResult(query: query, embedder: nil, selectedSnippetID: keepsSelection ? selectedSnippetID() : nil)
@@ -165,12 +181,26 @@ final class LauncherPanelController: NSObject, NSWindowDelegate {
       logger.error("Failed to search snippets: \(String(describing: error))")
       state.searchResult = SnippetSearchResult(keywordMatches: [], semanticMatches: [])
     }
-    state.selectedSnippetIndex = launcherSelectionIndexAfterResultUpdate(searchResult: state.searchResult, selectedSnippetID: selectedSnippetID)
+    state.selectedSnippetIndex = launcherSelectionIndexAfterResultUpdate(
+      recentSnippets: state.recentSnippets,
+      searchResult: state.searchResult,
+      selectedSnippetID: selectedSnippetID
+    )
+  }
+
+  /// 最近使ったスニペット。読めなければ記録して空にし、使ったことが無い時と同じ新規作成の案内を出す。
+  private func loadRecentSnippets() -> [Snippet] {
+    do {
+      return try recentlyUsedSnippets(modelContext: modelContainer.mainContext)
+    } catch {
+      logger.error("Failed to fetch recently used snippets: \(String(describing: error))")
+      return []
+    }
   }
 
   /// 今選んでいるスニペットの `id`。
   private func selectedSnippetID() -> UUID? {
-    launcherSelectedSnippet(searchResult: state.searchResult, selectedSnippetIndex: state.selectedSnippetIndex)?.id
+    launcherSelectedSnippet(recentSnippets: state.recentSnippets, searchResult: state.searchResult, selectedSnippetIndex: state.selectedSnippetIndex)?.id
   }
 
   /// 管理ウィンドウの検索に渡す埋め込みモデル。入力のベクトルを `SnippetEmbeddingIndexer` でメインスレッドの外で作り、それを返すだけの埋め込みモデルにして返す。
@@ -232,7 +262,7 @@ final class LauncherPanelController: NSObject, NSWindowDelegate {
       state.selectedSnippetIndex = launcherMovedSelectionIndex(
         currentIndex: state.selectedSnippetIndex,
         offset: Int(event.keyCode) == kVK_UpArrow ? -1 : 1,
-        count: launcherSelectableSnippets(searchResult: state.searchResult).count
+        count: launcherSelectableSnippets(recentSnippets: state.recentSnippets, searchResult: state.searchResult).count
       )
       return true
     case kVK_Return, kVK_ANSI_KeypadEnter:
@@ -246,21 +276,40 @@ final class LauncherPanelController: NSObject, NSWindowDelegate {
     }
   }
 
-  /// 選んでいるスニペットをコピー (と貼り付け) してパネルを閉じる。選んでいなければ何もしない。
+  /// 選んでいるスニペットをコピー (と貼り付け) し、使った日時を記録してパネルを閉じる。選んでいなければ何もしない。
+  ///
+  /// 使った日時の保存に失敗しても記録だけにする。コピーは済んでおり、最近使ったスニペットに出ないだけのため。
   private func outputSelectedSnippet(action: LauncherOutputAction) {
-    guard let snippet = launcherSelectedSnippet(searchResult: state.searchResult, selectedSnippetIndex: state.selectedSnippetIndex) else {
+    guard
+      let snippet = launcherSelectedSnippet(
+        recentSnippets: state.recentSnippets,
+        searchResult: state.searchResult,
+        selectedSnippetIndex: state.selectedSnippetIndex
+      )
+    else {
       return
     }
     copySnippetBodyToPasteboard(body: snippet.body)
+    do {
+      try recordSnippetUse(snippet: snippet, usedAt: .now, modelContext: modelContainer.mainContext)
+    } catch {
+      logger.error("Failed to record the snippet use: \(String(describing: error))")
+    }
     close()
     if action == .copyAndPaste {
       pasteToApplication(application: previousApplication)
     }
   }
 
-  /// 結果なしの時だけ、入力した言葉を下書きにして管理ウィンドウの編集を開く (`documents/design/LauncherEmpty.dc.html`)。
+  /// 結果なし・最近使ったスニペットが無い時だけ、入力した言葉を下書きにして管理ウィンドウの編集を開く (`documents/design/LauncherEmpty.dc.html`)。入力が空なら下書きのタイトルも空にする。
   private func createSnippetFromQuery() {
-    guard launcherContentState(query: state.query, searchResult: state.searchResult, isSemanticSearchPending: state.isSemanticSearchPending) == .empty else {
+    let contentState = launcherContentState(
+      query: state.query,
+      recentSnippets: state.recentSnippets,
+      searchResult: state.searchResult,
+      isSemanticSearchPending: state.isSemanticSearchPending
+    )
+    guard contentState == .empty || contentState == .noRecentSnippets else {
       return
     }
     // close() が入力を空にするため、閉じる前に下書きのタイトルを取っておく。

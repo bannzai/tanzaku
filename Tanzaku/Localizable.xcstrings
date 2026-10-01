@@ -459,6 +459,16 @@
         }
       }
     },
+    "Create a new snippet" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新しいスニペットを作成"
+          }
+        }
+      }
+    },
     "Create a new snippet “%@”" : {
       "localizations" : {
         "ja" : {
@@ -919,6 +929,16 @@
         }
       }
     },
+    "No recently used snippets" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最近使ったスニペットはありません"
+          }
+        }
+      }
+    },
     "No snippets close to “%@”" : {
       "localizations" : {
         "ja" : {
@@ -985,6 +1005,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "どのアプリを使っていても、画面の中央に開きます"
+          }
+        }
+      }
+    },
+    "Opens the editor in the manager window" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "管理ウィンドウの編集を開きます"
           }
         }
       }
@@ -1085,6 +1115,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "紫"
+          }
+        }
+      }
+    },
+    "Recently used" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最近使ったもの"
           }
         }
       }
@@ -1325,6 +1365,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "スニペット"
+          }
+        }
+      }
+    },
+    "Snippets you copy or paste show up here.\nType to search by keywords, titles, and meaning." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "コピー・貼り付けしたスニペットがここに並びます。\n文字を打つと、キーワード・タイトル・意味から探せます。"
           }
         }
       }

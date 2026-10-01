@@ -20,11 +20,11 @@ struct LauncherView: View {
       queryField
       LauncherLine()
       switch contentState {
-      case .idle, .searching:
+      case .searching:
         Spacer(minLength: 0)
-      case .results:
+      case .recentSnippets, .results:
         results
-      case .empty:
+      case .noRecentSnippets, .empty:
         emptyResult
       }
       LauncherLine()
@@ -58,7 +58,7 @@ struct LauncherView: View {
           onQueryChange()
         }
       if contentState == .results || contentState == .empty {
-        Text("\(launcherSelectableSnippets(searchResult: state.searchResult).count) results")
+        Text("\(launcherSelectableSnippets(recentSnippets: state.recentSnippets, searchResult: state.searchResult).count) results")
           .font(.system(size: 12))
           .foregroundStyle(LauncherColors.tertiaryForeground)
       }
@@ -73,19 +73,19 @@ struct LauncherView: View {
       ScrollViewReader { scrollViewProxy in
         ScrollView {
           VStack(alignment: .leading, spacing: 2) {
-            // 片方の欄だけに結果がある時は、中身の無い見出しを出さない。
-            if !state.searchResult.keywordMatches.isEmpty {
-              LauncherSectionHeader(title: "Keyword matches", topPadding: 6)
+            // 検索語が空の時だけ出る欄。検索の結果の欄とは同時に出ない (`launcherSelectableSnippets(recentSnippets:searchResult:)`)。
+            if !state.recentSnippets.isEmpty {
+              LauncherSectionHeader(title: "Recently used", topPadding: 6)
             }
-            ForEach(Array(state.searchResult.keywordMatches.enumerated()), id: \.element.snippet.id) { index, keywordMatch in
+            ForEach(Array(state.recentSnippets.enumerated()), id: \.element.id) { index, snippet in
               LauncherResultRow(
-                snippet: keywordMatch.snippet,
+                snippet: snippet,
                 isSelected: state.selectedSnippetIndex == index,
-                subtitle: snippetBodyFirstLine(body: keywordMatch.snippet.body),
+                subtitle: snippetBodyFirstLine(body: snippet.body),
                 isSubtitleMonospaced: true
               ) {
-                keywordMatch.snippet.keyword.map { keyword in
-                  LauncherKeywordChip(highlight: launcherKeywordHighlight(keyword: keyword, query: state.query, matchKind: keywordMatch.kind))
+                snippet.keyword.map { keyword in
+                  LauncherKeywordChip(highlight: launcherKeywordHighlight(keyword: keyword, query: state.query, matchKind: nil))
                 }
               }
               .onTapGesture(count: 2) {
@@ -96,13 +96,36 @@ struct LauncherView: View {
                 state.selectedSnippetIndex = index
               }
             }
+            // 片方の欄だけに結果がある時は、中身の無い見出しを出さない。
+            if !state.searchResult.keywordMatches.isEmpty {
+              LauncherSectionHeader(title: "Keyword matches", topPadding: 6)
+            }
+            ForEach(Array(state.searchResult.keywordMatches.enumerated()), id: \.element.snippet.id) { offset, keywordMatch in
+              LauncherResultRow(
+                snippet: keywordMatch.snippet,
+                isSelected: state.selectedSnippetIndex == state.recentSnippets.count + offset,
+                subtitle: snippetBodyFirstLine(body: keywordMatch.snippet.body),
+                isSubtitleMonospaced: true
+              ) {
+                keywordMatch.snippet.keyword.map { keyword in
+                  LauncherKeywordChip(highlight: launcherKeywordHighlight(keyword: keyword, query: state.query, matchKind: keywordMatch.kind))
+                }
+              }
+              .onTapGesture(count: 2) {
+                state.selectedSnippetIndex = state.recentSnippets.count + offset
+                onCopySelectedSnippet()
+              }
+              .onTapGesture {
+                state.selectedSnippetIndex = state.recentSnippets.count + offset
+              }
+            }
             if !state.searchResult.semanticMatches.isEmpty {
               LauncherSectionHeader(title: "Similar meaning", topPadding: state.searchResult.keywordMatches.isEmpty ? 6 : 12)
             }
             ForEach(Array(state.searchResult.semanticMatches.enumerated()), id: \.element.id) { offset, snippet in
               LauncherResultRow(
                 snippet: snippet,
-                isSelected: state.selectedSnippetIndex == state.searchResult.keywordMatches.count + offset,
+                isSelected: state.selectedSnippetIndex == state.recentSnippets.count + state.searchResult.keywordMatches.count + offset,
                 subtitle: snippetBodyFirstLine(body: snippet.body),
                 isSubtitleMonospaced: false
               ) {
@@ -117,11 +140,11 @@ struct LauncherView: View {
                 }
               }
               .onTapGesture(count: 2) {
-                state.selectedSnippetIndex = state.searchResult.keywordMatches.count + offset
+                state.selectedSnippetIndex = state.recentSnippets.count + state.searchResult.keywordMatches.count + offset
                 onCopySelectedSnippet()
               }
               .onTapGesture {
-                state.selectedSnippetIndex = state.searchResult.keywordMatches.count + offset
+                state.selectedSnippetIndex = state.recentSnippets.count + state.searchResult.keywordMatches.count + offset
               }
             }
           }
@@ -131,7 +154,7 @@ struct LauncherView: View {
         .onChange(of: state.selectedSnippetIndex) {
           scrollToSelectedSnippet(scrollViewProxy: scrollViewProxy)
         }
-        .onChange(of: launcherSelectableSnippets(searchResult: state.searchResult).map(\.id)) {
+        .onChange(of: launcherSelectableSnippets(recentSnippets: state.recentSnippets, searchResult: state.searchResult).map(\.id)) {
           scrollToSelectedSnippet(scrollViewProxy: scrollViewProxy)
         }
       }
@@ -147,23 +170,39 @@ struct LauncherView: View {
     }
   }
 
-  /// 結果なしの案内と新規作成のボタン。
+  /// 結果なし (入力が空なら、使ったことのあるスニペットが無い) の案内と新規作成のボタン。入力が空の時は入力した言葉を出さない文言にする。
   private var emptyResult: some View {
     VStack(spacing: 14) {
       LauncherTanzakuIcon()
         .stroke(LauncherColors.tertiaryForeground, style: StrokeStyle(lineWidth: 1.8, lineCap: .round))
         .frame(width: 36, height: 36)
-      Text("No snippets close to “\(trimmedQuery)”")
-        .font(.system(size: 15, weight: .semibold))
-      Text("Searched by the meaning of keywords, titles, and bodies.\nIf you use it often, you can make a snippet from here.")
-        .font(.system(size: 13))
-        .foregroundStyle(LauncherColors.secondaryForeground)
-        .lineSpacing(4)
+      Group {
+        if trimmedQuery.isEmpty {
+          Text("No recently used snippets")
+        } else {
+          Text("No snippets close to “\(trimmedQuery)”")
+        }
+      }
+      .font(.system(size: 15, weight: .semibold))
+      Group {
+        if trimmedQuery.isEmpty {
+          Text("Snippets you copy or paste show up here.\nType to search by keywords, titles, and meaning.")
+        } else {
+          Text("Searched by the meaning of keywords, titles, and bodies.\nIf you use it often, you can make a snippet from here.")
+        }
+      }
+      .font(.system(size: 13))
+      .foregroundStyle(LauncherColors.secondaryForeground)
+      .lineSpacing(4)
       Button(action: onCreateSnippet) {
         HStack(spacing: 10) {
           Image(systemName: "plus")
             .font(.system(size: 12, weight: .semibold))
-          Text("Create a new snippet “\(trimmedQuery)”")
+          if trimmedQuery.isEmpty {
+            Text("Create a new snippet")
+          } else {
+            Text("Create a new snippet “\(trimmedQuery)”")
+          }
           Text(verbatim: "⌘N")
             .font(.system(size: 12))
             .opacity(0.85)
@@ -177,19 +216,25 @@ struct LauncherView: View {
       .buttonStyle(.plain)
       .padding(.top, 6)
       .accessibilityIdentifier("launcherCreateSnippetButton")
-      Text("Opens the editor in the manager window with your words as the title")
-        .font(.system(size: 12))
-        .foregroundStyle(LauncherColors.tertiaryForeground)
+      Group {
+        if trimmedQuery.isEmpty {
+          Text("Opens the editor in the manager window")
+        } else {
+          Text("Opens the editor in the manager window with your words as the title")
+        }
+      }
+      .font(.system(size: 12))
+      .foregroundStyle(LauncherColors.tertiaryForeground)
     }
     .multilineTextAlignment(.center)
     .padding(.horizontal, 64)
     .frame(maxWidth: .infinity, maxHeight: .infinity)
   }
 
-  /// 下の操作の案内。結果なしの時は新規作成と閉じるだけを出す。
+  /// 下の操作の案内。結果なし・最近使ったスニペットが無い時は新規作成と閉じるだけを出す。
   private var footer: some View {
     HStack(spacing: 18) {
-      if contentState == .empty {
+      if contentState == .empty || contentState == .noRecentSnippets {
         LauncherKeyHint(key: "⌘N", label: "New")
         LauncherKeyHint(key: "esc", label: "Close")
       } else {
@@ -209,7 +254,12 @@ struct LauncherView: View {
 
   /// 本体の欄に出すもの。
   private var contentState: LauncherContentState {
-    launcherContentState(query: state.query, searchResult: state.searchResult, isSemanticSearchPending: state.isSemanticSearchPending)
+    launcherContentState(
+      query: state.query,
+      recentSnippets: state.recentSnippets,
+      searchResult: state.searchResult,
+      isSemanticSearchPending: state.isSemanticSearchPending
+    )
   }
 
   /// 選んでいる行を一覧の見える位置に出す。選んでいなければ何もしない。
@@ -221,7 +271,7 @@ struct LauncherView: View {
 
   /// 選んでいるスニペット。
   private var selectedSnippet: Snippet? {
-    launcherSelectedSnippet(searchResult: state.searchResult, selectedSnippetIndex: state.selectedSnippetIndex)
+    launcherSelectedSnippet(recentSnippets: state.recentSnippets, searchResult: state.searchResult, selectedSnippetIndex: state.selectedSnippetIndex)
   }
 
   /// 前後の空白を除いた入力。結果なしの文言に使う。
