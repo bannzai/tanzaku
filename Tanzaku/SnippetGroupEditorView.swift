@@ -95,9 +95,6 @@ struct SnippetGroupEditorView: View {
           }
         }
         .listStyle(.bordered(alternatesRowBackgrounds: true))
-        // List の高さの範囲を決めないと、この編集画面を出した時に管理ウィンドウが画面の外まで縦に伸び、サイドバーがツールバーの下にずれる (simtunnel ではウィンドウが高さ 3128pt まで伸びた。https://github.com/bannzai/tanzaku/issues/43 )。
-        // 120pt は行 (26pt) が 4 行見える高さで、許可の案内を出していても編集画面全体がデザインのウィンドウの高さ (800pt) に収まる。
-        .frame(minHeight: 120, idealHeight: 120, maxHeight: .infinity)
         .overlay {
           if groupSnippets.isEmpty {
             Text("Add snippets to show in the menu")
