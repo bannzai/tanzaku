@@ -55,6 +55,21 @@
       #expect(deletionRequestSnippet.keyword == nil)
     }
 
+    @Test("見本の操作が途中で失敗したら、保存していない変更を捨てて後の保存に残さない")
+    func saveDeveloperSampleDataChangesRollsBackOnFailure() throws {
+      let modelContext = ModelContext(try makeTanzakuModelContainer(storeLocation: .inMemory, syncedStoreCloudKitDatabase: .none))
+
+      #expect(throws: SnippetValidationError.emptyBody) {
+        try saveDeveloperSampleDataChanges(modelContext: modelContext) {
+          modelContext.insert(Folder(name: "開発環境"))
+          throw SnippetValidationError.emptyBody
+        }
+      }
+      try modelContext.save()
+
+      #expect(try modelContext.fetchCount(FetchDescriptor<Folder>()) == 0)
+    }
+
     @Test("「Delete Sample Data」は見本と見本だけが入った重複のフォルダ・タグを消し、ユーザーのスニペット・フォルダ・タグ・スニペットグループを残す")
     func deleteDeveloperSampleDataKeepsUserData() throws {
       let modelContext = ModelContext(try makeTanzakuModelContainer(storeLocation: .inMemory, syncedStoreCloudKitDatabase: .none))

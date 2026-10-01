@@ -205,44 +205,59 @@
     return insertedSnippetsByKeyword
   }
 
+  /// `operation` で変えたストアを保存する。失敗したら保存していない変更を捨ててから投げ直す。
+  ///
+  /// 開発者メニューはアプリと同じ `mainContext` を使うため、途中まで入れた見本・消した見本を残すと、後の別の保存で一緒に保存されてしまうため。
+  func saveDeveloperSampleDataChanges(modelContext: ModelContext, operation: () throws -> Void) throws {
+    do {
+      try operation()
+      try modelContext.save()
+    } catch {
+      modelContext.rollback()
+      throw error
+    }
+  }
+
   /// 「Insert Sample Snippets」の見本を入れて保存する。何度呼んでも同じ結果になる (`insertDeveloperSampleSnippets(sampleSnippets:modelContext:now:)`)。
   func insertLauncherSampleData(modelContext: ModelContext, now: Date) throws {
-    _ = try insertDeveloperSampleSnippets(sampleSnippets: launcherSampleSnippets, modelContext: modelContext, now: now)
-    try modelContext.save()
+    try saveDeveloperSampleDataChanges(modelContext: modelContext) {
+      _ = try insertDeveloperSampleSnippets(sampleSnippets: launcherSampleSnippets, modelContext: modelContext, now: now)
+    }
   }
 
   /// デザイン (`documents/design/Manager.dc.html`) と同じ並びのスニペット・フォルダ・タグ・スニペットグループを入れて保存する。
   ///
   /// 同じキーワードのスニペット・スニペットグループがあれば入れないため、何度呼んでも同じ結果になる。「Insert Sample Snippets」で入れた見本と同じキーワードのスニペットは、その見本をそのまま使う。
   func insertManagerSampleData(modelContext: ModelContext, now: Date) throws {
-    let insertedSnippetsByKeyword = try insertDeveloperSampleSnippets(sampleSnippets: managerSampleSnippets, modelContext: modelContext, now: now)
-    for snippet in insertedSnippetsByKeyword.values {
-      // 作成日時と更新日時が違うスニペットの表示を確かめるため、作成日時を更新日時より前にする。
-      snippet.createdAt = snippet.updatedAt.addingTimeInterval(-7 * 24 * 60 * 60)
+    try saveDeveloperSampleDataChanges(modelContext: modelContext) {
+      let insertedSnippetsByKeyword = try insertDeveloperSampleSnippets(sampleSnippets: managerSampleSnippets, modelContext: modelContext, now: now)
+      for snippet in insertedSnippetsByKeyword.values {
+        // 作成日時と更新日時が違うスニペットの表示を確かめるため、作成日時を更新日時より前にする。
+        snippet.createdAt = snippet.updatedAt.addingTimeInterval(-7 * 24 * 60 * 60)
+      }
+      // 「AI エージェントが追加」の絞り込みと、MCP で変更した主体の表示を確かめるため。
+      insertedSnippetsByKeyword["research"]?.createdByKind = "mcp"
+      insertedSnippetsByKeyword["research"]?.createdByClientName = "Claude Code"
+      insertedSnippetsByKeyword["research"]?.updatedByKind = "mcp"
+      insertedSnippetsByKeyword["research"]?.updatedByClientName = "Claude Code"
+      insertedSnippetsByKeyword["ghsec"]?.updatedByKind = "mcp"
+      insertedSnippetsByKeyword["ghsec"]?.updatedByClientName = "Claude Code"
+      let sampleGroupKeyword: String? = managerSampleSnippetGroupKeyword
+      if try modelContext.fetchCount(FetchDescriptor<SnippetGroup>(predicate: #Predicate { $0.keyword == sampleGroupKeyword })) == 0 {
+        let snippetsByKeyword = Dictionary(
+          try modelContext.fetch(FetchDescriptor<Snippet>()).compactMap { snippet in snippet.keyword.map { ($0, snippet) } },
+          uniquingKeysWith: { first, _ in first }
+        )
+        try applySnippetGroupEdit(
+          snippetGroup: SnippetGroup(name: ""),
+          name: managerSampleSnippetGroupName,
+          keyword: managerSampleSnippetGroupKeyword,
+          snippets: ["envkey", "envrc", "ghsec"].compactMap { snippetsByKeyword[$0] },
+          modelContext: modelContext,
+          now: now
+        )
+      }
     }
-    // 「AI エージェントが追加」の絞り込みと、MCP で変更した主体の表示を確かめるため。
-    insertedSnippetsByKeyword["research"]?.createdByKind = "mcp"
-    insertedSnippetsByKeyword["research"]?.createdByClientName = "Claude Code"
-    insertedSnippetsByKeyword["research"]?.updatedByKind = "mcp"
-    insertedSnippetsByKeyword["research"]?.updatedByClientName = "Claude Code"
-    insertedSnippetsByKeyword["ghsec"]?.updatedByKind = "mcp"
-    insertedSnippetsByKeyword["ghsec"]?.updatedByClientName = "Claude Code"
-    let sampleGroupKeyword: String? = managerSampleSnippetGroupKeyword
-    if try modelContext.fetchCount(FetchDescriptor<SnippetGroup>(predicate: #Predicate { $0.keyword == sampleGroupKeyword })) == 0 {
-      let snippetsByKeyword = Dictionary(
-        try modelContext.fetch(FetchDescriptor<Snippet>()).compactMap { snippet in snippet.keyword.map { ($0, snippet) } },
-        uniquingKeysWith: { first, _ in first }
-      )
-      try applySnippetGroupEdit(
-        snippetGroup: SnippetGroup(name: ""),
-        name: managerSampleSnippetGroupName,
-        keyword: managerSampleSnippetGroupKeyword,
-        snippets: ["envkey", "envrc", "ghsec"].compactMap { snippetsByKeyword[$0] },
-        modelContext: modelContext,
-        now: now
-      )
-    }
-    try modelContext.save()
   }
 
   /// 削除の依頼に出す見本のスニペットを返す。保存は呼び出し側で行う。
@@ -291,19 +306,20 @@
     let sampleGroupKeyword: String? = managerSampleSnippetGroupKeyword
     let sampleSnippetGroups = try modelContext.fetch(FetchDescriptor<SnippetGroup>(predicate: #Predicate { $0.keyword == sampleGroupKeyword }))
       .filter { $0.name == managerSampleSnippetGroupName }
-    for snippet in sampleSnippets {
-      modelContext.delete(snippet)
+    try saveDeveloperSampleDataChanges(modelContext: modelContext) {
+      for snippet in sampleSnippets {
+        modelContext.delete(snippet)
+      }
+      for folder in sampleFolders {
+        modelContext.delete(folder)
+      }
+      for tag in sampleTags {
+        modelContext.delete(tag)
+      }
+      for snippetGroup in sampleSnippetGroups {
+        modelContext.delete(snippetGroup)
+      }
     }
-    for folder in sampleFolders {
-      modelContext.delete(folder)
-    }
-    for tag in sampleTags {
-      modelContext.delete(tag)
-    }
-    for snippetGroup in sampleSnippetGroups {
-      modelContext.delete(snippetGroup)
-    }
-    try modelContext.save()
   }
 
   /// Debug ビルドだけに出す開発者メニュー。simtunnel の画面の確認で、スニペットがある状態・無い状態とライト・ダークを作るため (`AGENTS.md`「画面の確認」)。
