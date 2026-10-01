@@ -28,13 +28,15 @@ public func snippetIntentSearchResults(query: String, modelContext: ModelContext
   return searchResult.keywordMatches.map(\.snippet) + searchResult.semanticMatches
 }
 
-/// App Intents で選んだスニペットの本文を `pasteboardWriter` でクリップボードへ入れ、そのスニペットを返す。無ければ `SnippetIntentError.snippetNotFound` を投げる。
+/// App Intents で選んだスニペットの本文を `pasteboardWriter` でクリップボードへ入れ、使った日時を `usedAt` にして、そのスニペットを返す。無ければ `SnippetIntentError.snippetNotFound` を投げる。
 ///
-/// クリップボードへの書き込みを引数で受け取るのは、クリップボードを使わないテストで入れる本文を確かめるため。同じスニペットで何度呼んでもクリップボードの中身は同じになる。
-public func copySnippetBody(snippetID: UUID, modelContext: ModelContext, pasteboardWriter: (String) -> Void) throws -> Snippet {
+/// クリップボードへの書き込みを引数で受け取るのは、クリップボードを使わないテストで入れる本文を確かめるため。同じスニペットと `usedAt` で何度呼んでもクリップボードの中身と使った日時は同じになる。
+/// 使った日時の保存に失敗してもエラーにしない。コピーは済んでおり、最近使ったスニペットに出ないだけのため。
+public func copySnippetBody(snippetID: UUID, modelContext: ModelContext, usedAt: Date, pasteboardWriter: (String) -> Void) throws -> Snippet {
   guard let snippet = try modelContext.fetch(FetchDescriptor<Snippet>(predicate: #Predicate { $0.id == snippetID })).first else {
     throw SnippetIntentError.snippetNotFound(snippetID: snippetID)
   }
   pasteboardWriter(snippet.body)
+  try? recordSnippetUse(snippet: snippet, usedAt: usedAt, modelContext: modelContext)
   return snippet
 }

@@ -9,10 +9,10 @@ public enum ModelStoreLocation {
   case inMemory
 }
 
-/// 同期するストアの `ModelConfiguration` の名前。メモリに置く時に 2 つのストアを区別するために要る。
-private let syncedStoreConfigurationName = "Synced"
-/// 端末内のストアの `ModelConfiguration` の名前。
-private let localStoreConfigurationName = "Local"
+/// 同期するストアの `ModelConfiguration` の名前。メモリに置く時に 2 つのストアを区別するために要る。移行のテストが前の版のストアを同じ名前で作るため private にしない。
+let syncedStoreConfigurationName = "Synced"
+/// 端末内のストアの `ModelConfiguration` の名前。移行のテストが前の版のストアを同じ名前で作るため private にしない。
+let localStoreConfigurationName = "Local"
 
 /// 同期するストアと端末内のストアの 2 つの `ModelConfiguration` から、アプリと拡張が共通に使う `ModelContainer` を作る。
 ///
@@ -21,8 +21,8 @@ public func makeTanzakuModelContainer(
   storeLocation: ModelStoreLocation,
   syncedStoreCloudKitDatabase: ModelConfiguration.CloudKitDatabase
 ) throws -> ModelContainer {
-  let syncedSchema = Schema(SchemaV1.syncedModels)
-  let localSchema = Schema(SchemaV1.localModels)
+  let syncedSchema = Schema(SchemaV2.syncedModels)
+  let localSchema = Schema(SchemaV2.localModels)
   let configurations: [ModelConfiguration] =
     switch storeLocation {
     case .files(let syncedStoreURL, let localStoreURL):
@@ -47,7 +47,7 @@ public func makeTanzakuModelContainer(
       ]
     }
   return try ModelContainer(
-    for: Schema(versionedSchema: SchemaV1.self),
+    for: Schema(versionedSchema: SchemaV2.self),
     migrationPlan: TanzakuMigrationPlan.self,
     configurations: configurations
   )
