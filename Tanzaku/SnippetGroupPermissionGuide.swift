@@ -26,7 +26,7 @@ struct SnippetGroupPermissionGuide: View {
             .fixedSize(horizontal: false, vertical: true)
             permissionRow(title: "Input Monitoring", isGranted: isInputMonitoringGranted, action: requestInputMonitoringAccess)
               .accessibilityIdentifier("snippet-group-permission-input-monitoring")
-            permissionRow(title: "Accessibility", isGranted: isAccessibilityGranted, action: requestSnippetGroupAccessibilityAccess)
+            permissionRow(title: "Accessibility", isGranted: isAccessibilityGranted, action: requestSyntheticKeyStrokeAccess)
               .accessibilityIdentifier("snippet-group-permission-accessibility")
             Text("If the menu doesn’t appear after you allow access, quit and reopen Tanzaku.")
               .font(.caption)
