@@ -48,6 +48,7 @@ iOS では、本体アプリ・共有シート・App Intents・カスタムキ�
 | `createdAt` / `updatedAt` | `Date` | `.now` | |
 | `createdByKind` / `updatedByKind` | `String` | `"user"` | 作成・更新した主体の種類 (`user` / `mcp`)。「AI エージェントが追加」の絞り込みを `#Predicate` で書くため、Codable の複合型にせず平の属性にする |
 | `createdByClientName` / `updatedByClientName` | `String?` | `nil` | 主体が `mcp` の時の MCP クライアント名 |
+| `lastUsedAt` | `Date?` | `nil` | 最後に使った日時。Mac のランチャーでコピー・貼り付けした時、Mac のスニペットグループのメニューで選んだ時、iOS の一覧・詳細・ショートカット (App Intents) でコピーした時に更新する。iOS のキーボードで入れた時は更新しない (キーボードからはストアへ書き込まない)。使っても `updatedAt` と更新の主体は変えない。ランチャーの検索語が空の時に、新しい順に最大 10 件を出す。`SchemaV2` で足した |
 
 ### Folder
 
@@ -122,3 +123,8 @@ MCP サーバーに接続を許可したクライアント。設定画面の一�
 ## スキーマの版
 
 `VersionedSchema` と `SchemaMigrationPlan` で版を管理する。最初の版を `SchemaV1` とし、モデルを変える時は新しい版と移行段階を足す。
+
+| 版 | 変えたこと | 前の版からの移行段階 |
+| --- | --- | --- |
+| `SchemaV1` | 最初の版 | |
+| `SchemaV2` (現在) | `Snippet.lastUsedAt` を足した | lightweight (既存のスニペットの `lastUsedAt` は `nil` のまま) |

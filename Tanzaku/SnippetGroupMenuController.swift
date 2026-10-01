@@ -244,21 +244,27 @@ final class SnippetGroupMenuController {
   /// 選んでいるスニペットを入れる。打ったキーワードをバックスペースで消し、本文をクリップボードに入れて ⌘V で貼り付ける。
   ///
   /// 本文を文字のキー入力として送らず貼り付けるのは、改行を Return として受け取って送信するアプリ (チャットなど) で本文の途中で送信されないため (`documents/DIRECTION.md`「決めたこと」)。
+  /// 入れた後に使った日時を記録する。保存に失敗しても記録だけにする。本文は入っており、ランチャーの最近使ったスニペットに出ないだけのため。
   /// 冪等ではない: 呼ぶたびに入力が 1 回起きる。
   private func insertSelectedSnippet() {
     guard state.snippets.indices.contains(state.selectedSnippetIndex), let keyword = state.snippetGroup?.keyword else {
       closeMenu()
       return
     }
-    // closeMenu() がメニューのスニペットを空にするため、閉じる前に本文を取っておく。
-    let body = state.snippets[state.selectedSnippetIndex].body
+    // closeMenu() がメニューのスニペットを空にするため、閉じる前に取っておく。
+    let snippet = state.snippets[state.selectedSnippetIndex]
     closeMenu()
     typedText = ""
     for _ in 0..<snippetGroupKeywordBackspaceCount(keyword: keyword) {
       postSyntheticKeyStroke(virtualKey: kVK_Delete, flags: [])
     }
-    copySnippetBodyToPasteboard(body: body)
+    copySnippetBodyToPasteboard(body: snippet.body)
     postSyntheticKeyStroke(virtualKey: kVK_ANSI_V, flags: .maskCommand)
+    do {
+      try recordSnippetUse(snippet: snippet, usedAt: .now, modelContext: modelContainer.mainContext)
+    } catch {
+      logger.error("Failed to record the snippet use: \(String(describing: error))")
+    }
   }
 
   /// ほかのアプリへ切り替えた時の処理。打った文字は切り替える前の入力欄のものなので捨て、メニューを閉じる。許可を与えて戻ってきた時に備えて監視を始め直す。

@@ -6,11 +6,13 @@ import TanzakuKit
 final class LauncherState {
   /// 検索欄に入力した文字列。
   var query = ""
-  /// `query` で検索した結果。
+  /// `query` で検索した結果。`query` が空 (空白だけを含む) の時は空。
   var searchResult = SnippetSearchResult(keywordMatches: [], semanticMatches: [])
+  /// `query` が空の時に出す、最近使ったスニペット (`recentlyUsedSnippets(modelContext:)`)。`query` が空でない時は空。
+  var recentSnippets: [Snippet] = []
   /// `query` の意味検索 (入力のベクトルの推論) が終わっていないか。
   var isSemanticSearchPending = false
-  /// ↑↓ で選んでいるスニペットの `launcherSelectableSnippets(searchResult:)` での位置。結果が無ければ `nil`。
+  /// ↑↓ で選んでいるスニペットの `launcherSelectableSnippets(recentSnippets:searchResult:)` での位置。結果が無ければ `nil`。
   var selectedSnippetIndex: Int?
   /// パネルを開いた回数。開くたびに検索欄へフォーカスを戻すきっかけに使う。
   var presentationCount = 0

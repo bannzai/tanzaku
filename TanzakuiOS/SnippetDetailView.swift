@@ -9,7 +9,7 @@ struct SnippetDetailView: View {
   /// 出すスニペット。
   var snippet: Snippet
 
-  /// 削除に使う。
+  /// 削除と、コピーした時の使った日時の記録に使う。
   @Environment(\.modelContext) private var modelContext
   /// 削除の後に意味検索のベクトルを作り直させる。
   @Environment(SnippetEmbeddingController.self) private var snippetEmbeddingController
@@ -68,7 +68,7 @@ struct SnippetDetailView: View {
     .toolbar {
       ToolbarItemGroup(placement: .primaryAction) {
         Button("Copy", systemImage: "doc.on.doc") {
-          copySnippetBodyToPasteboard(body: snippet.body)
+          copySnippetBodyAndRecordUse(snippet: snippet, modelContext: modelContext)
         }
         ShareLink(item: snippet.body)
         Button("Edit", systemImage: "pencil") {

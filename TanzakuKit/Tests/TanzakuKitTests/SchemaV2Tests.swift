@@ -4,8 +4,8 @@ import Testing
 
 @testable import TanzakuKit
 
-/// `SchemaV1` の既定値と削除ルールが `documents/data-model.md` のとおりかを、インメモリのストアで確かめる。
-struct SchemaV1Tests {
+/// 現在の版 (`SchemaV2`) の既定値と削除ルールが `documents/data-model.md` のとおりかを、インメモリのストアで確かめる。
+struct SchemaV2Tests {
   @Test("Snippet は本文以外が既定値で作られる")
   func snippetDefaults() throws {
     let modelContext = ModelContext(try makeTanzakuModelContainer(storeLocation: .inMemory, syncedStoreCloudKitDatabase: .none))
@@ -23,6 +23,7 @@ struct SchemaV1Tests {
     #expect(snippet.updatedByKind == "user")
     #expect(snippet.createdByClientName == nil)
     #expect(snippet.updatedByClientName == nil)
+    #expect(snippet.lastUsedAt == nil)
   }
 
   @Test("保存したスニペットを別の ModelContext から読み出せる")
@@ -61,7 +62,7 @@ struct SchemaV1Tests {
   @Test("タグを消してもスニペットは残る")
   func deletingTagKeepsSnippets() throws {
     let modelContext = ModelContext(try makeTanzakuModelContainer(storeLocation: .inMemory, syncedStoreCloudKitDatabase: .none))
-    let tag = SchemaV1.Tag(name: "dummy-tag")
+    let tag = SchemaV2.Tag(name: "dummy-tag")
     let snippet = Snippet(body: "echo dummy")
     modelContext.insert(tag)
     modelContext.insert(snippet)
@@ -71,7 +72,7 @@ struct SchemaV1Tests {
     modelContext.delete(tag)
     try modelContext.save()
 
-    #expect(try modelContext.fetchCount(FetchDescriptor<SchemaV1.Tag>()) == 0)
+    #expect(try modelContext.fetchCount(FetchDescriptor<SchemaV2.Tag>()) == 0)
     #expect(try modelContext.fetch(FetchDescriptor<Snippet>()).map { $0.tags ?? [] } == [[]])
   }
 

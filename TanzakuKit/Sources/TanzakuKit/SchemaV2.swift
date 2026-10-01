@@ -1,13 +1,14 @@
 import Foundation
 import SwiftData
 
-/// 最初の版のスキーマ。属性の意味・既定値・削除ルールの正は `documents/data-model.md`。
+/// `Snippet.lastUsedAt` (最近使ったスニペット) を足した版のスキーマ。属性の意味・既定値・削除ルールの正は `documents/data-model.md`。
 ///
-/// 本番の CloudKit スキーマは追加しかできないため、この版のモデルは書き換えない。モデルを変える時は `SchemaV2` と移行段階を足す (`.claude/rules/data-model.md`)。
-public enum SchemaV1: VersionedSchema {
+/// `SchemaV1` から変えたのは `Snippet.lastUsedAt` の追加だけで、ほかのモデルは `SchemaV1` と同じ。SwiftData は版ごとに別のモデルの型を求めるため、すべてのモデルを置く。
+/// 本番の CloudKit スキーマは追加しかできないため、この版のモデルも公開した後は書き換えない。モデルを変える時は `SchemaV3` と移行段階を足す (`.claude/rules/data-model.md`)。
+public enum SchemaV2: VersionedSchema {
   /// この版の番号。
   public static var versionIdentifier: Schema.Version {
-    Schema.Version(1, 0, 0)
+    Schema.Version(2, 0, 0)
   }
 
   /// この版のすべてのモデル。
@@ -59,6 +60,8 @@ public enum SchemaV1: VersionedSchema {
     public var createdByClientName: String?
     /// 更新した主体が `mcp` の時の MCP クライアント名。
     public var updatedByClientName: String?
+    /// 最後に使った日時 (`recordSnippetUse(snippet:usedAt:modelContext:)`)。使ったことが無ければ `nil`。ランチャーの検索語が空の時の並びに使う。
+    public var lastUsedAt: Date?
 
     /// 必須の属性は本文だけのため、本文だけを受け取る。
     public init(body: String) {
@@ -182,3 +185,18 @@ public enum SchemaV1: VersionedSchema {
     }
   }
 }
+
+/// 現在の版のスニペット。
+public typealias Snippet = SchemaV2.Snippet
+/// 現在の版のフォルダ。
+public typealias Folder = SchemaV2.Folder
+/// 現在の版のタグ。
+public typealias Tag = SchemaV2.Tag
+/// 現在の版のスニペットグループ。
+public typealias SnippetGroup = SchemaV2.SnippetGroup
+/// 現在の版のスニペットグループの項目。
+public typealias SnippetGroupItem = SchemaV2.SnippetGroupItem
+/// 現在の版の意味検索のベクトル。
+public typealias SnippetEmbedding = SchemaV2.SnippetEmbedding
+/// 現在の版の MCP クライアント。
+public typealias MCPClient = SchemaV2.MCPClient

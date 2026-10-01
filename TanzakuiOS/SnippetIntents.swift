@@ -137,6 +137,7 @@ private func copySnippetBodyForIntent(snippetID: UUID) throws -> String? {
   let snippet = try copySnippetBody(
     snippetID: snippetID,
     modelContext: iosModelContainerResult.get().mainContext,
+    usedAt: .now,
     pasteboardWriter: copySnippetBodyToPasteboard(body:)
   )
   return snippet.title ?? snippet.keyword

@@ -20,7 +20,7 @@ struct SnippetListView: View {
   @Query private var folders: [Folder]
   /// 見出しに出すタグ名を識別子から引くためのすべてのタグ。
   @Query private var tags: [Tag]
-  /// 削除と検索に使う。
+  /// 削除・検索と、コピーした時の使った日時の記録に使う。
   @Environment(\.modelContext) private var modelContext
   /// 意味検索の埋め込みモデルとベクトル。
   @Environment(SnippetEmbeddingController.self) private var snippetEmbeddingController
@@ -138,7 +138,7 @@ struct SnippetListView: View {
   /// 一覧の 1 行。タップでコピーし、スワイプと長押しで編集・削除・共有する。
   private func snippetRow(snippet: Snippet) -> some View {
     Button {
-      copySnippetBodyToPasteboard(body: snippet.body)
+      copySnippetBodyAndRecordUse(snippet: snippet, modelContext: modelContext)
       withAnimation {
         copiedSnippetTitle = snippetDisplayTitle(snippet: snippet)
       }
@@ -160,7 +160,7 @@ struct SnippetListView: View {
     }
     .contextMenu {
       Button("Copy", systemImage: "doc.on.doc") {
-        copySnippetBodyToPasteboard(body: snippet.body)
+        copySnippetBodyAndRecordUse(snippet: snippet, modelContext: modelContext)
       }
       Button("Edit", systemImage: "pencil") {
         snippetEditor = SnippetEditorTarget(snippet: snippet, sidebarItem: sidebarItem)

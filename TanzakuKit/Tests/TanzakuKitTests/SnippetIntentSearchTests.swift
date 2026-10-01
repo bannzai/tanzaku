@@ -42,17 +42,21 @@ struct SnippetIntentSearchTests {
     #expect(snippets.map(\.id) == [exactMatchedSnippet.id, titleMatchedSnippet.id])
   }
 
-  @Test("選んだスニペットの本文をクリップボードへ入れ、そのスニペットを返す")
+  @Test("選んだスニペットの本文をクリップボードへ入れ、使った日時を記録して、そのスニペットを返す")
   func copiesSelectedSnippetBody() throws {
     let modelContext = ModelContext(try makeTanzakuModelContainer(storeLocation: .inMemory, syncedStoreCloudKitDatabase: .none))
-    _ = insertSnippet(modelContext: modelContext, body: "echo other dummy")
+    let otherSnippet = insertSnippet(modelContext: modelContext, body: "echo other dummy")
     let snippet = insertSnippet(modelContext: modelContext, body: "export API_TOKEN=dummy-token-for-test", keyword: "envkey")
     var pasteboardStrings: [String] = []
+    let usedAt = Date(timeIntervalSince1970: 1_000)
 
-    let copiedSnippet = try copySnippetBody(snippetID: snippet.id, modelContext: modelContext) { pasteboardStrings.append($0) }
+    let copiedSnippet = try copySnippetBody(snippetID: snippet.id, modelContext: modelContext, usedAt: usedAt) { pasteboardStrings.append($0) }
 
     #expect(copiedSnippet.id == snippet.id)
     #expect(pasteboardStrings == ["export API_TOKEN=dummy-token-for-test"])
+    #expect(snippet.lastUsedAt == usedAt)
+    #expect(otherSnippet.lastUsedAt == nil)
+    #expect(try recentlyUsedSnippets(modelContext: modelContext).map(\.id) == [snippet.id])
   }
 
   @Test("消されたスニペットは snippetNotFound を投げ、クリップボードに何も入れない")
@@ -63,7 +67,7 @@ struct SnippetIntentSearchTests {
     var pasteboardStrings: [String] = []
 
     #expect(throws: SnippetIntentError.snippetNotFound(snippetID: missingSnippetID)) {
-      try copySnippetBody(snippetID: missingSnippetID, modelContext: modelContext) { pasteboardStrings.append($0) }
+      try copySnippetBody(snippetID: missingSnippetID, modelContext: modelContext, usedAt: Date(timeIntervalSince1970: 1_000)) { pasteboardStrings.append($0) }
     }
     #expect(pasteboardStrings.isEmpty)
   }
