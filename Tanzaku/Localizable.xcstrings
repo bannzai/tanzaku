@@ -1459,6 +1459,16 @@
         }
       }
     },
+    "Turn on Tanzaku in System Settings › Privacy & Security › Accessibility. If it's already on and this message stays, remove Tanzaku from the list with − and open System Settings again from here." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "システム設定 › プライバシーとセキュリティ › アクセシビリティで Tanzaku をオンにします。オンなのにこの表示が消えない時は、Tanzaku を「−」で一覧から外し、ここからシステム設定を開き直します。"
+          }
+        }
+      }
+    },
     "Untitled Snippet Group" : {
       "localizations" : {
         "ja" : {
