@@ -194,7 +194,7 @@ struct LauncherView: View {
         LauncherKeyHint(key: "esc", label: "Close")
       } else {
         LauncherKeyHint(key: "↩", label: "Copy")
-        LauncherKeyHint(key: "⌘↩", label: "Paste to the front app")
+        LauncherKeyHint(key: "⌘↩", label: launcherCommandReturnHintLabel(action: state.commandReturnAction))
         LauncherKeyHint(key: "↑↓", label: "Select")
         LauncherKeyHint(key: "esc", label: "Close")
       }
@@ -380,8 +380,8 @@ private struct LauncherSnippetPreview: View {
 private struct LauncherKeyHint: View {
   /// キーの表記。記号とキー名で、翻訳しない。
   var key: String
-  /// 操作の名前。
-  var label: LocalizedStringKey
+  /// 操作の名前。⌘↩ の名前を `launcherCommandReturnHintLabel(action:)` から受け取るため、`LocalizedStringKey` ではなくテストで比べられる `LocalizedStringResource` にする。
+  var label: LocalizedStringResource
 
   var body: some View {
     HStack(spacing: 6) {

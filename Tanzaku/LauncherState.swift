@@ -14,4 +14,7 @@ final class LauncherState {
   var selectedSnippetIndex: Int?
   /// パネルを開いた回数。開くたびに検索欄へフォーカスを戻すきっかけに使う。
   var presentationCount = 0
+  /// ⌘Return で選んだ時の出し方。パネルを開くたびに設定と許可から決め直し、下の案内と ⌘Return の動きの両方がこの値を使う。
+  /// 初めに開くまでは画面に出ないため、許可を確かめずに済むコピーにしておく。
+  var commandReturnAction = LauncherOutputAction.copy
 }
