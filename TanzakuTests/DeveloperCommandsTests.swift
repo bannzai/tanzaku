@@ -6,8 +6,73 @@
 
   @testable import Tanzaku
 
-  /// 開発者メニューの「Delete All Snippets」が、リレーションを持つスニペットを消しても失敗しないことを確かめる。
+  /// 開発者メニューの見本の投入が冪等で、「Delete Sample Data」が見本だけを消し、「Delete All Snippets」がリレーションを持つスニペットを消しても失敗しないことを確かめる。
   struct DeveloperCommandsTests {
+    @Test("見本の投入を 2 回実行しても、スニペット・フォルダ・タグ・スニペットグループの件数が 1 回目と同じ")
+    func insertingSampleDataTwiceKeepsCounts() throws {
+      let modelContext = ModelContext(try makeTanzakuModelContainer(storeLocation: .inMemory, syncedStoreCloudKitDatabase: .none))
+      let insertAllSampleData = {
+        try insertLauncherSampleData(modelContext: modelContext, now: .now)
+        try insertManagerSampleData(modelContext: modelContext, now: .now)
+        _ = try insertDeletionRequestSampleSnippet(modelContext: modelContext, now: .now)
+        try modelContext.save()
+      }
+      let counts = {
+        [
+          try modelContext.fetchCount(FetchDescriptor<Snippet>()),
+          try modelContext.fetchCount(FetchDescriptor<Folder>()),
+          try modelContext.fetchCount(FetchDescriptor<TanzakuKit.Tag>()),
+          try modelContext.fetchCount(FetchDescriptor<SnippetGroup>()),
+        ]
+      }
+
+      try insertAllSampleData()
+      let countsAfterFirstInsertion = try counts()
+      try insertAllSampleData()
+
+      #expect(try counts() == countsAfterFirstInsertion)
+      let folderNames = try modelContext.fetch(FetchDescriptor<Folder>()).map(\.name)
+      #expect(folderNames.count == Set(folderNames).count)
+      let tagNames = try modelContext.fetch(FetchDescriptor<TanzakuKit.Tag>()).map(\.name)
+      #expect(tagNames.count == Set(tagNames).count)
+    }
+
+    @Test("「Delete Sample Data」は見本と見本だけが入った重複のフォルダ・タグを消し、ユーザーのスニペット・フォルダ・タグ・スニペットグループを残す")
+    func deleteDeveloperSampleDataKeepsUserData() throws {
+      let modelContext = ModelContext(try makeTanzakuModelContainer(storeLocation: .inMemory, syncedStoreCloudKitDatabase: .none))
+      let userSnippet = Snippet(body: "echo dummy-user-snippet")
+      modelContext.insert(userSnippet)
+      userSnippet.folder = Folder(name: "dummy user folder")
+      userSnippet.tags = [TanzakuKit.Tag(name: "dummy-user-tag")]
+      // 見本と同じ名前のフォルダ・タグに入れたユーザーのスニペット。フォルダ・タグごと残す。
+      let userSnippetInSampleFolder = Snippet(body: "echo dummy-user-snippet-in-sample-folder")
+      modelContext.insert(userSnippetInSampleFolder)
+      userSnippetInSampleFolder.folder = Folder(name: "開発環境")
+      userSnippetInSampleFolder.tags = [TanzakuKit.Tag(name: "shell")]
+      let userSnippetGroup = SnippetGroup(name: "dummy user group")
+      modelContext.insert(userSnippetGroup)
+      userSnippetGroup.keyword = ";dummy-user"
+      // 投入が冪等になる前の見本が残した、スニペットの無い重複のフォルダ・タグ。
+      for _ in 0..<3 {
+        modelContext.insert(Folder(name: "開発環境"))
+        modelContext.insert(TanzakuKit.Tag(name: "direnv"))
+      }
+      try modelContext.save()
+      try insertLauncherSampleData(modelContext: modelContext, now: .now)
+      try insertManagerSampleData(modelContext: modelContext, now: .now)
+      _ = try insertDeletionRequestSampleSnippet(modelContext: modelContext, now: .now)
+      try modelContext.save()
+
+      try deleteDeveloperSampleData(modelContext: modelContext)
+      try deleteDeveloperSampleData(modelContext: modelContext)
+
+      #expect(Set(try modelContext.fetch(FetchDescriptor<Snippet>()).map(\.body)) == ["echo dummy-user-snippet", "echo dummy-user-snippet-in-sample-folder"])
+      #expect(try modelContext.fetch(FetchDescriptor<Folder>()).map(\.name).sorted() == ["dummy user folder", "開発環境"])
+      #expect(try modelContext.fetch(FetchDescriptor<TanzakuKit.Tag>()).map(\.name).sorted() == ["dummy-user-tag", "shell"])
+      #expect(try modelContext.fetch(FetchDescriptor<SnippetGroup>()).map(\.name) == ["dummy user group"])
+      #expect(userSnippetInSampleFolder.folder?.name == "開発環境")
+    }
+
     @Test("フォルダ・タグ・スニペットグループの項目・意味検索のベクトルを持つスニペットをすべて消し、何度呼んでも失敗しない")
     func deleteAllSnippetDataDeletesSnippetsWithRelationships() throws {
       let modelContext = ModelContext(try makeTanzakuModelContainer(storeLocation: .inMemory, syncedStoreCloudKitDatabase: .none))
