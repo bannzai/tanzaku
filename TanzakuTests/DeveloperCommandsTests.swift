@@ -37,6 +37,24 @@
       #expect(tagNames.count == Set(tagNames).count)
     }
 
+    @Test("見本のキーワードをスニペットグループが使っていれば、その見本だけを飛ばして他の見本を入れる")
+    func insertingSampleDataSkipsKeywordsUsedBySnippetGroups() throws {
+      let modelContext = ModelContext(try makeTanzakuModelContainer(storeLocation: .inMemory, syncedStoreCloudKitDatabase: .none))
+      for keyword in ["envkey", "envrc"] {
+        let snippetGroup = SnippetGroup(name: "dummy user group \(keyword)")
+        modelContext.insert(snippetGroup)
+        snippetGroup.keyword = keyword
+      }
+      try modelContext.save()
+
+      try insertLauncherSampleData(modelContext: modelContext, now: .now)
+      let deletionRequestSnippet = try insertDeletionRequestSampleSnippet(modelContext: modelContext, now: .now)
+      try modelContext.save()
+
+      #expect(Set(try modelContext.fetch(FetchDescriptor<Snippet>()).compactMap(\.keyword)) == ["ghsec"])
+      #expect(deletionRequestSnippet.keyword == nil)
+    }
+
     @Test("「Delete Sample Data」は見本と見本だけが入った重複のフォルダ・タグを消し、ユーザーのスニペット・フォルダ・タグ・スニペットグループを残す")
     func deleteDeveloperSampleDataKeepsUserData() throws {
       let modelContext = ModelContext(try makeTanzakuModelContainer(storeLocation: .inMemory, syncedStoreCloudKitDatabase: .none))

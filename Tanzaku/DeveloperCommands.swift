@@ -165,15 +165,26 @@
     return folder
   }
 
+  /// キーワードがスニペットかスニペットグループで使われているか。見本のキーワードが既に使われている時に、見本を入れずに飛ばすため。
+  ///
+  /// キーワードの名前空間の検査は `validateKeywordIsUnique` を正とし、同じ条件で判定する。どのモデルにも属さない新しい `ownerID` を渡し、自分自身との一致を除かない。
+  func isDeveloperSampleKeywordUsed(keyword: String, modelContext: ModelContext) throws -> Bool {
+    do {
+      try validateKeywordIsUnique(keyword: keyword, ownerID: UUID(), modelContext: modelContext)
+      return false
+    } catch SnippetValidationError.keywordAlreadyUsed {
+      return true
+    }
+  }
+
   /// 見本のスニペットを入れる。保存は呼び出し側で行う。
   ///
-  /// 同じキーワードのスニペットがあれば入れず、同じ名前のフォルダ・タグがあればそれを使う (タグは `applySnippetEdit` が名前で使い回す) ため、何度呼んでもスニペット・フォルダ・タグは増えない。
+  /// 同じキーワードのスニペット・スニペットグループがあれば入れず、同じ名前のフォルダ・タグがあればそれを使う (タグは `applySnippetEdit` が名前で使い回す) ため、何度呼んでもスニペット・フォルダ・タグは増えない。
   /// - Returns: 新しく入れたスニペットをキーワードで引ける辞書。
   func insertDeveloperSampleSnippets(sampleSnippets: [DeveloperSampleSnippet], modelContext: ModelContext, now: Date) throws -> [String: Snippet] {
     var insertedSnippetsByKeyword: [String: Snippet] = [:]
     for sampleSnippet in sampleSnippets {
-      let sampleKeyword: String? = sampleSnippet.keyword
-      guard try modelContext.fetchCount(FetchDescriptor<Snippet>(predicate: #Predicate { $0.keyword == sampleKeyword })) == 0 else {
+      guard try !isDeveloperSampleKeywordUsed(keyword: sampleSnippet.keyword, modelContext: modelContext) else {
         continue
       }
       let snippet = Snippet(body: "")
@@ -242,13 +253,12 @@
     if let snippet = try modelContext.fetch(FetchDescriptor<Snippet>(predicate: #Predicate { $0.body == sampleBody })).first {
       return snippet
     }
-    let sampleKeyword: String? = deletionRequestSampleSnippet.keyword
     let snippet = Snippet(body: "")
     try applySnippetEdit(
       snippet: snippet,
       body: deletionRequestSampleSnippet.body,
       title: deletionRequestSampleSnippet.title,
-      keyword: try modelContext.fetchCount(FetchDescriptor<Snippet>(predicate: #Predicate { $0.keyword == sampleKeyword })) == 0 ? deletionRequestSampleSnippet.keyword : "",
+      keyword: try isDeveloperSampleKeywordUsed(keyword: deletionRequestSampleSnippet.keyword, modelContext: modelContext) ? "" : deletionRequestSampleSnippet.keyword,
       language: deletionRequestSampleSnippet.language?.rawValue,
       color: deletionRequestSampleSnippet.color,
       folder: try deletionRequestSampleSnippet.folderName.map { try developerSampleFolder(name: $0, modelContext: modelContext) },
