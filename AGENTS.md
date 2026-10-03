@@ -24,6 +24,7 @@
 | `make build-ios` | iOS アプリのシミュレータ向けのビルド |
 | `make test` | macOS アプリと `TanzakuKit` のユニットテスト (Swift Testing) |
 | `make macos` | Release ビルドを `/Applications/Tanzaku.app` に配置する。開発者が普段使いする時の手段で、agent の検証手段ではない |
+| `make macos-debug` | Debug ビルドを `/Applications/Tanzaku.app` に上書き配置する。開発者メニュー (見本データの削除等) のような Debug ビルドにしか無い操作を普段使いのデータに対して行う時の一時的な手段で、終わったら `make macos` で Release に戻す。agent の検証手段ではない |
 | `make dmg` | Developer ID で署名・公証・staple した Mac 版の DMG を `tmp/distribution/Tanzaku-<版>.dmg` に作る (「Mac 版のリリース」) |
 | `make clean` | `tmp/DerivedData` を消す |
 
