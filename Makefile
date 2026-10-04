@@ -48,3 +48,22 @@ macos:
 	ditto 'tmp/DerivedData/Build/Products/Release/Tanzaku.app' $(INSTALL_APP)
 	$(LSREGISTER) -f $(INSTALL_APP)
 	@echo "起動するには: open $(INSTALL_APP)"
+
+# Debug ビルドを Release と同じ /Applications/Tanzaku.app に上書き配置する。
+# Debug ビルドにしか無い操作 (開発者メニュー等) を普段使いのデータに対して行うための一時的な配置で、
+# 終わったら make macos で Release に戻す
+# 起動は自動では行わない (ssh 越しの実行を想定)
+.PHONY: macos-debug
+
+macos-debug:
+	xcodebuild -project 'Tanzaku.xcodeproj' -scheme 'Tanzaku' \
+		-configuration Debug \
+		-destination 'platform=macOS' \
+		-derivedDataPath 'tmp/DerivedData' \
+		-allowProvisioningUpdates -allowProvisioningDeviceRegistration \
+		build
+	rm -rf $(INSTALL_APP)
+	ditto 'tmp/DerivedData/Build/Products/Debug/Tanzaku.app' $(INSTALL_APP)
+	$(LSREGISTER) -f $(INSTALL_APP)
+	@echo "起動するには: open $(INSTALL_APP)"
+	@echo "Release に戻すには: make macos"
