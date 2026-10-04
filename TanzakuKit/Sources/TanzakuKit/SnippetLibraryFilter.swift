@@ -7,8 +7,6 @@ import SwiftData
 public enum SnippetLibraryFilter: Hashable, Sendable {
   /// すべてのスニペット。
   case all
-  /// MCP クライアント (AI エージェント) が作成したスニペット。
-  case addedByAgent
   /// フォルダに入っているスニペット。
   case folder(folderID: UUID)
   /// タグを付けたスニペット。
@@ -16,14 +14,10 @@ public enum SnippetLibraryFilter: Hashable, Sendable {
 }
 
 /// スニペットが絞り込みの条件に合うか。
-///
-/// 「AI エージェントが追加」は作成した主体だけで判定する。ユーザーが作って AI エージェントが更新したものは「追加」ではないため。
 public func snippetMatchesLibraryFilter(snippet: Snippet, filter: SnippetLibraryFilter) -> Bool {
   switch filter {
   case .all:
     true
-  case .addedByAgent:
-    snippet.createdByKind == "mcp"
   case .folder(let folderID):
     snippet.folder?.id == folderID
   case .tag(let tagID):

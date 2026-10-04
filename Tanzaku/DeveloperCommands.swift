@@ -235,7 +235,7 @@
         // 作成日時と更新日時が違うスニペットの表示を確かめるため、作成日時を更新日時より前にする。
         snippet.createdAt = snippet.updatedAt.addingTimeInterval(-7 * 24 * 60 * 60)
       }
-      // 「AI エージェントが追加」の絞り込みと、MCP で変更した主体の表示を確かめるため。
+      // MCP で変更した主体の表示を確かめるため。
       insertedSnippetsByKeyword["research"]?.createdByKind = "mcp"
       insertedSnippetsByKeyword["research"]?.createdByClientName = "Claude Code"
       insertedSnippetsByKeyword["research"]?.updatedByKind = "mcp"

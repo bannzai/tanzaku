@@ -322,6 +322,35 @@ struct MCPServerTests {
     #expect(((result["structuredContent"] as? [String: Any])?["snippet"] as? [String: Any])?["id"] as? String == snippet.id.uuidString)
   }
 
+  @Test("追加のツールは、作った MCP のクライアント名のタグを付ける")
+  func createSnippetTagsClientName() async throws {
+    let environment = try makeEnvironment()
+
+    let result = try toolResult(
+      response: await handleMCPHTTPRequest(request: try makeToolCallRequest(name: "create_snippet", arguments: ["body": "echo dummy"]), environment: environment)
+    )
+
+    let snippet = try #require(try fetchSnippets(environment: environment).first)
+    #expect(snippet.tags?.map(\.name) == ["Claude Code"])
+    #expect(((result["structuredContent"] as? [String: Any])?["snippet"] as? [String: Any])?["tags"] as? [String] == ["Claude Code"])
+  }
+
+  @Test("追加のツールは、クライアント名と同じ名前のタグが既にあればそれを使い、タグを増やさない")
+  func createSnippetReusesExistingClientNameTag() async throws {
+    let environment = try makeEnvironment()
+    let existingTag = SchemaV2.Tag(name: "Claude Code")
+    environment.modelContext.insert(existingTag)
+    try environment.modelContext.save()
+
+    _ = try toolResult(
+      response: await handleMCPHTTPRequest(request: try makeToolCallRequest(name: "create_snippet", arguments: ["body": "echo dummy"]), environment: environment)
+    )
+
+    let snippet = try #require(try fetchSnippets(environment: environment).first)
+    #expect(snippet.tags?.map(\.id) == [existingTag.id])
+    #expect(try environment.modelContext.fetchCount(FetchDescriptor<SchemaV2.Tag>()) == 1)
+  }
+
   @Test("追加・更新・削除を保存した後に意味検索のベクトルの作り直しを頼み、検索と取得では頼まない")
   func requestsEmbeddingRefreshAfterChanges() async throws {
     let snippetChangeCounter = SnippetChangeCounter()

@@ -79,7 +79,7 @@ let mcpToolDefinitions: [[String: Any]] = [
     "name": "create_snippet",
     "title": "Create a snippet",
     "description":
-      "Creates a snippet. Only body is required. The keyword must be unique among snippets and snippet groups. The snippet is recorded as created by this MCP client.",
+      "Creates a snippet. Only body is required. The keyword must be unique among snippets and snippet groups. The snippet is recorded as created by this MCP client and gets a tag named after this MCP client.",
     "inputSchema": [
       "type": "object",
       "properties": [
@@ -286,6 +286,8 @@ func mcpKeywordMatchKindText(kind: SnippetKeywordMatchKind) -> String {
 }
 
 /// `create_snippet` で作ったスニペット。
+///
+/// 作ったクライアントの名前のタグを付ける (同じ名前のタグがあればそれを使う)。ユーザーがサイドバーの「タグ」からクライアントごとに絞り込め、タグを外す・名前を変える・消すこともできるため。
 func createSnippetTool(arguments: [String: Any], client: MCPClient, environment: MCPServerEnvironment) throws -> Snippet {
   let body = try mcpStringArgument(arguments: arguments, name: "body") ?? ""
   try validateSnippetBody(body: body)
@@ -301,6 +303,8 @@ func createSnippetTool(arguments: [String: Any], client: MCPClient, environment:
   snippet.createdByClientName = client.name
   snippet.updatedByClientName = client.name
   environment.modelContext.insert(snippet)
+  // リレーションは両方がストアに入っている必要があるため、スニペットを入れた後に張る。
+  snippet.tags = try resolvedTags(tagNames: [client.name], modelContext: environment.modelContext)
   try saveSnippetChanges(environment: environment)
   return snippet
 }
