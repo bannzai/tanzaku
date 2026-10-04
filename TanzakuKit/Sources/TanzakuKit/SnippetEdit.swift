@@ -42,7 +42,7 @@ public func applySnippetEdit(
 /// タグの名前から、同じ名前の既存のタグか、新しく作ったタグを返す。前後の空白を除き、空の名前と重複した名前は除く。
 ///
 /// 名前の比較は大文字と小文字を区別した完全一致にする。キーワードの一意と同じ基準にそろえ、ユーザーが打った表記をそのまま残すため。
-func resolvedTags(tagNames: [String], modelContext: ModelContext) throws -> [Tag] {
+public func resolvedTags(tagNames: [String], modelContext: ModelContext) throws -> [Tag] {
   let existingTagsByName = Dictionary(
     try modelContext.fetch(FetchDescriptor<Tag>()).map { ($0.name, $0) },
     uniquingKeysWith: { first, _ in first }
