@@ -97,8 +97,6 @@ struct SnippetListView: View {
     switch filter {
     case .all:
       Text("All Snippets")
-    case .addedByAgent:
-      Text("Added by AI Agents")
     case .folder(let folderID):
       Text(verbatim: folders.first { $0.id == folderID }?.name ?? "")
     case .tag(let tagID):

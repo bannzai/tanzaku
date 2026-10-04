@@ -200,8 +200,6 @@ struct SnippetListView: View {
     switch sidebarItem {
     case .library(.all):
       Text("All Snippets")
-    case .library(.addedByAgent):
-      Text("Added by AI Agents")
     case .library(.folder(let folderID)):
       Text(verbatim: folders.first { $0.id == folderID }?.name ?? "")
     case .library(.tag(let tagID)):

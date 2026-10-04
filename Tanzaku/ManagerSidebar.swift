@@ -5,7 +5,7 @@ import TanzakuKit
 /// 無料版で保存できるスニペットの件数 (`documents/PROJECT.md`「ライセンス」)。購入の判定はライセンスの issue ( https://github.com/bannzai/tanzaku/issues/20 ) で作り、ここでは件数の表示だけに使う。
 let freeSnippetLimit = 20
 
-/// 管理ウィンドウのサイドバー。ライブラリ (すべて・AI エージェントが追加・スニペットグループ)、フォルダ、タグと、無料版の件数を出す。
+/// 管理ウィンドウのサイドバー。ライブラリ (すべて・スニペットグループ)、フォルダ、タグと、無料版の件数を出す。
 struct ManagerSidebar: View {
   /// サイドバーで選んでいる項目。
   @Binding var selection: ManagerSidebarSelection?
@@ -27,13 +27,6 @@ struct ManagerSidebar: View {
         sidebarRow(title: Text("All Snippets"), systemImage: "doc.plaintext", count: snippets.count)
           .tag(ManagerSidebarSelection.snippets(filter: .all))
           .accessibilityIdentifier("sidebar-all-snippets")
-        sidebarRow(
-          title: Text("Added by AI Agents"),
-          systemImage: "sparkles",
-          count: snippets.filter { snippetMatchesLibraryFilter(snippet: $0, filter: .addedByAgent) }.count
-        )
-        .tag(ManagerSidebarSelection.snippets(filter: .addedByAgent))
-        .accessibilityIdentifier("sidebar-added-by-agents")
         sidebarRow(title: Text("Snippet Groups"), systemImage: "list.bullet.rectangle", count: snippetGroups.count)
           .tag(ManagerSidebarSelection.snippetGroups)
           .accessibilityIdentifier("sidebar-snippet-groups")

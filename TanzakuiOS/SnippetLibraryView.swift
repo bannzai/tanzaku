@@ -106,7 +106,7 @@ private struct SnippetSpotlightIndexTaskID: Hashable {
   let snippetUpdatedAts: [Date]
 }
 
-/// サイドバー。ライブラリ (すべて・AI エージェントが追加)・フォルダ・タグ・スニペットグループを並べる (`documents/design/Manager.dc.html` のサイドバー)。
+/// サイドバー。ライブラリ (すべて)・フォルダ・タグ・スニペットグループを並べる (`documents/design/Manager.dc.html` のサイドバー)。
 ///
 /// スニペットグループはここで追加・編集・削除する。
 struct SnippetSidebarView: View {
@@ -155,12 +155,6 @@ struct SnippetSidebarView: View {
   @ViewBuilder private var sidebarSections: some View {
     Section("Library") {
       SnippetSidebarRow(sidebarItem: .library(filter: .all), title: Text("All Snippets"), systemImage: "rectangle.portrait", count: snippets.count)
-      SnippetSidebarRow(
-        sidebarItem: .library(filter: .addedByAgent),
-        title: Text("Added by AI Agents"),
-        systemImage: "sparkles",
-        count: snippets.filter { snippetMatchesLibraryFilter(snippet: $0, filter: .addedByAgent) }.count
-      )
     }
     if !folders.isEmpty {
       Section("Folders") {

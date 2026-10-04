@@ -51,16 +51,6 @@
         }
       }
     },
-    "Added by AI Agents" : {
-      "localizations" : {
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "AI エージェントが追加"
-          }
-        }
-      }
-    },
     "All Snippets" : {
       "localizations" : {
         "ja" : {
