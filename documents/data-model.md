@@ -46,7 +46,7 @@ iOS では、本体アプリ・共有シート・App Intents・カスタムキ�
 | `tags` | `[Tag]?` | `[]` | 0 個以上のタグ |
 | `groupItems` | `[SnippetGroupItem]?` | `[]` | このスニペットを入れたスニペットグループの項目 (`SnippetGroupItem.snippet` の逆のリレーション)。削除ルールは `.cascade` (スニペットを消すと項目も消える)。CloudKit はリレーションに逆向きを求めるため置く |
 | `createdAt` / `updatedAt` | `Date` | `.now` | |
-| `createdByKind` / `updatedByKind` | `String` | `"user"` | 作成・更新した主体の種類 (`user` / `mcp`)。「AI エージェントが追加」の絞り込みを `#Predicate` で書くため、Codable の複合型にせず平の属性にする |
+| `createdByKind` / `updatedByKind` | `String` | `"user"` | 作成・更新した主体の種類 (`user` / `mcp`)。`#Predicate` で絞り込めるよう、Codable の複合型にせず平の属性にする |
 | `createdByClientName` / `updatedByClientName` | `String?` | `nil` | 主体が `mcp` の時の MCP クライアント名 |
 | `lastUsedAt` | `Date?` | `nil` | 最後に使った日時。Mac のランチャーでコピー・貼り付けした時、Mac のスニペットグループのメニューで選んだ時、iOS の一覧・詳細・ショートカット (App Intents) でコピーした時に更新する。iOS のキーボードで入れた時は更新しない (キーボードからはストアへ書き込まない)。使っても `updatedAt` と更新の主体は変えない。ランチャーの検索語が空の時に、新しい順に最大 10 件を出す。`SchemaV2` で足した |
 
