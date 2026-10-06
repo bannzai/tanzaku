@@ -20,6 +20,7 @@
 
 | コマンド | 内容 |
 | --- | --- |
+| `make` (= `make verify`) | 動作確認。`build-macos`・`build-ios`・`test` を順に実行する (CI の `.github/workflows/ci.yml` と同じ検査)。引数なしの `make` の実行対象 |
 | `make build-macos` | macOS アプリのビルド (`-derivedDataPath tmp/DerivedData`) |
 | `make build-ios` | iOS アプリのシミュレータ向けのビルド |
 | `make test` | macOS アプリと `TanzakuKit` のユニットテスト (Swift Testing) |

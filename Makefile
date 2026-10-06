@@ -67,3 +67,11 @@ macos-debug:
 	$(LSREGISTER) -f $(INSTALL_APP)
 	@echo "起動するには: open $(INSTALL_APP)"
 	@echo "Release に戻すには: make macos"
+
+# 引数なしの make で動作確認 (verify) を実行する
+.DEFAULT_GOAL := verify
+
+.PHONY: verify
+# 前提の 3 つは同じ tmp/DerivedData を使うため、make -j でも直列に実行する (並列だと xcodebuild の build.db がロックで失敗する)
+.NOTPARALLEL: verify
+verify: build-macos build-ios test
