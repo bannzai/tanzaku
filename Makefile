@@ -72,4 +72,6 @@ macos-debug:
 .DEFAULT_GOAL := verify
 
 .PHONY: verify
+# 前提の 3 つは同じ tmp/DerivedData を使うため、make -j でも直列に実行する (並列だと xcodebuild の build.db がロックで失敗する)
+.NOTPARALLEL: verify
 verify: build-macos build-ios test
