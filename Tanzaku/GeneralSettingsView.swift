@@ -3,8 +3,9 @@ import ApplicationServices
 import Combine
 import ServiceManagement
 import SwiftUI
+import TanzakuKit
 
-/// 設定の「一般」(`documents/design/Settings.dc.html` の tab=general)。ランチャーのショートカット・前面のアプリへの直接貼り付け・ログイン時の起動を扱う。
+/// 設定の「一般」(`documents/design/Settings.dc.html` の tab=general)。ランチャーのショートカット・前面のアプリへの直接貼り付け・タイトルとタグの自動の作成・ログイン時の起動を扱う。
 struct GeneralSettingsView: View {
   @Environment(LauncherShortcutController.self) private var launcherShortcutController
   /// ランチャーの ⌘Return で前面のアプリに貼り付けるか。ランチャーは押した時にこの値を読む (`LauncherPanelController`)。
@@ -12,6 +13,12 @@ struct GeneralSettingsView: View {
   @AppStorage(directPasteEnabledUserDefaultsKey) private var isDirectPasteEnabled = false
   /// ⌘V を送る許可 (アクセシビリティとイベント送信) があるか。許可はシステム設定で変わり通知が無いため、アプリが前面に戻るたびに読み直す。
   @State private var isSyntheticKeyStrokePermissionGranted = isSyntheticKeyStrokeAllowed()
+  /// 編集を終えたスニペットにタイトルを自動で付けるか。スニペットの編集画面は編集を終えた時にこの値を読む (`generateSnippetMetadata(snippet:userDefaults:modelContext:)`)。
+  @AppStorage(snippetTitleGenerationEnabledUserDefaultsKey) private var isSnippetTitleGenerationEnabled = isSnippetTitleGenerationEnabledByDefault
+  /// 編集を終えたスニペットにタグを自動で付けるか。読む場所はタイトルと同じ。
+  @AppStorage(snippetTagGenerationEnabledUserDefaultsKey) private var isSnippetTagGenerationEnabled = isSnippetTagGenerationEnabledByDefault
+  /// 端末内の言語モデルを今使えるか。Apple Intelligence のオンとオフはシステム設定で変わるため、アプリが前面に戻るたびに読み直す。
+  @State private var isSnippetMetadataGenerationSupported = isSnippetMetadataGenerationAvailable()
   /// ログイン項目の登録の状態。正はシステム (`SMAppService`) が持つため、保存せずに毎回読む。
   @State private var launchAtLoginStatus = SMAppService.mainApp.status
   /// ログイン項目の登録・解除の失敗。
@@ -60,6 +67,29 @@ struct GeneralSettingsView: View {
       }
 
       Section {
+        Toggle(isOn: $isSnippetTitleGenerationEnabled) {
+          Text("Add titles automatically")
+          Text("When you finish editing a snippet that has no title, Tanzaku writes one from its content.")
+        }
+        .accessibilityIdentifier("snippet-title-generation-toggle")
+        Toggle(isOn: $isSnippetTagGenerationEnabled) {
+          Text("Add tags automatically")
+          Text("When you finish editing a snippet that has no tags, Tanzaku adds up to \(generatedSnippetTagLimit) tags.")
+        }
+        .accessibilityIdentifier("snippet-tag-generation-toggle")
+        Group {
+          if isSnippetMetadataGenerationSupported {
+            Text("Titles and tags are written on this Mac by Apple Intelligence. The content of your snippets isn’t sent anywhere.")
+          } else {
+            Text("Titles and tags are written on this Mac by Apple Intelligence, which needs macOS 26 or later. It isn’t available on this Mac now, so nothing is added.")
+          }
+        }
+        .font(.caption)
+        .foregroundStyle(.secondary)
+        .accessibilityIdentifier("snippet-metadata-generation-note")
+      }
+
+      Section {
         Toggle(
           "Launch at login",
           isOn: Binding(
@@ -88,6 +118,7 @@ struct GeneralSettingsView: View {
     .formStyle(.grouped)
     .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
       isSyntheticKeyStrokePermissionGranted = isSyntheticKeyStrokeAllowed()
+      isSnippetMetadataGenerationSupported = isSnippetMetadataGenerationAvailable()
       launchAtLoginStatus = SMAppService.mainApp.status
     }
   }

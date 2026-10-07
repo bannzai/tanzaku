@@ -11,10 +11,12 @@ struct SnippetBodyEditor: NSViewRepresentable {
   @Binding var text: String
   /// 選んでいる言語 (`Snippet.language` の値)。`nil` はプレーンテキスト。
   var language: String?
+  /// 編集欄を出した時にカーソルを入れるか。編集欄を作った時の値だけを使い、後から変えても入れ直さない。
+  var focusesOnAppear: Bool
 
   /// 入力を画面の状態へ返し、文字色を付けた言語と外観を覚えておく coordinator を作る。
   func makeCoordinator() -> SnippetBodyEditorCoordinator {
-    SnippetBodyEditorCoordinator(text: $text, language: language)
+    SnippetBodyEditorCoordinator(text: $text, language: language, isFocusPending: focusesOnAppear)
   }
 
   /// スクロールする編集欄を作り、最初の文字色を付ける。背景は SwiftUI 側 (デザインの code の色) を見せるため描かない。
@@ -38,6 +40,10 @@ struct SnippetBodyEditor: NSViewRepresentable {
     textView.string = text
     context.coordinator.colorScheme = context.environment.colorScheme
     context.coordinator.applyHighlight(textView: textView)
+    // 編集欄はこのメソッドを抜けた後にウィンドウへ入るため、入った後にカーソルを入れる。
+    Task { [coordinator = context.coordinator] in
+      coordinator.focusIfPending(textView: textView)
+    }
     return scrollView
   }
 
@@ -48,6 +54,8 @@ struct SnippetBodyEditor: NSViewRepresentable {
     }
     let coordinator = context.coordinator
     coordinator.text = $text
+    // 作った直後の 1 回 (`makeNSView`) でウィンドウに入っていなかった時に、次の更新で入れる。
+    coordinator.focusIfPending(textView: textView)
     let isTextReplaced = textView.string != text
     if isTextReplaced {
       textView.string = text
@@ -70,11 +78,23 @@ final class SnippetBodyEditorCoordinator: NSObject, NSTextViewDelegate {
   var language: String?
   /// 今の文字色を付けた外観。
   var colorScheme: ColorScheme = .light
+  /// 編集欄がウィンドウに入ったらカーソルを入れるのを待っているか。
+  private var isFocusPending: Bool
 
-  /// 入力中の本文と、最初に文字色を付ける言語を受け取る。class は memberwise initializer を持たないため書く。
-  init(text: Binding<String>, language: String?) {
+  /// 入力中の本文・最初に文字色を付ける言語・出した時にカーソルを入れるかを受け取る。class は memberwise initializer を持たないため書く。
+  init(text: Binding<String>, language: String?, isFocusPending: Bool) {
     self.text = text
     self.language = language
+    self.isFocusPending = isFocusPending
+  }
+
+  /// カーソルを入れるのを待っていて、編集欄がウィンドウに入っていればカーソルを入れる。待っていない・ウィンドウに入っていない時は何もしないため、何度呼んでも入れるのは 1 回になる。
+  func focusIfPending(textView: NSTextView) {
+    guard isFocusPending, let window = textView.window else {
+      return
+    }
+    isFocusPending = false
+    window.makeFirstResponder(textView)
   }
 
   /// 入力した本文を画面の状態へ返し、文字色を付け直す。

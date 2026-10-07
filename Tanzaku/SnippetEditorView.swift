@@ -3,12 +3,18 @@ import SwiftData
 import SwiftUI
 import TanzakuKit
 
+/// 入力が止まってから自動で保存するまでの時間。
+///
+/// 打鍵の間隔 (1 文字あたりおよそ 100〜200 ミリ秒) より十分長く、打っている途中の内容で保存と意味検索のベクトルの作り直しを繰り返さない長さ。止めてから一覧に反映されるまでの遅れとしては短い。
+private let snippetAutosaveDelay: Duration = .seconds(1)
+
 /// スニペットの編集画面 (`documents/design/Manager.dc.html` の右の列)。
 ///
-/// 入力はこの画面の状態に持ち、「保存」で検査を通った時だけスニペットに書き込む。SwiftData は自動で保存するため、
+/// 開いた時に見せるのはキーワードと置き換える内容 (本文) だけにし、タイトル・タグ・フォルダ・色は「追加情報」に畳む (`documents/DIRECTION.md`「決めたこと」)。
+/// 入力はこの画面の状態に持ち、入力が止まった時と編集を終えた時に、検査を通った時だけスニペットに書き込む。SwiftData は自動で保存するため、
 /// スニペットを直接書き換えると、空の本文や重複したキーワードのまま保存されてしまうため。
 struct SnippetEditorView: View {
-  /// 編集するスニペット。`nil` は新規。
+  /// 編集するスニペット。`nil` は、まだストアに入れていない新規。
   let snippet: Snippet?
   /// スニペットを保存・削除した後に呼び、意味検索のベクトルを作り直させる。
   let onSnippetsChange: () -> Void
@@ -17,7 +23,7 @@ struct SnippetEditorView: View {
   @Environment(\.modelContext) private var modelContext
   /// フォルダのメニューに並べるフォルダ。
   @Query(sort: \Folder.name) private var folders: [Folder]
-  /// 入力中の本文。
+  /// 入力中の本文 (置き換える内容)。
   @State private var bodyText: String
   /// 入力中のタイトル。
   @State private var title: String
@@ -31,8 +37,18 @@ struct SnippetEditorView: View {
   @State private var folderID: UUID?
   /// 付けるタグの名前。
   @State private var tagNames: [String]
+  /// この編集画面を開いてから入力を変えた回数。入力が止まるのを待って保存し直す条件に使う。
+  @State private var inputRevision = 0
+  /// 最後に保存した時の `inputRevision`。`inputRevision` と同じ間は保存しない (選んだだけで更新日時を変えないため)。
+  @State private var savedInputRevision = 0
+  /// この編集画面を開いてから 1 回でも保存したか。編集を終えた時に、自動のタイトル・タグを付けるかを決める。
+  @State private var hasSavedChanges = false
   /// タグの欄に入力中の、まだタグにしていない名前。
   @State private var newTagName = ""
+  /// タグの欄にフォーカスがあるか。フォーカスが外れた時に入力中の名前をタグにする。
+  @FocusState private var isTagFieldFocused: Bool
+  /// 「追加情報」(タイトル・タグ・フォルダ・色) を開いているか。
+  @State private var isAdditionalInfoExpanded: Bool
   /// 保存に失敗した理由。画面にそのまま出す。
   @State private var errorMessage: String?
   /// 新しいフォルダの名前を入力するアラートを出しているか。
@@ -43,10 +59,19 @@ struct SnippetEditorView: View {
   @State private var deletingSnippet: Snippet?
   /// 新規作成の下書きのスニペット。検査を通るとストアに入る。ストアへの保存に失敗した時は入れたのを取り消し (`saveManagerChanges(modelContext:)`)、
   /// 次の保存では新しい下書きを使う。取り消したスニペットをもう一度ストアに入れられるかは SwiftData が保証していないため。
-  @State private var draftSnippet = Snippet(body: "")
+  @State private var draftSnippet: Snippet
 
-  /// 編集画面の入力の初期値をスニペットから決めるため、`@State` の初期値を渡す。`draftTitle` は新規の時のタイトルの初期値 (ランチャーに入力した言葉)。
-  init(snippet: Snippet?, draftTitle: String, onSnippetsChange: @escaping () -> Void, selection: Binding<ManagerDetailSelection?>) {
+  /// 編集画面の入力の初期値をスニペットから決めるため、`@State` の初期値を渡す。
+  ///
+  /// `snippetID` は新規のスニペットに付ける識別子 (`ManagerDetailSelection.newSnippet` の `draftID`)。保存の前後で編集画面を同じ識別子で出し続け、入力中のフォーカスを保つため。
+  /// `draftTitle` は新規の時のタイトルの初期値 (ランチャーに入力した言葉)。
+  init(
+    snippet: Snippet?,
+    snippetID: UUID,
+    draftTitle: String,
+    onSnippetsChange: @escaping () -> Void,
+    selection: Binding<ManagerDetailSelection?>
+  ) {
     self.snippet = snippet
     self.onSnippetsChange = onSnippetsChange
     _selection = selection
@@ -57,40 +82,27 @@ struct SnippetEditorView: View {
     _color = State(initialValue: snippet?.color)
     _folderID = State(initialValue: snippet?.folder?.id)
     _tagNames = State(initialValue: (snippet?.tags ?? []).map(\.name).sorted())
+    // ランチャーに入力した言葉はタイトルに入るため、入ったことが見えるよう開いておく。それ以外は issue #55 のとおり閉じておく。
+    _isAdditionalInfoExpanded = State(initialValue: snippet == nil && !draftTitle.isEmpty)
+    _draftSnippet = State(initialValue: makeDraftSnippet(snippetID: snippetID))
   }
 
   var body: some View {
     VStack(alignment: .leading, spacing: 16) {
-      Grid(alignment: .leading, horizontalSpacing: 14, verticalSpacing: 12) {
-        GridRow {
-          fieldLabel(text: Text("Title"))
-          TextField("Title", text: $title, prompt: Text("Uses the first line of the body when empty"))
-            .labelsHidden()
-            .accessibilityIdentifier("snippet-title-field")
-        }
-        GridRow {
-          fieldLabel(text: Text("Keyword"))
-          TextField("Keyword", text: $keyword)
-            .labelsHidden()
-            .frame(width: 160)
-            .accessibilityIdentifier("snippet-keyword-field")
-        }
-        GridRow {
-          fieldLabel(text: Text("Tags"))
-          tagsField
-        }
-        GridRow {
-          fieldLabel(text: Text("Folder"))
-          folderMenu
-        }
-        GridRow {
-          fieldLabel(text: Text("Color"))
-          colorPicker
-        }
+      if !keyword.isEmpty {
+        SnippetGroupPermissionGuide()
+      }
+      HStack(spacing: 14) {
+        Text("Keyword")
+          .foregroundStyle(.secondary)
+        TextField("Keyword", text: $keyword)
+          .labelsHidden()
+          .frame(width: 160)
+          .accessibilityIdentifier("snippet-keyword-field")
       }
       VStack(alignment: .leading, spacing: 8) {
         HStack(spacing: 12) {
-          Text("Body")
+          Text("Replacement")
             .foregroundStyle(.secondary)
           Picker("Language", selection: $language) {
             Text("Plain Text").tag(String?.none)
@@ -111,31 +123,54 @@ struct SnippetEditorView: View {
             NSPasteboard.general.setString(bodyText, forType: .string)
           }
         }
-        SnippetBodyEditor(text: $bodyText, language: language)
+        // 新規作成 (⌘N) は置き換える内容から書き始めるため、開いた時にカーソルを入れる。既存のスニペットを選んだ時は、一覧を ↑↓ で動かし続けられるよう入れない。
+        SnippetBodyEditor(text: $bodyText, language: language, focusesOnAppear: snippet == nil)
           .padding(10)
           // 本文の背景はデザインの code の値 (`documents/design/Manager.dc.html` の LIGHT / DARK)。
           .background(appearanceAdaptiveColor(lightHex: 0xF6F7F9, darkHex: 0x19191B), in: RoundedRectangle(cornerRadius: 8))
           .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color(nsColor: .separatorColor)))
       }
+      DisclosureGroup(isExpanded: $isAdditionalInfoExpanded) {
+        Grid(alignment: .leading, horizontalSpacing: 14, verticalSpacing: 12) {
+          GridRow {
+            fieldLabel(text: Text("Title"))
+            TextField("Title", text: $title, prompt: Text("Uses the first line of the replacement when empty"))
+              .labelsHidden()
+              .accessibilityIdentifier("snippet-title-field")
+          }
+          GridRow {
+            fieldLabel(text: Text("Tags"))
+            tagsField
+          }
+          GridRow {
+            fieldLabel(text: Text("Folder"))
+            folderMenu
+          }
+          GridRow {
+            fieldLabel(text: Text("Color"))
+            colorPicker
+          }
+        }
+        .padding(.top, 8)
+      } label: {
+        Text("Additional Info")
+          .foregroundStyle(.secondary)
+      }
+      .accessibilityIdentifier("snippet-additional-info")
       if let errorMessage {
         Text(verbatim: errorMessage)
           .foregroundStyle(.red)
           .accessibilityIdentifier("snippet-error-message")
       }
-      HStack(spacing: 16) {
-        if let snippet {
+      if let snippet {
+        HStack(spacing: 16) {
           SnippetHistoryText(snippet: snippet)
-        }
-        Spacer()
-        if let snippet {
+          Spacer()
           Button("Delete…", role: .destructive) {
             deletingSnippet = snippet
           }
+          .accessibilityIdentifier("snippet-delete-button")
         }
-        Button("Save", action: save)
-          .keyboardShortcut("s")
-          .buttonStyle(.borderedProminent)
-          .accessibilityIdentifier("snippet-save-button")
       }
     }
     .padding(.horizontal, 32)
@@ -152,6 +187,54 @@ struct SnippetEditorView: View {
       let removedTagNames = Set(oldTagNames).subtracting(newTagNames)
       tagNames.removeAll { removedTagNames.contains($0) }
     }
+    .onChange(of: isTagFieldFocused) {
+      if !isTagFieldFocused {
+        tagNames = tagNamesAddingNewTagName()
+        newTagName = ""
+      }
+    }
+    .onChange(of: bodyText) {
+      inputRevision += 1
+    }
+    .onChange(of: title) {
+      inputRevision += 1
+    }
+    .onChange(of: keyword) {
+      inputRevision += 1
+    }
+    .onChange(of: language) {
+      inputRevision += 1
+    }
+    .onChange(of: color) {
+      inputRevision += 1
+    }
+    .onChange(of: folderID) {
+      inputRevision += 1
+    }
+    .onChange(of: tagNames) {
+      inputRevision += 1
+    }
+    .task(id: inputRevision) {
+      guard inputRevision != savedInputRevision else {
+        return
+      }
+      do {
+        try await Task.sleep(for: snippetAutosaveDelay)
+      } catch {
+        return
+      }
+      save(tagNames: tagNames)
+    }
+    .onDisappear(perform: finishEditing)
+    // 入力が止まるのを待つ間にアプリを終了しても、入力を失わないため。
+    .onReceive(NotificationCenter.default.publisher(for: NSApplication.willTerminateNotification)) { _ in
+      save(tagNames: tagNamesAddingNewTagName())
+    }
+  }
+
+  /// 書き込む先のスニペット。新規の時は下書き。
+  private var editingSnippet: Snippet {
+    snippet ?? draftSnippet
   }
 
   /// 選んでいるフォルダ。消されたフォルダは `folders` に無いため「なし」になる。
@@ -166,7 +249,7 @@ struct SnippetEditorView: View {
       .gridColumnAlignment(.trailing)
   }
 
-  /// 付けたタグと、タグを足す入力欄。Return でタグにする。
+  /// 付けたタグと、タグを足す入力欄。Return を押すか、欄からフォーカスが外れるとタグにする。
   private var tagsField: some View {
     HStack(spacing: 6) {
       ForEach(tagNames, id: \.self) { tagName in
@@ -188,11 +271,9 @@ struct SnippetEditorView: View {
       }
       TextField("Add Tag", text: $newTagName)
         .textFieldStyle(.plain)
+        .focused($isTagFieldFocused)
         .onSubmit {
-          let tagName = newTagName.trimmingCharacters(in: .whitespacesAndNewlines)
-          if !tagName.isEmpty && !tagNames.contains(tagName) {
-            tagNames.append(tagName)
-          }
+          tagNames = tagNamesAddingNewTagName()
           newTagName = ""
         }
         .accessibilityIdentifier("snippet-tag-field")
@@ -263,9 +344,33 @@ struct SnippetEditorView: View {
     }
   }
 
-  /// 入力を検査してスニペットに書き込み、保存する。新規のスニペットは保存できたら一覧で選ぶ。
-  private func save() {
-    let editingSnippet = snippet ?? draftSnippet
+  /// 付けるタグの名前に、タグの欄に入力中の名前を足したもの。空の名前と、付けてあるタグと同じ名前は足さない。
+  private func tagNamesAddingNewTagName() -> [String] {
+    let tagName = newTagName.trimmingCharacters(in: .whitespacesAndNewlines)
+    return tagName.isEmpty || tagNames.contains(tagName) ? tagNames : tagNames + [tagName]
+  }
+
+  /// 入力を検査してスニペットに書き込み、保存する。保存したら `true`。新規のスニペットは保存できたら一覧で選ぶ。
+  ///
+  /// `tagNames` は付けるタグの名前。編集を終える時は、タグの欄に入力中で Return を押していない名前も足して渡す (`tagNamesAddingNewTagName()`)。
+  /// 最後に保存した後に入力を変えていなければ何もしないため、入力を変えずに何度呼んでも保存は 1 回になる。
+  /// 検査を通らない入力 (空の置き換える内容・重複したキーワード) は書き込まずに理由を出す。ストアには最後に検査を通った内容が残る。
+  @discardableResult
+  private func save(tagNames: [String]) -> Bool {
+    let editingSnippet = self.editingSnippet
+    let isNewSnippet = editingSnippet.modelContext == nil
+    // 編集中に消されたスニペット (この画面の削除・MCP・同期) には書き込まない。
+    if let snippet, !isSnippetInStore(snippet: snippet) {
+      return false
+    }
+    guard inputRevision != savedInputRevision || tagNames != self.tagNames else {
+      return false
+    }
+    // 新規で置き換える内容をまだ書いていない間は、キーワードやタイトルを先に入れても検査の理由を出さず、書くのを待つ。
+    if isNewSnippet && bodyText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+      errorMessage = nil
+      return false
+    }
     do {
       try applySnippetEdit(
         snippet: editingSnippet,
@@ -275,35 +380,54 @@ struct SnippetEditorView: View {
         language: language,
         color: color,
         folder: selectedFolder,
-        tagNames: tagNames + [newTagName],
+        tagNames: tagNames,
         modelContext: modelContext,
         now: .now
       )
       // 保存に失敗したら、書き込んだ変更と新規の挿入を取り消す。残すと、自動保存や別の項目の保存で失敗した変更まで保存されるため。入力は画面の状態に残る。
       if let saveErrorMessage = saveManagerChanges(modelContext: modelContext) {
         errorMessage = saveErrorMessage
-        if snippet == nil {
-          draftSnippet = Snippet(body: "")
+        if isNewSnippet {
+          draftSnippet = makeDraftSnippet(snippetID: editingSnippet.id)
         }
-        return
+        return false
       }
-      onSnippetsChange()
+      savedInputRevision = inputRevision
+      hasSavedChanges = true
       errorMessage = nil
-      if snippet == nil {
+      onSnippetsChange()
+      // 一覧でこの下書きを選んでいる間だけ選び直す。編集を終えた時の保存 (別の項目を選んだ後) で、選んだ項目を戻さないため。
+      if case .newSnippet(let draftID, _) = selection, draftID == editingSnippet.id {
         selection = .snippet(snippetID: editingSnippet.id)
-      } else {
-        tagNames = (editingSnippet.tags ?? []).map(\.name).sorted()
-        newTagName = ""
       }
+      return true
     } catch let validationError as SnippetValidationError {
       errorMessage = validationError.description
+      return false
     } catch {
       // ストアの読み込みの失敗 (タグの取得など) は書き込みの途中で起き得るため、途中まで書き込んだ変更と新規の挿入を取り消す。
       modelContext.rollback()
-      if snippet == nil {
-        draftSnippet = Snippet(body: "")
+      if isNewSnippet {
+        draftSnippet = makeDraftSnippet(snippetID: editingSnippet.id)
       }
       errorMessage = error.localizedDescription
+      return false
+    }
+  }
+
+  /// 編集を終えた時 (別の項目を選んだ・ウィンドウを閉じた) の処理。入力が止まるのを待っている入力を保存し、この画面で保存したスニペットに自動のタイトル・タグを付ける。
+  ///
+  /// タイトル・タグを入力の途中ではなくここで作るのは、書きかけの内容から作らないため (`documents/DIRECTION.md`「決めたこと」)。
+  /// 言語モデルの応答はこの画面が消えた後に届くため、画面の状態ではなくスニペットに書き込む (`generateSnippetMetadata(snippet:userDefaults:modelContext:)`)。
+  private func finishEditing() {
+    let editingSnippet = self.editingSnippet
+    guard save(tagNames: tagNamesAddingNewTagName()) || hasSavedChanges, isSnippetInStore(snippet: editingSnippet) else {
+      return
+    }
+    Task { [modelContext, onSnippetsChange] in
+      if await generateSnippetMetadata(snippet: editingSnippet, userDefaults: .standard, modelContext: modelContext) {
+        onSnippetsChange()
+      }
     }
   }
 
@@ -325,6 +449,13 @@ struct SnippetEditorView: View {
     }
     folderID = newFolder.id
   }
+}
+
+/// 新規作成の下書きのスニペットを作る。`snippetID` を識別子にし、保存の前後で一覧の選択と編集画面が同じスニペットを指せるようにする。
+private func makeDraftSnippet(snippetID: UUID) -> Snippet {
+  let snippet = Snippet(body: "")
+  snippet.id = snippetID
+  return snippet
 }
 
 /// スニペットの作成・更新の日時と主体。主体が MCP クライアントの時だけクライアント名を添える (`documents/design/Manager.dc.html`)。

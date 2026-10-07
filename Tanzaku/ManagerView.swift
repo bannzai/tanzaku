@@ -15,6 +15,7 @@ enum ManagerDetailSelection: Hashable {
   /// 既存のスニペット。
   case snippet(snippetID: UUID)
   /// 新規のスニペット。保存するまでストアに入れないため、押すたびに編集画面を作り直すよう下書きごとの識別子を持つ。`title` はタイトルの入力の初期値 (ランチャーに入力した言葉)。
+  /// `draftID` は保存した時にスニペットの識別子になり、選択は同じ識別子の `snippet` に変わる。保存の前後で同じ編集画面を出し続けるため。
   case newSnippet(draftID: UUID, title: String)
   /// 既存のスニペットグループ。
   case snippetGroup(snippetGroupID: UUID)
@@ -117,6 +118,13 @@ func saveManagerChanges(modelContext: ModelContext) -> String? {
   }
 }
 
+/// スニペットがストアに入っているか。まだ保存していない新規のスニペットと、消したスニペットは `false`。
+///
+/// 消したスニペットの属性を読み書きすると落ちるため、編集を終えた時の保存や、言語モデルの応答を待った後の書き込みの前に確かめる。
+func isSnippetInStore(snippet: Snippet) -> Bool {
+  snippet.modelContext != nil && !snippet.isDeleted
+}
+
 extension View {
   /// 保存に失敗した理由をアラートで出す。`errorMessage` が `nil` でない間だけ出し、閉じると `nil` に戻す。
   func managerSaveErrorAlert(errorMessage: Binding<String?>) -> some View {
@@ -145,6 +153,8 @@ private struct ManagerDetailView: View {
   @Binding var selection: ManagerDetailSelection?
   /// スニペットを保存・削除した後に呼び、意味検索のベクトルを作り直させる。
   let onSnippetsChange: () -> Void
+  /// 保存した直後のスニペットを `snippets` より先に引くためのストア (`storedSnippet(snippetID:)`)。
+  @Environment(\.modelContext) private var modelContext
   /// 選んだ識別子のスニペットを探すためのすべてのスニペット。
   @Query private var snippets: [Snippet]
   /// 選んだ識別子のスニペットグループを探すためのすべてのスニペットグループ。
@@ -152,16 +162,22 @@ private struct ManagerDetailView: View {
 
   var body: some View {
     switch selection {
-    case .snippet(let snippetID):
-      if let snippet = snippets.first(where: { $0.id == snippetID }) {
-        SnippetEditorView(snippet: snippet, draftTitle: "", onSnippetsChange: onSnippetsChange, selection: $selection)
-          .id(selection)
+    // 新規のスニペットは保存すると同じ識別子の `snippet` の選択に変わる。その前後で編集画面を作り直すと入力中のフォーカスが失われるため、2 つの選択を同じ場所・同じ識別子で出す。
+    case .snippet(let snippetID), .newSnippet(let snippetID, _):
+      let snippet = storedSnippet(snippetID: snippetID)
+      if snippet != nil || newSnippetDraftTitle != nil {
+        SnippetEditorView(
+          snippet: snippet,
+          snippetID: snippetID,
+          // 既存のスニペットはタイトルをスニペットから読むため、下書きのタイトルは使わない。
+          draftTitle: newSnippetDraftTitle ?? "",
+          onSnippetsChange: onSnippetsChange,
+          selection: $selection
+        )
+        .id(snippetID)
       } else {
         noSelectionView
       }
-    case .newSnippet(_, let title):
-      SnippetEditorView(snippet: nil, draftTitle: title, onSnippetsChange: onSnippetsChange, selection: $selection)
-        .id(selection)
     case .snippetGroup(let snippetGroupID):
       if let snippetGroup = snippetGroups.first(where: { $0.id == snippetGroupID }) {
         SnippetGroupEditorView(snippetGroup: snippetGroup, selection: $selection)
@@ -175,6 +191,23 @@ private struct ManagerDetailView: View {
     case nil:
       noSelectionView
     }
+  }
+
+  /// 新規のスニペットを選んでいる時の、タイトルの入力の初期値。新規のスニペットを選んでいなければ `nil`。
+  private var newSnippetDraftTitle: String? {
+    if case .newSnippet(_, let title) = selection {
+      return title
+    }
+    return nil
+  }
+
+  /// ストアにある `snippetID` のスニペット。無ければ `nil`。
+  ///
+  /// `@Query` の結果に無い時はストアから直接引く。新規のスニペットを自動保存でストアに入れた直後の描画で `@Query` の結果がまだ古いと、
+  /// その 1 回の描画で編集画面が外れて入力中のフォーカスが失われるため。消したスニペットはどちらにも無い。
+  private func storedSnippet(snippetID: UUID) -> Snippet? {
+    snippets.first { $0.id == snippetID }
+      ?? (try? modelContext.fetch(FetchDescriptor<Snippet>(predicate: #Predicate { $0.id == snippetID })))?.first
   }
 
   /// 何も選んでいない時の表示。

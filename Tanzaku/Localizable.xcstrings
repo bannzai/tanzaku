@@ -89,6 +89,36 @@
         }
       }
     },
+    "Add tags automatically" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "タグを自動で付ける"
+          }
+        }
+      }
+    },
+    "Add titles automatically" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "タイトルを自動で付ける"
+          }
+        }
+      }
+    },
+    "Additional Info" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "追加情報"
+          }
+        }
+      }
+    },
     "AI Agents" : {
       "localizations" : {
         "ja" : {
@@ -219,22 +249,22 @@
         }
       }
     },
+    "Allow keyboard access to expand keywords" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "キーワードを展開するにはキーボードの許可が必要です"
+          }
+        }
+      }
+    },
     "Allow Tanzaku in Login Items in System Settings to launch it at login." : {
       "localizations" : {
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "ログイン時に起動するには、システム設定のログイン項目で Tanzaku を許可してください。"
-          }
-        }
-      }
-    },
-    "Allow keyboard access to use snippet groups" : {
-      "localizations" : {
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "スニペットグループを使うにはキーボードの許可が必要です"
           }
         }
       }
@@ -699,12 +729,12 @@
         }
       }
     },
-    "If the menu doesn’t appear after you allow access, quit and reopen Tanzaku." : {
+    "If keywords don’t expand after you allow access, quit and reopen Tanzaku." : {
       "localizations" : {
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "許可してもメニューが出ない時は、Tanzaku を終了して開き直してください。"
+            "value" : "許可してもキーワードが展開されない時は、Tanzaku を終了して開き直してください。"
           }
         }
       }
@@ -1199,6 +1229,16 @@
         }
       }
     },
+    "Replacement" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "置き換える内容"
+          }
+        }
+      }
+    },
     "Requested by" : {
       "localizations" : {
         "ja" : {
@@ -1499,6 +1539,26 @@
         }
       }
     },
+    "Titles and tags are written on this Mac by Apple Intelligence, which needs macOS 26 or later. It isn’t available on this Mac now, so nothing is added." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "タイトルとタグは、この Mac の Apple Intelligence が作ります (macOS 26 以降が必要です)。今この Mac では使えないため、何も付けません。"
+          }
+        }
+      }
+    },
+    "Titles and tags are written on this Mac by Apple Intelligence. The content of your snippets isn’t sent anywhere." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "タイトルとタグは、この Mac の Apple Intelligence が作ります。スニペットの内容はどこにも送信しません。"
+          }
+        }
+      }
+    },
     "Turn on Tanzaku in System Settings › Privacy & Security › Accessibility. If it's already on and this message stays, remove Tanzaku from the list with − and open System Settings again from here." : {
       "localizations" : {
         "ja" : {
@@ -1539,12 +1599,12 @@
         }
       }
     },
-    "Uses the first line of the body when empty" : {
+    "Uses the first line of the replacement when empty" : {
       "localizations" : {
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "空なら本文の 1 行目を表示"
+            "value" : "空なら置き換える内容の 1 行目を表示"
           }
         }
       }
@@ -1569,12 +1629,32 @@
         }
       }
     },
-    "When you type a snippet group’s keyword, Tanzaku shows the menu at the text cursor and replaces the keyword with the snippet you choose. What you type is used only to find keywords, and is never saved or sent." : {
+    "When you finish editing a snippet that has no tags, Tanzaku adds up to %lld tags." : {
       "localizations" : {
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "スニペットグループのキーワードを打つと、入力欄のカーソルの位置にメニューを出し、選んだスニペットでキーワードを置き換えます。打った内容はキーワードの判定だけに使い、保存も送信もしません。"
+            "value" : "タグが無いスニペットの編集を終えると、タグを %lld 個まで付けます。"
+          }
+        }
+      }
+    },
+    "When you finish editing a snippet that has no title, Tanzaku writes one from its content." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "タイトルが無いスニペットの編集を終えると、内容からタイトルを付けます。"
+          }
+        }
+      }
+    },
+    "When you type a snippet’s keyword, Tanzaku replaces it with the snippet. When you type a snippet group’s keyword, Tanzaku shows the menu at the text cursor and replaces the keyword with the snippet you choose. What you type is used only to find keywords, and is never saved or sent." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "スニペットのキーワードを打つと、キーワードをスニペットの内容に置き換えます。スニペットグループのキーワードを打つと、入力欄のカーソルの位置にメニューを出し、選んだスニペットでキーワードを置き換えます。打った内容はキーワードの判定だけに使い、保存も送信もしません。"
           }
         }
       }
