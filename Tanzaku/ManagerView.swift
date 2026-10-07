@@ -159,8 +159,17 @@ private struct ManagerDetailView: View {
   @Query private var snippets: [Snippet]
   /// 選んだ識別子のスニペットグループを探すためのすべてのスニペットグループ。
   @Query private var snippetGroups: [SnippetGroup]
+  /// スニペットの編集を終えた時 (別の項目を選んだ時など) の保存に失敗した理由。編集画面は消えているため、ここからアラートで出す。
+  @State private var finishEditingErrorMessage: String?
 
   var body: some View {
+    detail
+      .managerSaveErrorAlert(errorMessage: $finishEditingErrorMessage)
+  }
+
+  /// 選んでいる項目の編集画面。何も選んでいなければ案内。
+  @ViewBuilder
+  private var detail: some View {
     switch selection {
     // 新規のスニペットは保存すると同じ識別子の `snippet` の選択に変わる。その前後で編集画面を作り直すと入力中のフォーカスが失われるため、2 つの選択を同じ場所・同じ識別子で出す。
     case .snippet(let snippetID), .newSnippet(let snippetID, _):
@@ -172,6 +181,9 @@ private struct ManagerDetailView: View {
           // 既存のスニペットはタイトルをスニペットから読むため、下書きのタイトルは使わない。
           draftTitle: newSnippetDraftTitle ?? "",
           onSnippetsChange: onSnippetsChange,
+          onFinishEditingFailure: { errorMessage in
+            finishEditingErrorMessage = errorMessage
+          },
           selection: $selection
         )
         .id(snippetID)

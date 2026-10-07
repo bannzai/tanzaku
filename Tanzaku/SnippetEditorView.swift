@@ -18,6 +18,8 @@ struct SnippetEditorView: View {
   let snippet: Snippet?
   /// スニペットを保存・削除した後に呼び、意味検索のベクトルを作り直させる。
   let onSnippetsChange: () -> Void
+  /// 編集を終えた時の保存に失敗した時に、理由を渡して呼ぶ。この画面は消えるため、理由は呼び出し側が出す。
+  let onFinishEditingFailure: (String) -> Void
   /// 一覧で選んでいる項目。新規のスニペットを保存したら、そのスニペットを選ぶ。
   @Binding var selection: ManagerDetailSelection?
   @Environment(\.modelContext) private var modelContext
@@ -73,10 +75,12 @@ struct SnippetEditorView: View {
     snippetID: UUID,
     draftTitle: String,
     onSnippetsChange: @escaping () -> Void,
+    onFinishEditingFailure: @escaping (String) -> Void,
     selection: Binding<ManagerDetailSelection?>
   ) {
     self.snippet = snippet
     self.onSnippetsChange = onSnippetsChange
+    self.onFinishEditingFailure = onFinishEditingFailure
     _selection = selection
     _bodyText = State(initialValue: snippet?.body ?? "")
     _title = State(initialValue: snippet?.title ?? draftTitle)
@@ -196,15 +200,18 @@ struct SnippetEditorView: View {
     // 入力で足したばかりのタグはスニペットにまだ付いていないため、スニペットから外れた名前だけを外す。
     // 前に編集を終えた時の自動のタグ (`generateSnippetMetadata(snippet:userDefaults:modelContext:)`) は、この画面を開き直した後に付くことがある。
     // 入力に足さないと、次の自動保存が開いた時のタグで上書きして消すため、スニペットに付いた名前を入力にも足す。
+    // 足すのは、保存していない入力が無い時だけ (`hasUnsavedInput`)。
     .onChange(of: (snippet?.tags ?? []).map(\.name).sorted()) { oldTagNames, newTagNames in
       let removedTagNames = Set(oldTagNames).subtracting(newTagNames)
       tagNames.removeAll { removedTagNames.contains($0) }
-      tagNames.append(contentsOf: newTagNames.filter { !oldTagNames.contains($0) && !tagNames.contains($0) })
+      if !hasUnsavedInput {
+        tagNames.append(contentsOf: newTagNames.filter { !oldTagNames.contains($0) && !tagNames.contains($0) })
+      }
     }
-    // 自動のタイトルも同じく開き直した後に付くことがある。ユーザーがタイトルの入力を変えていなければ入力に映し、変えていればユーザーの入力を残す。
+    // 自動のタイトルも同じく開き直した後に付くことがある。保存していない入力が無く、ユーザーがタイトルの入力を変えていなければ入力に映す。
     .onChange(of: snippet?.title) { oldTitle, newTitle in
       // 空の入力はタイトルなし (`nil`) として保存しているため、タイトルなしは空の入力と比べる。
-      if title == (oldTitle ?? "") {
+      if !hasUnsavedInput && title == (oldTitle ?? "") {
         title = newTitle ?? ""
       }
     }
@@ -229,7 +236,7 @@ struct SnippetEditorView: View {
       inputRevision += 1
     }
     .task(id: inputRevision) {
-      guard inputRevision != savedInputRevision else {
+      guard hasUnsavedInput else {
         return
       }
       do {
@@ -237,12 +244,13 @@ struct SnippetEditorView: View {
       } catch {
         return
       }
-      save(tagNames: tagNames)
+      // 入力の途中の失敗は、この画面に出す理由で足りるため、ほかへは伝えない。
+      save(tagNames: tagNames, onFailure: { _ in })
     }
     .onDisappear(perform: finishEditing)
     // 入力が止まるのを待つ間にアプリを終了しても、入力を失わないため。
     .onReceive(NotificationCenter.default.publisher(for: NSApplication.willTerminateNotification)) { _ in
-      save(tagNames: tagNamesAddingNewTagName())
+      save(tagNames: tagNamesAddingNewTagName(), onFailure: onFinishEditingFailure)
     }
   }
 
@@ -257,6 +265,14 @@ struct SnippetEditorView: View {
         }
       }
     )
+  }
+
+  /// ユーザーが変えて、まだ保存していない入力があるか。
+  ///
+  /// ある間は、スニペットに後から付いた自動のタイトル・タグを入力に映さない。言語モデルは保存済みの本文から作るため、本文を書き換えている途中に届いたものは古い本文のものになる。
+  /// 映さなければ次の自動保存が入力 (空のタイトル) で上書きし、編集を終えた時に新しい本文から作り直す。
+  private var hasUnsavedInput: Bool {
+    inputRevision != savedInputRevision
   }
 
   /// 書き込む先のスニペット。新規の時は下書き。
@@ -390,15 +406,16 @@ struct SnippetEditorView: View {
   /// `tagNames` は付けるタグの名前。編集を終える時は、タグの欄に入力中で Return を押していない名前も足して渡す (`tagNamesAddingNewTagName()`)。
   /// 最後に保存した後に入力を変えていなければ何もしないため、入力を変えずに何度呼んでも保存は 1 回になる。
   /// 検査を通らない入力 (空の置き換える内容・重複したキーワード) は書き込まずに理由を出す。ストアには最後に検査を通った内容が残る。
+  /// 理由はこの画面に出し、`onFailure` にも渡す。編集を終えた時はこの画面が消えて理由が見えないため、呼び出し側が出せるようにする。
   @discardableResult
-  private func save(tagNames: [String]) -> Bool {
+  private func save(tagNames: [String], onFailure: (String) -> Void) -> Bool {
     let editingSnippet = self.editingSnippet
     let isNewSnippet = editingSnippet.modelContext == nil
     // 編集中に消されたスニペット (この画面の削除・MCP・同期) には書き込まない。
     if let snippet, !isSnippetInStore(snippet: snippet) {
       return false
     }
-    guard inputRevision != savedInputRevision || tagNames != self.tagNames else {
+    guard hasUnsavedInput || tagNames != self.tagNames else {
       return false
     }
     // 新規で置き換える内容をまだ書いていない間は、キーワードやタイトルを先に入れても検査の理由を出さず、書くのを待つ。
@@ -422,6 +439,7 @@ struct SnippetEditorView: View {
       // 保存に失敗したら、書き込んだ変更と新規の挿入を取り消す。残すと、自動保存や別の項目の保存で失敗した変更まで保存されるため。入力は画面の状態に残る。
       if let saveErrorMessage = saveManagerChanges(modelContext: modelContext) {
         errorMessage = saveErrorMessage
+        onFailure(saveErrorMessage)
         if isNewSnippet {
           draftSnippet = makeDraftSnippet(snippetID: editingSnippet.id)
         }
@@ -438,6 +456,7 @@ struct SnippetEditorView: View {
       return true
     } catch let validationError as SnippetValidationError {
       errorMessage = validationError.description
+      onFailure(validationError.description)
       return false
     } catch {
       // ストアの読み込みの失敗 (タグの取得など) は書き込みの途中で起き得るため、途中まで書き込んだ変更と新規の挿入を取り消す。
@@ -446,6 +465,7 @@ struct SnippetEditorView: View {
         draftSnippet = makeDraftSnippet(snippetID: editingSnippet.id)
       }
       errorMessage = error.localizedDescription
+      onFailure(error.localizedDescription)
       return false
     }
   }
@@ -456,7 +476,7 @@ struct SnippetEditorView: View {
   /// 言語モデルの応答はこの画面が消えた後に届くため、画面の状態ではなくスニペットに書き込む (`generateSnippetMetadata(snippet:userDefaults:modelContext:)`)。
   private func finishEditing() {
     let editingSnippet = self.editingSnippet
-    guard save(tagNames: tagNamesAddingNewTagName()) || hasSavedChanges, isSnippetInStore(snippet: editingSnippet) else {
+    guard save(tagNames: tagNamesAddingNewTagName(), onFailure: onFinishEditingFailure) || hasSavedChanges, isSnippetInStore(snippet: editingSnippet) else {
       return
     }
     Task { [modelContext, onSnippetsChange] in
