@@ -91,6 +91,8 @@ struct SnippetEditorView: View {
     VStack(alignment: .leading, spacing: 16) {
       if !keyword.isEmpty {
         SnippetGroupPermissionGuide()
+          // 高さが足りない時は、案内の文を切り詰める前に置き換える内容の欄を縮める。案内の文には、打った内容を保存も送信もしないことが書いてあるため。
+          .layoutPriority(1)
       }
       HStack(spacing: 14) {
         Text("Keyword")
@@ -155,8 +157,14 @@ struct SnippetEditorView: View {
       } label: {
         Text("Additional Info")
           .foregroundStyle(.secondary)
+          // macOS の DisclosureGroup は三角のクリックでしか開閉しないため、見出しの文字のクリックでも開閉する。
+          .contentShape(Rectangle())
+          .onTapGesture {
+            isAdditionalInfoExpanded.toggle()
+          }
+          // DisclosureGroup に付けると、中の欄の識別子 (`snippet-title-field` など) がこの識別子に置き換わるため、見出しに付ける。
+          .accessibilityIdentifier("snippet-additional-info")
       }
-      .accessibilityIdentifier("snippet-additional-info")
       if let errorMessage {
         Text(verbatim: errorMessage)
           .foregroundStyle(.red)
