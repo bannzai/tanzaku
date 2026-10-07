@@ -191,9 +191,19 @@ struct SnippetEditorView: View {
     .snippetDeleteConfirmation(deletingSnippet: $deletingSnippet, onSnippetsChange: onSnippetsChange, selection: $selection)
     // 編集中にサイドバーでタグを消すと、スニペットからそのタグが外れる。入力に残したまま保存すると同じ名前のタグを作り直してしまうため、入力からも外す。
     // 入力で足したばかりのタグはスニペットにまだ付いていないため、スニペットから外れた名前だけを外す。
+    // 前に編集を終えた時の自動のタグ (`generateSnippetMetadata(snippet:userDefaults:modelContext:)`) は、この画面を開き直した後に付くことがある。
+    // 入力に足さないと、次の自動保存が開いた時のタグで上書きして消すため、スニペットに付いた名前を入力にも足す。
     .onChange(of: (snippet?.tags ?? []).map(\.name).sorted()) { oldTagNames, newTagNames in
       let removedTagNames = Set(oldTagNames).subtracting(newTagNames)
       tagNames.removeAll { removedTagNames.contains($0) }
+      tagNames.append(contentsOf: newTagNames.filter { !oldTagNames.contains($0) && !tagNames.contains($0) })
+    }
+    // 自動のタイトルも同じく開き直した後に付くことがある。ユーザーがタイトルの入力を変えていなければ入力に映し、変えていればユーザーの入力を残す。
+    .onChange(of: snippet?.title) { oldTitle, newTitle in
+      // 空の入力はタイトルなし (`nil`) として保存しているため、タイトルなしは空の入力と比べる。
+      if title == (oldTitle ?? "") {
+        title = newTitle ?? ""
+      }
     }
     .onChange(of: isTagFieldFocused) {
       if !isTagFieldFocused {

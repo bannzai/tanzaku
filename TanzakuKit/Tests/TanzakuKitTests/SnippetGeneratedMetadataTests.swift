@@ -82,6 +82,21 @@ struct SnippetGeneratedMetadataTests {
     )
   }
 
+  @Test("言語モデルに渡す既にあるタグは、付けたスニペットが多い順に最大の数までで、長すぎる名前は渡さない")
+  func limitsExistingTagNamesForPrompt() throws {
+    _ = try insertSnippet(body: "dummy-command-1", title: "", tagNames: ["shell", "tmux"])
+    _ = try insertSnippet(body: "dummy-command-2", title: "", tagNames: ["shell", "auth", String(repeating: "a", count: generatedSnippetTagNameMaxLength + 1)])
+    _ = try insertSnippet(body: "dummy-command-3", title: "", tagNames: (0..<generatedSnippetTagPromptExistingTagLimit).map { "tag-\($0)" })
+    // タグから付けたスニペットをたどる向きのリレーションを、ストアに確定させてから数える。
+    try modelContext.save()
+
+    let existingTagNames = generatedSnippetTagPromptExistingTagNames(tags: try modelContext.fetch(FetchDescriptor<SchemaV2.Tag>()))
+
+    #expect(existingTagNames.count == generatedSnippetTagPromptExistingTagLimit)
+    #expect(Array(existingTagNames.prefix(3)) == ["shell", "auth", "tag-0"])
+    #expect(existingTagNames.allSatisfy { $0.count <= generatedSnippetTagNameMaxLength })
+  }
+
   @Test("タイトルが無く本文が変わっていないスニペットには、作ったタイトルを付け、更新日時は変えない")
   func appliesTitleToUntitledSnippet() throws {
     let snippet = try insertSnippet(body: "dummy-command-for-test", title: "", tagNames: [])

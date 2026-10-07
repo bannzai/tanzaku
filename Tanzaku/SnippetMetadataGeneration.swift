@@ -20,7 +20,7 @@ let isSnippetTagGenerationEnabledByDefault = false
 /// 言語モデルに渡す本文の最大の文字数。これより長い本文は先頭だけを渡す。
 ///
 /// 端末内の言語モデルが 1 回のやり取りで扱えるのは 4096 トークン ( https://developer.apple.com/documentation/technotes/tn3193-managing-the-on-device-foundation-model-s-context-window )。
-/// 日本語は 1 文字が 1 トークンを超えることがあるため、指示と応答の分を残して収まる文字数にする。タイトルとタグは本文の先頭から決められる。
+/// 日本語は 1 文字が 1 トークンを超えることがあるため、指示・既にあるタグ (`generatedSnippetTagPromptExistingTagLimit`)・応答の分を残して収まる文字数にする。タイトルとタグは本文の先頭から決められる。
 private let snippetMetadataGenerationBodyMaxLength = 1500
 
 /// タイトル・タグの自動の作成の失敗の記録。スニペットの本文と言語モデルの応答は入れない (`.claude/rules/snippet-content-handling.md`)。
@@ -91,7 +91,7 @@ func generateSnippetMetadata(snippet: Snippet, userDefaults: UserDefaults, model
         instructions:
           "You choose tags for a text snippet, which is reusable text, a shell command, code, or a prompt. Reply with up to \(generatedSnippetTagLimit) tags separated by commas, and nothing else. Each tag is one or two words. When an existing tag fits, use it as written.",
         prompt:
-          "Existing tags: \(modelContext.fetch(FetchDescriptor<Tag>()).map(\.name).sorted().joined(separator: ", "))\n\nSnippet:\n\(sourceBody.prefix(snippetMetadataGenerationBodyMaxLength))"
+          "Existing tags: \(generatedSnippetTagPromptExistingTagNames(tags: modelContext.fetch(FetchDescriptor<Tag>())).joined(separator: ", "))\n\nSnippet:\n\(sourceBody.prefix(snippetMetadataGenerationBodyMaxLength))"
       )
       if let generatedText, isSnippetInStore(snippet: snippet) {
         isSnippetChanged =

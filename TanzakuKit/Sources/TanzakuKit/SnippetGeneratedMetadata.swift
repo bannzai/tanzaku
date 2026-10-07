@@ -16,6 +16,29 @@ public let generatedSnippetTagLimit = 3
 /// サイドバーの最小の幅 (200pt) の 1 行に収まる長さ。言語モデルがタグの代わりに文を返した時に、文をタグにしないため。
 public let generatedSnippetTagNameMaxLength = 20
 
+/// 言語モデルに「既にあるタグ」として渡すタグの最大の数。
+///
+/// 端末内の言語モデルが 1 回のやり取りで扱えるのは 4096 トークン ( https://developer.apple.com/documentation/technotes/tn3193-managing-the-on-device-foundation-model-s-context-window )。
+/// タグをすべて渡すと、タグの多いライブラリではこの上限を超えてタグを作れなくなるため、数を決める。名前は `generatedSnippetTagNameMaxLength` 文字までのものに限るため、渡す文字数は区切りを含めて 660 文字までになる。
+public let generatedSnippetTagPromptExistingTagLimit = 30
+
+/// 言語モデルに「既にあるタグ」として渡すタグの名前。付けたスニペットが多い順 (同じ数なら名前の順) に `generatedSnippetTagPromptExistingTagLimit` 個まで。
+///
+/// よく使うタグほど新しいスニペットにも合いやすいため、多い順に選ぶ。`generatedSnippetTagNameMaxLength` 文字より長い名前は、言語モデルが返しても付けない (`generatedSnippetTagNames(generatedText:)`) ため渡さない。
+public func generatedSnippetTagPromptExistingTagNames(tags: [Tag]) -> [String] {
+  Array(
+    tags
+      .filter { $0.name.count <= generatedSnippetTagNameMaxLength }
+      .sorted { firstTag, secondTag in
+        let firstSnippetCount = (firstTag.snippets ?? []).count
+        let secondSnippetCount = (secondTag.snippets ?? []).count
+        return firstSnippetCount == secondSnippetCount ? firstTag.name < secondTag.name : firstSnippetCount > secondSnippetCount
+      }
+      .map(\.name)
+      .prefix(generatedSnippetTagPromptExistingTagLimit)
+  )
+}
+
 /// 言語モデルが返した文字列から、スニペットのタイトルにする文字列を取り出す。タイトルにできるものが無ければ `nil`。
 ///
 /// 返すタイトルは 1 行で、囲みの引用符・かぎ括弧と前後の空白を含まず、`generatedSnippetTitleMaxLength` 文字以内。言語モデルは指示しても、複数行の応答・引用符で囲んだ応答・長い文を返すことがあるため。
