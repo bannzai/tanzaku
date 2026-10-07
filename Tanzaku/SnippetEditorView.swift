@@ -411,6 +411,8 @@ struct SnippetEditorView: View {
   private func save(tagNames: [String], onFailure: (String) -> Void) -> Bool {
     let editingSnippet = self.editingSnippet
     let isNewSnippet = editingSnippet.modelContext == nil
+    // 保存に失敗して挿入を取り消した後のスニペットは属性を読めないため、識別子は書き込む前に取っておく。
+    let editingSnippetID = editingSnippet.id
     // 編集中に消されたスニペット (この画面の削除・MCP・同期) には書き込まない。
     if let snippet, !isSnippetInStore(snippet: snippet) {
       return false
@@ -441,7 +443,7 @@ struct SnippetEditorView: View {
         errorMessage = saveErrorMessage
         onFailure(saveErrorMessage)
         if isNewSnippet {
-          draftSnippet = makeDraftSnippet(snippetID: editingSnippet.id)
+          draftSnippet = makeDraftSnippet(snippetID: editingSnippetID)
         }
         return false
       }
@@ -450,8 +452,8 @@ struct SnippetEditorView: View {
       errorMessage = nil
       onSnippetsChange()
       // 一覧でこの下書きを選んでいる間だけ選び直す。編集を終えた時の保存 (別の項目を選んだ後) で、選んだ項目を戻さないため。
-      if case .newSnippet(let draftID, _) = selection, draftID == editingSnippet.id {
-        selection = .snippet(snippetID: editingSnippet.id)
+      if case .newSnippet(let draftID, _) = selection, draftID == editingSnippetID {
+        selection = .snippet(snippetID: editingSnippetID)
       }
       return true
     } catch let validationError as SnippetValidationError {
@@ -462,7 +464,7 @@ struct SnippetEditorView: View {
       // ストアの読み込みの失敗 (タグの取得など) は書き込みの途中で起き得るため、途中まで書き込んだ変更と新規の挿入を取り消す。
       modelContext.rollback()
       if isNewSnippet {
-        draftSnippet = makeDraftSnippet(snippetID: editingSnippet.id)
+        draftSnippet = makeDraftSnippet(snippetID: editingSnippetID)
       }
       errorMessage = error.localizedDescription
       onFailure(error.localizedDescription)
