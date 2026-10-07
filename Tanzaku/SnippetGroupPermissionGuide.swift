@@ -3,9 +3,9 @@ import SwiftUI
 /// 許可を与えたかを確かめ直す間隔。システム設定で許可を切り替えてこの画面へ戻った時に、案内の表示がすぐ追いつくよう 1 秒にする。許可の確認はプロセス内の問い合わせだけで軽い。
 private let snippetGroupPermissionRefreshInterval: Duration = .seconds(1)
 
-/// スニペットグループのメニューに要る許可 (入力監視・アクセシビリティ) の案内。許可がすべてあれば何も出さない。
+/// キーワード展開 (スニペットのキーワードの置き換えとスニペットグループのメニュー) に要る許可 (入力監視・アクセシビリティ) の案内。許可がすべてあれば何も出さない。
 ///
-/// スニペットグループの編集画面の上に出す。許可はスニペットグループを作る時に初めて要るため、初回起動の手順では求めない (`documents/PROJECT.md`「設定・初回起動」)。
+/// スニペットグループの編集画面と、キーワードを入れたスニペットの編集画面の上に出す。許可はキーワードを使う時に初めて要るため、初回起動の手順では求めない (`documents/PROJECT.md`「設定・初回起動」)。
 struct SnippetGroupPermissionGuide: View {
   /// 入力監視の許可があるか。
   @State private var isInputMonitoringGranted = isInputMonitoringAllowed()
@@ -17,10 +17,10 @@ struct SnippetGroupPermissionGuide: View {
       if !isInputMonitoringGranted || !isAccessibilityGranted {
         GroupBox {
           VStack(alignment: .leading, spacing: 10) {
-            Text("Allow keyboard access to use snippet groups")
+            Text("Allow keyboard access to expand keywords")
               .font(.headline)
             Text(
-              "When you type a snippet group’s keyword, Tanzaku shows the menu at the text cursor and replaces the keyword with the snippet you choose. What you type is used only to find keywords, and is never saved or sent."
+              "When you type a snippet’s keyword, Tanzaku replaces it with the snippet. When you type a snippet group’s keyword, Tanzaku shows the menu at the text cursor and replaces the keyword with the snippet you choose. What you type is used only to find keywords, and is never saved or sent."
             )
             .foregroundStyle(.secondary)
             // `.fixedSize(horizontal: false, vertical: true)` を付けない。管理ウィンドウの最小の大きさを求める時の狭い幅で 1 文字ずつ折り返した高さが最小の高さになり、ウィンドウが画面の外まで縦に伸びてサイドバーがツールバーの下にずれたため (https://github.com/bannzai/tanzaku/issues/43 )。
@@ -28,7 +28,7 @@ struct SnippetGroupPermissionGuide: View {
               .accessibilityIdentifier("snippet-group-permission-input-monitoring")
             permissionRow(title: "Accessibility", isGranted: isAccessibilityGranted, action: requestSyntheticKeyStrokeAccess)
               .accessibilityIdentifier("snippet-group-permission-accessibility")
-            Text("If the menu doesn’t appear after you allow access, quit and reopen Tanzaku.")
+            Text("If keywords don’t expand after you allow access, quit and reopen Tanzaku.")
               .font(.caption)
               .foregroundStyle(.secondary)
           }

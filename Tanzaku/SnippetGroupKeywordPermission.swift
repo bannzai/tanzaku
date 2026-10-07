@@ -11,7 +11,7 @@ func isSnippetGroupAccessibilityAllowed() -> Bool {
   isSyntheticKeyStrokeAllowed()
 }
 
-/// スニペットグループのメニューに要る許可がすべてあるか。1 つでも欠けたらキー入力の監視を始めない (`documents/PROJECT.md`「スニペットグループとキーワード展開」)。
+/// キーワード展開 (スニペットのキーワードの置き換えとスニペットグループのメニュー) に要る許可がすべてあるか。1 つでも欠けたらキー入力の監視を始めない (`documents/PROJECT.md`「スニペットグループとキーワード展開」)。
 func isSnippetGroupKeywordExpansionAllowed() -> Bool {
   isInputMonitoringAllowed() && isSnippetGroupAccessibilityAllowed()
 }
