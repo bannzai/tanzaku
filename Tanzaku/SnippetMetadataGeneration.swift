@@ -70,36 +70,46 @@ func generateSnippetMetadata(snippet: Snippet, userDefaults: UserDefaults, model
     return false
   }
   let sourceBody = snippet.body
-  var isSnippetChanged = false
+  var generatedTitleText: String?
+  var generatedTagText: String?
   if isSnippetTitleGenerationEnabled(userDefaults: userDefaults) && snippet.title == nil {
     do {
-      let generatedText = try await languageModelResponse(
+      generatedTitleText = try await languageModelResponse(
         instructions:
           "You write a title for a text snippet, which is reusable text, a shell command, code, or a prompt. Reply with the title only, on one line, without quotes or a trailing period. Write the title in the same language as the snippet. Keep it within \(generatedSnippetTitleMaxLength) characters.",
         prompt: String(sourceBody.prefix(snippetMetadataGenerationBodyMaxLength))
       )
-      if let generatedText, isSnippetInStore(snippet: snippet) {
-        isSnippetChanged = applyGeneratedSnippetTitle(snippet: snippet, generatedText: generatedText, sourceBody: sourceBody)
-      }
     } catch {
       snippetMetadataGenerationLogger.error("Failed to generate a title: \(String(describing: type(of: error)), privacy: .public)")
     }
   }
   if isSnippetTagGenerationEnabled(userDefaults: userDefaults) && isSnippetInStore(snippet: snippet) && (snippet.tags ?? []).isEmpty {
     do {
-      let generatedText = try await languageModelResponse(
+      generatedTagText = try await languageModelResponse(
         instructions:
           "You choose tags for a text snippet, which is reusable text, a shell command, code, or a prompt. Reply with up to \(generatedSnippetTagLimit) tags separated by commas, and nothing else. Each tag is one or two words. When an existing tag fits, use it as written.",
         prompt:
           "Existing tags: \(generatedSnippetTagPromptExistingTagNames(tags: modelContext.fetch(FetchDescriptor<Tag>())).joined(separator: ", "))\n\nSnippet:\n\(sourceBody.prefix(snippetMetadataGenerationBodyMaxLength))"
       )
-      if let generatedText, isSnippetInStore(snippet: snippet) {
-        isSnippetChanged =
-          try applyGeneratedSnippetTags(snippet: snippet, generatedText: generatedText, sourceBody: sourceBody, modelContext: modelContext)
-          || isSnippetChanged
-      }
     } catch {
       snippetMetadataGenerationLogger.error("Failed to generate tags: \(String(describing: type(of: error)), privacy: .public)")
+    }
+  }
+  // 応答をすべて受け取ってから、まとめて付ける。タイトルを先に付けてからタグの応答を待つと、待つ間に本文を書き換えた編集画面の保存が、古い本文のタイトルを新しい本文と一緒に保存するため。
+  guard isSnippetInStore(snippet: snippet) else {
+    return false
+  }
+  var isSnippetChanged = false
+  if let generatedTitleText {
+    isSnippetChanged = applyGeneratedSnippetTitle(snippet: snippet, generatedText: generatedTitleText, sourceBody: sourceBody)
+  }
+  if let generatedTagText {
+    do {
+      isSnippetChanged =
+        try applyGeneratedSnippetTags(snippet: snippet, generatedText: generatedTagText, sourceBody: sourceBody, modelContext: modelContext)
+        || isSnippetChanged
+    } catch {
+      snippetMetadataGenerationLogger.error("Failed to apply the generated tags: \(String(describing: type(of: error)), privacy: .public)")
     }
   }
   guard isSnippetChanged else {
