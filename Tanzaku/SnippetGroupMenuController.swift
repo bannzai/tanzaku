@@ -238,6 +238,10 @@ final class SnippetGroupMenuController {
       maxLength: (snippets.map { ($0.keyword ?? "").count } + snippetGroups.map { ($0.keyword ?? "").count }).max() ?? 0
     )
     if let snippet = snippetMatchingTypedText(typedText: typedText, snippets: snippets, snippetGroups: snippetGroups), let keyword = snippet.keyword {
+      // バックスペースで末尾がスニペットのキーワードに戻った時は、置き換えもグループのメニューも起こさない (最後の文字を打ち直すと置き換わる)。
+      guard isSnippetKeywordExpansionKey(keyCode: keyCode) else {
+        return false
+      }
       // 置き換えた直後のバックスペースで同じキーワードに戻った時に、もう一度置き換えないため。
       typedText = ""
       insertSnippet(snippet: snippet, backspaceCount: snippetKeywordBackspaceCount(keyword: keyword))

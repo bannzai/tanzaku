@@ -37,7 +37,10 @@ struct SnippetEditorView: View {
   @State private var folderID: UUID?
   /// 付けるタグの名前。
   @State private var tagNames: [String]
-  /// この編集画面を開いてから入力を変えた回数。入力が止まるのを待って保存し直す条件に使う。
+  /// この編集画面を開いてからユーザーが入力を変えた回数。入力が止まるのを待って保存し直す条件に使う。
+  ///
+  /// スニペットから入力へ映した変更 (自動のタイトル・タグ、サイドバーで消したタグ) は数えない。数えると、ユーザーが何も変えていないのに画面に残った入力で保存し直し、
+  /// 編集画面を開いている間に MCP・同期が変えた本文などを上書きするため。タイトルとタグはスニペットから映すことがあるため、ユーザーが操作する箇所で数える。
   @State private var inputRevision = 0
   /// 最後に保存した時の `inputRevision`。`inputRevision` と同じ間は保存しない (選んだだけで更新日時を変えないため)。
   @State private var savedInputRevision = 0
@@ -136,7 +139,7 @@ struct SnippetEditorView: View {
         Grid(alignment: .leading, horizontalSpacing: 14, verticalSpacing: 12) {
           GridRow {
             fieldLabel(text: Text("Title"))
-            TextField("Title", text: $title, prompt: Text("Uses the first line of the replacement when empty"))
+            TextField("Title", text: titleInput, prompt: Text("Uses the first line of the replacement when empty"))
               .labelsHidden()
               .accessibilityIdentifier("snippet-title-field")
           }
@@ -207,14 +210,10 @@ struct SnippetEditorView: View {
     }
     .onChange(of: isTagFieldFocused) {
       if !isTagFieldFocused {
-        tagNames = tagNamesAddingNewTagName()
-        newTagName = ""
+        commitNewTagName()
       }
     }
     .onChange(of: bodyText) {
-      inputRevision += 1
-    }
-    .onChange(of: title) {
       inputRevision += 1
     }
     .onChange(of: keyword) {
@@ -227,9 +226,6 @@ struct SnippetEditorView: View {
       inputRevision += 1
     }
     .onChange(of: folderID) {
-      inputRevision += 1
-    }
-    .onChange(of: tagNames) {
       inputRevision += 1
     }
     .task(id: inputRevision) {
@@ -248,6 +244,19 @@ struct SnippetEditorView: View {
     .onReceive(NotificationCenter.default.publisher(for: NSApplication.willTerminateNotification)) { _ in
       save(tagNames: tagNamesAddingNewTagName())
     }
+  }
+
+  /// タイトルの欄の入力。ユーザーが書き換えた時だけ `inputRevision` を進める (スニペットから映した変更と区別するため)。
+  private var titleInput: Binding<String> {
+    Binding(
+      get: { title },
+      set: { newTitle in
+        if title != newTitle {
+          title = newTitle
+          inputRevision += 1
+        }
+      }
+    )
   }
 
   /// 書き込む先のスニペット。新規の時は下書き。
@@ -275,6 +284,7 @@ struct SnippetEditorView: View {
           Text(verbatim: tagName)
           Button {
             tagNames.removeAll { $0 == tagName }
+            inputRevision += 1
           } label: {
             Image(systemName: "xmark")
               .font(.system(size: 8, weight: .bold))
@@ -290,10 +300,7 @@ struct SnippetEditorView: View {
       TextField("Add Tag", text: $newTagName)
         .textFieldStyle(.plain)
         .focused($isTagFieldFocused)
-        .onSubmit {
-          tagNames = tagNamesAddingNewTagName()
-          newTagName = ""
-        }
+        .onSubmit(commitNewTagName)
         .accessibilityIdentifier("snippet-tag-field")
     }
     .padding(.horizontal, 6)
@@ -366,6 +373,16 @@ struct SnippetEditorView: View {
   private func tagNamesAddingNewTagName() -> [String] {
     let tagName = newTagName.trimmingCharacters(in: .whitespacesAndNewlines)
     return tagName.isEmpty || tagNames.contains(tagName) ? tagNames : tagNames + [tagName]
+  }
+
+  /// タグの欄に入力中の名前をタグにする。空の名前と、付けてあるタグと同じ名前では入力中の名前を消すだけのため、何度呼んでもタグは 1 つしか増えない。
+  private func commitNewTagName() {
+    let newTagNames = tagNamesAddingNewTagName()
+    if newTagNames != tagNames {
+      tagNames = newTagNames
+      inputRevision += 1
+    }
+    newTagName = ""
   }
 
   /// 入力を検査してスニペットに書き込み、保存する。保存したら `true`。新規のスニペットは保存できたら一覧で選ぶ。

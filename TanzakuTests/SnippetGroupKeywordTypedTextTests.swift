@@ -6,6 +6,12 @@ import Testing
 
 /// キー入力 1 回を受けた後の、キーワードの判定に使う直前に打った文字を確かめる。
 struct SnippetGroupKeywordTypedTextTests {
+  @Test("バックスペースはスニペットのキーワードの置き換えを起こさず、文字のキー入力は起こす")
+  func backspaceDoesNotExpandSnippetKeyword() {
+    #expect(!isSnippetKeywordExpansionKey(keyCode: kVK_Delete))
+    #expect(isSnippetKeywordExpansionKey(keyCode: kVK_ANSI_W))
+  }
+
   @Test("文字のキー入力は末尾に足し、最も長いキーワードの文字数だけを残す")
   func appendsCharactersAndKeepsSuffix() {
     #expect(snippetGroupKeywordTypedText(typedText: ";focus-ap", keyCode: kVK_ANSI_P, modifierFlags: [], characters: "p", maxLength: 10) == ";focus-app")
