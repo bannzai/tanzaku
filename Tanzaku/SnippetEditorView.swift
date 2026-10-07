@@ -410,13 +410,13 @@ struct SnippetEditorView: View {
   @discardableResult
   private func save(tagNames: [String], onFailure: (String) -> Void) -> Bool {
     let editingSnippet = self.editingSnippet
-    let isNewSnippet = editingSnippet.modelContext == nil
-    // 保存に失敗して挿入を取り消した後のスニペットは属性を読めないため、識別子は書き込む前に取っておく。
-    let editingSnippetID = editingSnippet.id
-    // 編集中に消されたスニペット (この画面の削除・MCP・同期) には書き込まない。
+    // 編集中に消されたスニペット (この画面の削除・MCP・同期) には書き込まない。消したスニペットは属性を読めないため、属性を読む前に確かめる。
     if let snippet, !isSnippetInStore(snippet: snippet) {
       return false
     }
+    let isNewSnippet = editingSnippet.modelContext == nil
+    // 保存に失敗して挿入を取り消した後のスニペットも属性を読めないため、識別子は書き込む前に取っておく。
+    let editingSnippetID = editingSnippet.id
     guard hasUnsavedInput || tagNames != self.tagNames else {
       return false
     }
