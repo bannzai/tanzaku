@@ -114,7 +114,7 @@ struct SnippetGeneratedMetadataTests {
     #expect(try applyGeneratedSnippetTags(snippet: snippet, generatedText: "shell, tmux", sourceBody: "dummy-command-for-test", modelContext: modelContext))
     #expect(Set((snippet.tags ?? []).map(\.name)) == ["shell", "tmux"])
     #expect((snippet.tags ?? []).first { $0.name == "shell" }?.id == (taggedSnippet.tags ?? []).first?.id)
-    #expect(try modelContext.fetchCount(FetchDescriptor<Tag>()) == 2)
+    #expect(try modelContext.fetchCount(FetchDescriptor<SchemaV2.Tag>()) == 2)
     #expect(snippet.updatedAt == Date(timeIntervalSince1970: 0))
   }
 
@@ -130,6 +130,6 @@ struct SnippetGeneratedMetadataTests {
     let untaggedSnippet = try insertSnippet(body: "dummy-command-for-test", title: "", tagNames: [])
     #expect(try !applyGeneratedSnippetTags(snippet: untaggedSnippet, generatedText: " , ", sourceBody: "dummy-command-for-test", modelContext: modelContext))
 
-    #expect(try modelContext.fetchCount(FetchDescriptor<Tag>()) == 1)
+    #expect(try modelContext.fetchCount(FetchDescriptor<SchemaV2.Tag>()) == 1)
   }
 }
