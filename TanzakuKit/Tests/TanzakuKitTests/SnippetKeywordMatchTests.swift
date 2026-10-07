@@ -63,7 +63,7 @@ struct SnippetKeywordMatchTests {
 
   @Test("片方のキーワードがもう片方の末尾になっている時は長い方を選ぶ")
   func prefersLongerKeyword() throws {
-    let shortKeywordSnippet = try insertSnippet(keyword: ";env", body: "echo short")
+    let shortKeywordSnippet = try insertSnippet(keyword: "env", body: "echo short")
     let longKeywordSnippet = try insertSnippet(keyword: ";dev-env", body: "echo long")
 
     #expect(
@@ -75,31 +75,32 @@ struct SnippetKeywordMatchTests {
         == longKeywordSnippet.id
     )
     #expect(
-      snippetMatchingTypedText(typedText: "x;env", snippets: [shortKeywordSnippet, longKeywordSnippet], snippetGroups: [])?.id
+      snippetMatchingTypedText(typedText: "x-env", snippets: [shortKeywordSnippet, longKeywordSnippet], snippetGroups: [])?.id
         == shortKeywordSnippet.id
     )
   }
 
   @Test("スニペットグループのキーワードの方が長く一致している時は選ばず、グループのメニューに任せる")
   func yieldsToLongerSnippetGroupKeyword() throws {
-    let snippet = try insertSnippet(keyword: ";env", body: "echo short")
+    let snippet = try insertSnippet(keyword: "env", body: "echo short")
     let snippetGroup = try insertSnippetGroup(keyword: ";dev-env", snippets: [try insertSnippet(keyword: "", body: "echo long")])
 
     #expect(snippetMatchingTypedText(typedText: ";dev-env", snippets: [snippet], snippetGroups: [snippetGroup]) == nil)
-    #expect(snippetMatchingTypedText(typedText: "x;env", snippets: [snippet], snippetGroups: [snippetGroup])?.id == snippet.id)
+    #expect(snippetMatchingTypedText(typedText: "x-env", snippets: [snippet], snippetGroups: [snippetGroup])?.id == snippet.id)
   }
 
   @Test("スニペットのキーワードの方が長く一致している時は、スニペットグループがあってもスニペットを選ぶ")
   func winsOverShorterSnippetGroupKeyword() throws {
     let snippet = try insertSnippet(keyword: ";dev-env", body: "echo long")
-    let snippetGroup = try insertSnippetGroup(keyword: ";env", snippets: [try insertSnippet(keyword: "", body: "echo short")])
+    let snippetGroup = try insertSnippetGroup(keyword: "env", snippets: [try insertSnippet(keyword: "", body: "echo short")])
 
     #expect(snippetMatchingTypedText(typedText: ";dev-env", snippets: [snippet], snippetGroups: [snippetGroup])?.id == snippet.id)
+    #expect(snippetMatchingTypedText(typedText: "x-env", snippets: [snippet], snippetGroups: [snippetGroup]) == nil)
   }
 
   @Test("メニューに並べるスニペットが無いグループのキーワードには譲らない")
   func doesNotYieldToSnippetGroupWithoutSnippets() throws {
-    let snippet = try insertSnippet(keyword: ";env", body: "echo short")
+    let snippet = try insertSnippet(keyword: "env", body: "echo short")
     let emptySnippetGroup = try insertSnippetGroup(keyword: ";dev-env", snippets: [])
 
     #expect(snippetMatchingTypedText(typedText: ";dev-env", snippets: [snippet], snippetGroups: [emptySnippetGroup])?.id == snippet.id)

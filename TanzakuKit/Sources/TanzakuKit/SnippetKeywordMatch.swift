@@ -3,7 +3,7 @@ import Foundation
 /// 打った文字の末尾がキーワードと一致した、その場で本文に置き換えるスニペット。置き換えるものが無ければ `nil`。
 ///
 /// キーワードは打った文字列をそのまま照合する (大文字と小文字を区別した完全一致。`documents/DIRECTION.md`「決めたこと」)。
-/// 片方のキーワードがもう片方の末尾になっている時 (`;env` と `;dev-env` など) は長い方を選ぶ。長い方を打った時に短い方の本文に置き換えないため。
+/// 片方のキーワードがもう片方の末尾になっている時 (`env` と `;dev-env` など) は長い方を選ぶ。長い方を打った時に短い方の本文に置き換えないため。
 /// スニペットグループのキーワードの方が長く一致している時は `nil` を返し、グループのメニュー (`snippetGroupMatchingTypedText(typedText:snippetGroups:)`) に任せる。
 /// キーワードはスニペットとスニペットグループで共通の名前空間で一意 (`validateKeywordIsUnique(keyword:ownerID:modelContext:)`) のため、同じ長さで両方が一致することは無い。
 public func snippetMatchingTypedText(typedText: String, snippets: [Snippet], snippetGroups: [SnippetGroup]) -> Snippet? {
