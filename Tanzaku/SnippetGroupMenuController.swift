@@ -27,12 +27,13 @@ private func isKeyboardInputSourceASCIICapable() -> Bool {
   return CFBooleanGetValue(Unmanaged<CFBoolean>.fromOpaque(isASCIICapable).takeUnretainedValue())
 }
 
-/// スニペットグループのキーワードの入力の監視・メニューのパネル・選んだ本文の入力をまとめる。
+/// スニペットとスニペットグループのキーワードの入力の監視・スニペットグループのメニューのパネル・本文の入力をまとめる。
 ///
+/// スニペットのキーワードを打つとその場で本文に置き換え、スニペットグループのキーワードを打つとメニューを出す (`documents/DIRECTION.md`「決めたこと」)。
 /// キー入力は CGEventTap で見る。メニューはフォーカスを奪わないパネルに出し、入力中のアプリを前面のまま残すため、メニューの ↑↓・Return・Esc はパネルではなく CGEventTap で受け取り、入力欄へ渡さない。
 /// 打った文字はキーワードの判定だけに使い、保存・ログ出力・送信をしない (`documents/PROJECT.md`「スニペットグループとキーワード展開」、`.claude/rules/snippet-content-handling.md`)。
 final class SnippetGroupMenuController {
-  /// スニペットグループを読むストア。
+  /// スニペットとスニペットグループを読むストア。
   let modelContainer: ModelContainer
   /// メニューの状態。
   private let state = SnippetGroupMenuState()
@@ -145,7 +146,7 @@ final class SnippetGroupMenuController {
     state.selectedSnippetIndex = 0
   }
 
-  /// 監視したイベントを処理する。メニューのキー操作として受け取ったら `true` を返し、入力欄へ渡さない。
+  /// 監視したイベントを処理する。メニューのキー操作か、スニペットのキーワードの最後の文字として受け取ったら `true` を返し、入力欄へ渡さない。
   private func handleEvent(type: CGEventType, keyCode: Int, modifierFlags: CGEventFlags, characters: String, sourceUserData: Int64) -> Bool {
     switch type {
     case .tapDisabledByTimeout, .tapDisabledByUserInput:
@@ -176,8 +177,7 @@ final class SnippetGroupMenuController {
         typedText = ""
         return false
       }
-      updateTypedTextAndOpenMenu(keyCode: keyCode, modifierFlags: modifierFlags, characters: characters)
-      return false
+      return updateTypedTextAndExpandKeyword(keyCode: keyCode, modifierFlags: modifierFlags, characters: characters)
     default:
       // マウスのクリックでキャレットが動き得るため、打った文字を捨てる。メニューはクリックで閉じる (パネルはクリックを受けない)。
       typedText = ""
@@ -210,41 +210,52 @@ final class SnippetGroupMenuController {
     }
   }
 
-  /// 打った文字を足し、末尾がスニペットグループのキーワードと一致したらメニューを開く。
+  /// キー入力 1 回を受けてキーワードを判定する。スニペットを本文に置き換えた時だけ `true` を返し、呼び出し側はそのキー入力を入力欄へ渡さない。
   ///
-  /// スニペットグループはキー入力のたびにストアから読む。グループは管理ウィンドウ・開発者メニュー・同期 (#19) のどこからでも変わり、読んだ結果を持つと変更の通知を漏れなく受け取る仕組みが要るため。キーワードを持つグループだけを読むため、読む量はグループの数に比例して小さい。
-  private func updateTypedTextAndOpenMenu(keyCode: Int, modifierFlags: CGEventFlags, characters: String) {
+  /// スニペットとスニペットグループはキー入力のたびにストアから読む。どちらも管理ウィンドウ・開発者メニュー・MCP・同期 (#19) のどこからでも変わり、読んだ結果を持つと変更の通知を漏れなく受け取る仕組みが要るため。キーワードを持つものだけを読むため、読む量はキーワードの数に比例する。
+  private func updateTypedTextAndExpandKeyword(keyCode: Int, modifierFlags: CGEventFlags, characters: String) -> Bool {
     // 日本語などの入力ソースでは、キー入力の文字 (ローマ字) と入力欄に入る文字 (かな) が違い、変換の確定の Return をメニューの選択として奪い、消すバックスペースの数もずれるため判定しない。
     guard isKeyboardInputSourceASCIICapable() else {
       typedText = ""
-      return
+      return false
     }
+    let snippets: [Snippet]
     let snippetGroups: [SnippetGroup]
     do {
+      snippets = try modelContainer.mainContext.fetch(FetchDescriptor<Snippet>(predicate: #Predicate { $0.keyword != nil }))
       snippetGroups = try modelContainer.mainContext.fetch(FetchDescriptor<SnippetGroup>(predicate: #Predicate { $0.keyword != nil }))
     } catch {
-      logger.error("Failed to fetch snippet groups: \(String(describing: error), privacy: .public)")
+      logger.error("Failed to fetch snippets and snippet groups: \(String(describing: error), privacy: .public)")
       typedText = ""
-      return
+      return false
     }
-    // キーワードを持つグループが無ければ照合するものが無いため、打った文字を持たない (長さ 0)。キーワードは読む時の条件で `nil` を除いてある。
+    // キーワードを持つスニペットもグループも無ければ照合するものが無いため、打った文字を持たない (長さ 0)。キーワードは読む時の条件で `nil` を除いてある。
     typedText = snippetGroupKeywordTypedText(
       typedText: typedText,
       keyCode: keyCode,
       modifierFlags: modifierFlags,
       characters: characters,
-      maxLength: snippetGroups.map { ($0.keyword ?? "").count }.max() ?? 0
+      maxLength: (snippets.map { ($0.keyword ?? "").count } + snippetGroups.map { ($0.keyword ?? "").count }).max() ?? 0
     )
+    if let snippet = snippetMatchingTypedText(typedText: typedText, snippets: snippets, snippetGroups: snippetGroups), let keyword = snippet.keyword {
+      // バックスペースで末尾がスニペットのキーワードに戻った時は、置き換えもグループのメニューも起こさない (最後の文字を打ち直すと置き換わる)。
+      guard isSnippetKeywordExpansionKey(keyCode: keyCode) else {
+        return false
+      }
+      // 置き換えた直後のバックスペースで同じキーワードに戻った時に、もう一度置き換えないため。
+      typedText = ""
+      insertSnippet(snippet: snippet, backspaceCount: snippetKeywordBackspaceCount(keyword: keyword))
+      return true
+    }
     // 打った文字は開いた後も残す。短いキーワード (`;dev`) のメニューを出した後に長いキーワード (`;dev-env`) を打ち続けた時に、長い方のメニューを出すため。
     if let snippetGroup = snippetGroupMatchingTypedText(typedText: typedText, snippetGroups: snippetGroups) {
       openMenu(snippetGroup: snippetGroup)
     }
+    return false
   }
 
-  /// 選んでいるスニペットを入れる。打ったキーワードをバックスペースで消し、本文をクリップボードに入れて ⌘V で貼り付ける。
+  /// メニューで選んでいるスニペットを入れる。打ったキーワードは入力欄にすべて入っているため、キーワードの文字数だけ消す。
   ///
-  /// 本文を文字のキー入力として送らず貼り付けるのは、改行を Return として受け取って送信するアプリ (チャットなど) で本文の途中で送信されないため (`documents/DIRECTION.md`「決めたこと」)。
-  /// 入れた後に使った日時を記録する。保存に失敗しても記録だけにする。本文は入っており、ランチャーの最近使ったスニペットに出ないだけのため。
   /// 冪等ではない: 呼ぶたびに入力が 1 回起きる。
   private func insertSelectedSnippet() {
     guard state.snippets.indices.contains(state.selectedSnippetIndex), let keyword = state.snippetGroup?.keyword else {
@@ -255,7 +266,16 @@ final class SnippetGroupMenuController {
     let snippet = state.snippets[state.selectedSnippetIndex]
     closeMenu()
     typedText = ""
-    for _ in 0..<snippetGroupKeywordBackspaceCount(keyword: keyword) {
+    insertSnippet(snippet: snippet, backspaceCount: snippetGroupKeywordBackspaceCount(keyword: keyword))
+  }
+
+  /// 打ったキーワードをバックスペース `backspaceCount` 回で消し、`snippet` の本文をクリップボードに入れて ⌘V で貼り付ける。
+  ///
+  /// 本文を文字のキー入力として送らず貼り付けるのは、改行を Return として受け取って送信するアプリ (チャットなど) で本文の途中で送信されないため (`documents/DIRECTION.md`「決めたこと」)。
+  /// 入れた後に使った日時を記録する。保存に失敗しても記録だけにする。本文は入っており、ランチャーの最近使ったスニペットに出ないだけのため。
+  /// 冪等ではない: 呼ぶたびに入力が 1 回起きる。
+  private func insertSnippet(snippet: Snippet, backspaceCount: Int) {
+    for _ in 0..<backspaceCount {
       postSyntheticKeyStroke(virtualKey: kVK_Delete, flags: [])
     }
     copySnippetBodyToPasteboard(body: snippet.body)

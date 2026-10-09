@@ -1,6 +1,13 @@
 import Carbon.HIToolbox
 import CoreGraphics
 
+/// キー入力が、スニペットのキーワードの置き換えを起こしてよいものか。バックスペースは起こさない。
+///
+/// バックスペースで末尾がキーワードに戻った時は、キーワードが入力欄にすべて入っているため、消す文字数 (`snippetKeywordBackspaceCount(keyword:)`) が合わない。
+func isSnippetKeywordExpansionKey(keyCode: Int) -> Bool {
+  keyCode != kVK_Delete
+}
+
 /// キー入力 1 回を受けた後の、キーワードの判定に使う直前に打った文字。
 ///
 /// 打った文字はキーワードの判定だけに使い、保存・ログ出力・送信をしない (`documents/PROJECT.md`「スニペットグループとキーワード展開」)。そのため末尾の `maxLength` 文字 (最も長いキーワードの文字数) だけを残す。

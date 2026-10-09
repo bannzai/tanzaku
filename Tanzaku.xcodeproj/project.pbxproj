@@ -105,9 +105,11 @@
 		7F1500000000000000000004 /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F1500000000000000000104 /* OnboardingView.swift */; };
 		7F1500000000000000000005 /* GeneralSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F1500000000000000000105 /* GeneralSettingsView.swift */; };
 		7F1500000000000000000006 /* HelpCommands.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F1500000000000000000106 /* HelpCommands.swift */; };
+		7F3000000000000000000001 /* SnippetMetadataGeneration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F3000000000000000000101 /* SnippetMetadataGeneration.swift */; };
 		7F1500000000000000000007 /* LauncherShortcutTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F1500000000000000000107 /* LauncherShortcutTests.swift */; };
 		7F1500000000000000000008 /* OnboardingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F1500000000000000000108 /* OnboardingTests.swift */; };
 		7F1500000000000000000009 /* HelpCommandsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F1500000000000000000109 /* HelpCommandsTests.swift */; };
+		7F3000000000000000000002 /* SnippetMetadataGenerationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F3000000000000000000102 /* SnippetMetadataGenerationTests.swift */; };
 		7F2000000000000000000001 /* KeyboardViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F20000000000000000000A1 /* KeyboardViewController.swift */; };
 		7F2000000000000000000002 /* KeyboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F20000000000000000000A2 /* KeyboardView.swift */; };
 		7F2000000000000000000003 /* KeyboardKeysView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F20000000000000000000A3 /* KeyboardKeysView.swift */; };
@@ -247,9 +249,11 @@
 		7F1500000000000000000104 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
 		7F1500000000000000000105 /* GeneralSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeneralSettingsView.swift; sourceTree = "<group>"; };
 		7F1500000000000000000106 /* HelpCommands.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HelpCommands.swift; sourceTree = "<group>"; };
+		7F3000000000000000000101 /* SnippetMetadataGeneration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnippetMetadataGeneration.swift; sourceTree = "<group>"; };
 		7F1500000000000000000107 /* LauncherShortcutTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LauncherShortcutTests.swift; sourceTree = "<group>"; };
 		7F1500000000000000000108 /* OnboardingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingTests.swift; sourceTree = "<group>"; };
 		7F1500000000000000000109 /* HelpCommandsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HelpCommandsTests.swift; sourceTree = "<group>"; };
+		7F3000000000000000000102 /* SnippetMetadataGenerationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnippetMetadataGenerationTests.swift; sourceTree = "<group>"; };
 		7F20000000000000000000A1 /* KeyboardViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyboardViewController.swift; sourceTree = "<group>"; };
 		7F20000000000000000000A2 /* KeyboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyboardView.swift; sourceTree = "<group>"; };
 		7F20000000000000000000A3 /* KeyboardKeysView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyboardKeysView.swift; sourceTree = "<group>"; };
@@ -409,6 +413,7 @@
 				7F1500000000000000000104 /* OnboardingView.swift */,
 				7F1500000000000000000105 /* GeneralSettingsView.swift */,
 				7F1500000000000000000106 /* HelpCommands.swift */,
+				7F3000000000000000000101 /* SnippetMetadataGeneration.swift */,
 				7F2100000000000000000101 /* UpdateCommands.swift */,
 				7F2100000000000000000102 /* Info.plist */,
 				490F39DA27F8967A83114754 /* Localizable.xcstrings */,
@@ -446,6 +451,7 @@
 				7F1500000000000000000107 /* LauncherShortcutTests.swift */,
 				7F1500000000000000000108 /* OnboardingTests.swift */,
 				7F1500000000000000000109 /* HelpCommandsTests.swift */,
+				7F3000000000000000000102 /* SnippetMetadataGenerationTests.swift */,
 				7F2100000000000000000103 /* UpdateCommandsTests.swift */,
 			);
 			path = TanzakuTests;
@@ -670,6 +676,7 @@
 				7F1500000000000000000007 /* LauncherShortcutTests.swift in Sources */,
 				7F1500000000000000000008 /* OnboardingTests.swift in Sources */,
 				7F1500000000000000000009 /* HelpCommandsTests.swift in Sources */,
+				7F3000000000000000000002 /* SnippetMetadataGenerationTests.swift in Sources */,
 				7F2100000000000000000003 /* UpdateCommandsTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -726,6 +733,7 @@
 				7F1500000000000000000004 /* OnboardingView.swift in Sources */,
 				7F1500000000000000000005 /* GeneralSettingsView.swift in Sources */,
 				7F1500000000000000000006 /* HelpCommands.swift in Sources */,
+				7F3000000000000000000001 /* SnippetMetadataGeneration.swift in Sources */,
 				7F2100000000000000000001 /* UpdateCommands.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
