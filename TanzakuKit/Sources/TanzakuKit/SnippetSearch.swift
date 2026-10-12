@@ -56,18 +56,14 @@ let semanticMatchMinimumSimilarity: Float = 0.65
 /// `embedder` が `nil` の時 (埋め込みモデルの資産のダウンロードが済んでいない時) は、意味検索なしで文字列の一致だけを返す。
 /// 意味検索は、`embedder` と `modelIdentifier` が一致し、今のスニペットから作ったベクトル (`sourceHash` が一致するもの) だけを使う。ベクトルの作成・作り直しは `updateSnippetEmbeddings(modelContext:embedder:)` が行う。
 public func searchSnippets(query: String, modelContext: ModelContext, embedder: SnippetTextEmbedder?) throws -> SnippetSearchResult {
-  let normalizedQuery = normalizedSnippetSearchText(text: query.trimmingCharacters(in: .whitespacesAndNewlines))
-  guard !normalizedQuery.isEmpty else {
+  guard !normalizedSnippetSearchText(text: query.trimmingCharacters(in: .whitespacesAndNewlines)).isEmpty else {
     return SnippetSearchResult(keywordMatches: [], semanticMatches: [])
   }
   let snippets = try modelContext.fetch(FetchDescriptor<Snippet>(sortBy: [SortDescriptor(\.updatedAt, order: .reverse)]))
-  let keywordMatches = snippets.compactMap { snippet in
-    snippetKeywordMatchKind(snippet: snippet, normalizedQuery: normalizedQuery).map { SnippetKeywordMatch(snippet: snippet, kind: $0) }
-  }
-  let keywordMatchKindOrder: [SnippetKeywordMatchKind] = [.keywordExact, .keywordPrefix, .titleOrBody]
+  let keywordMatches = snippetKeywordMatches(query: query, snippets: snippets)
   let keywordMatchedSnippetIDs = Set(keywordMatches.map(\.snippet.id))
   return SnippetSearchResult(
-    keywordMatches: keywordMatchKindOrder.flatMap { kind in keywordMatches.filter { $0.kind == kind } },
+    keywordMatches: keywordMatches,
     semanticMatches: try embedder.map { embedder in
       try semanticSnippetMatches(
         query: query,
@@ -79,6 +75,21 @@ public func searchSnippets(query: String, modelContext: ModelContext, embedder: 
       )
     } ?? []
   )
+}
+
+/// `snippets` のうち、入力した文字列がキーワード・タイトル・本文に一致したもの。並びは `SnippetSearchResult.keywordMatches` と同じで、同じ種類の中は `snippets` の順 (更新日時の新しい順で渡す)。
+///
+/// ストアから読まずに渡したスニペットの中だけを探す。iOS のキーボードが、添付のスニペットを読み込みの条件で外したスニペットの中だけを探すため (`documents/DIRECTION.md`「決めたこと」)。
+public func snippetKeywordMatches(query: String, snippets: [Snippet]) -> [SnippetKeywordMatch] {
+  let normalizedQuery = normalizedSnippetSearchText(text: query.trimmingCharacters(in: .whitespacesAndNewlines))
+  guard !normalizedQuery.isEmpty else {
+    return []
+  }
+  let keywordMatches = snippets.compactMap { snippet in
+    snippetKeywordMatchKind(snippet: snippet, normalizedQuery: normalizedQuery).map { SnippetKeywordMatch(snippet: snippet, kind: $0) }
+  }
+  let keywordMatchKindOrder: [SnippetKeywordMatchKind] = [.keywordExact, .keywordPrefix, .titleOrBody]
+  return keywordMatchKindOrder.flatMap { kind in keywordMatches.filter { $0.kind == kind } }
 }
 
 /// 文字列の一致で比べるために、大文字と小文字・全角と半角・ひらがなとカタカナの違いをなくす。
