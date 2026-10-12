@@ -319,6 +319,16 @@
         }
       }
     },
+    "Choose Image or Video…" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "画像・動画を選ぶ…"
+          }
+        }
+      }
+    },
     "Choose the key that opens the launcher" : {
       "localizations" : {
         "ja" : {
@@ -1209,6 +1219,16 @@
         }
       }
     },
+    "Remove Image or Video" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "画像・動画を外す"
+          }
+        }
+      }
+    },
     "Remove Tag" : {
       "localizations" : {
         "ja" : {
@@ -1555,6 +1575,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "タイトルとタグは、この Mac の Apple Intelligence が作ります。スニペットの内容はどこにも送信しません。"
+          }
+        }
+      }
+    },
+    "To use an image or video, empty the replacement first" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "画像・動画を使うには置き換える内容を空にします"
           }
         }
       }

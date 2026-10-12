@@ -81,7 +81,7 @@ struct LauncherView: View {
               LauncherResultRow(
                 snippet: snippet,
                 isSelected: state.selectedSnippetIndex == index,
-                subtitle: snippetBodyFirstLine(body: snippet.body),
+                subtitle: snippetContentSummary(snippet: snippet),
                 isSubtitleMonospaced: true
               ) {
                 snippet.keyword.map { keyword in
@@ -104,7 +104,7 @@ struct LauncherView: View {
               LauncherResultRow(
                 snippet: keywordMatch.snippet,
                 isSelected: state.selectedSnippetIndex == state.recentSnippets.count + offset,
-                subtitle: snippetBodyFirstLine(body: keywordMatch.snippet.body),
+                subtitle: snippetContentSummary(snippet: keywordMatch.snippet),
                 isSubtitleMonospaced: true
               ) {
                 keywordMatch.snippet.keyword.map { keyword in
@@ -126,7 +126,7 @@ struct LauncherView: View {
               LauncherResultRow(
                 snippet: snippet,
                 isSelected: state.selectedSnippetIndex == state.recentSnippets.count + state.searchResult.keywordMatches.count + offset,
-                subtitle: snippetBodyFirstLine(body: snippet.body),
+                subtitle: snippetContentSummary(snippet: snippet),
                 isSubtitleMonospaced: false
               ) {
                 snippet.keyword.map { keyword in
@@ -379,7 +379,7 @@ private struct LauncherKeywordChip: View {
   }
 }
 
-/// 選んでいるスニペットのプレビュー。名前・キーワード・タグ・フォルダと本文を出す。本文は言語を選んでいればハイライトする。
+/// 選んでいるスニペットのプレビュー。名前・キーワード・タグ・フォルダと本文 (添付のスニペットは添付) を出す。本文は言語を選んでいればハイライトする。
 private struct LauncherSnippetPreview: View {
   /// プレビューするスニペット。
   var snippet: Snippet
@@ -408,13 +408,20 @@ private struct LauncherSnippetPreview: View {
       .font(.system(size: 12))
       .foregroundStyle(LauncherColors.secondaryForeground)
       .lineLimit(1)
-      ScrollView {
-        Text(highlightedSnippetBody(body: snippet.body, language: snippet.language, colorScheme: colorScheme))
-          .font(.system(size: 12, design: .monospaced))
-          .lineSpacing(7)
-          .frame(maxWidth: .infinity, alignment: .leading)
-          .padding(.horizontal, 14)
-          .padding(.vertical, 12)
+      Group {
+        if snippetHasAttachment(snippet: snippet) {
+          SnippetAttachmentPreviewOfSnippet(snippet: snippet)
+            .padding(12)
+        } else {
+          ScrollView {
+            Text(highlightedSnippetBody(body: snippet.body, language: snippet.language, colorScheme: colorScheme))
+              .font(.system(size: 12, design: .monospaced))
+              .lineSpacing(7)
+              .frame(maxWidth: .infinity, alignment: .leading)
+              .padding(.horizontal, 14)
+              .padding(.vertical, 12)
+          }
+        }
       }
       .frame(maxHeight: .infinity)
       .background(LauncherColors.code, in: RoundedRectangle(cornerRadius: 8))

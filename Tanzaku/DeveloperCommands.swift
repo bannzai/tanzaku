@@ -191,6 +191,9 @@
       try applySnippetEdit(
         snippet: snippet,
         body: sampleSnippet.body,
+        attachmentData: nil,
+        attachmentContentType: nil,
+        attachmentFileName: nil,
         title: sampleSnippet.title,
         keyword: sampleSnippet.keyword,
         language: sampleSnippet.language?.rawValue,
@@ -260,6 +263,13 @@
     }
   }
 
+  /// 見本の画像のスニペット (`insertDeveloperSampleAttachmentSnippet(modelContext:now:)`) を入れて保存する。何度呼んでも同じ結果になる。
+  func insertSampleAttachmentData(modelContext: ModelContext, now: Date) throws {
+    try saveDeveloperSampleDataChanges(modelContext: modelContext) {
+      try insertDeveloperSampleAttachmentSnippet(modelContext: modelContext, now: now)
+    }
+  }
+
   /// 削除の依頼に出す見本のスニペットを返す。保存は呼び出し側で行う。
   ///
   /// 前に入れた見本 (本文が一致するスニペット) が残っていればそれを使い、無ければ入れる。フォルダ・タグも同じ名前のものを使うため、何度押しても見本・フォルダ・タグは増えない。
@@ -272,6 +282,9 @@
     try applySnippetEdit(
       snippet: snippet,
       body: deletionRequestSampleSnippet.body,
+      attachmentData: nil,
+      attachmentContentType: nil,
+      attachmentFileName: nil,
       title: deletionRequestSampleSnippet.title,
       keyword: try isDeveloperSampleKeywordUsed(keyword: deletionRequestSampleSnippet.keyword, modelContext: modelContext) ? "" : deletionRequestSampleSnippet.keyword,
       language: deletionRequestSampleSnippet.language?.rawValue,
@@ -287,13 +300,17 @@
   /// 開発者メニューが入れた見本を消して保存する。ユーザーが作ったスニペット・スニペットグループ・フォルダ・タグは残す。
   ///
   /// 見本の印になる属性をモデルに足すと本番の CloudKit スキーマから消せなくなるため (`.claude/rules/data-model.md`)、見本は固定の値で見分ける。
-  /// スニペットは見本の本文と一致するもの、スニペットグループは見本と名前・キーワードが一致するもの、フォルダ・タグは見本と同じ名前で見本のスニペットの他にスニペットが入っていないものを消す。
+  /// スニペットは見本の本文と一致するもの (見本の画像のスニペットはキーワードとファイル名の両方が一致するもの)、スニペットグループは見本と名前・キーワードが一致するもの、フォルダ・タグは見本と同じ名前で見本のスニペットの他にスニペットが入っていないものを消す。
+  /// 見本の画像のスニペットを本文で見分けないのは、本文が空で、ユーザーの添付のスニペットも本文が空のため。
   /// 見本と同じ名前でもユーザーのスニペットが入ったフォルダ・タグは残し、スニペットが 1 つも無ければユーザーが作ったものでも消す (見本と見分けられないため)。
   /// `deleteAllSnippetData(modelContext:)` と同じ理由で 1 件ずつ消す。意味検索のベクトルは `updateSnippetEmbeddings` が消えたスニペットの分を消すため、ここでは消さない。消す対象が無ければ何もせず、何度呼んでも結果は同じになる。
   func deleteDeveloperSampleData(modelContext: ModelContext) throws {
     let allSampleSnippets = launcherSampleSnippets + managerSampleSnippets + [deletionRequestSampleSnippet]
     let sampleSnippetBodies = Set(allSampleSnippets.map(\.body))
-    let sampleSnippets = try modelContext.fetch(FetchDescriptor<Snippet>()).filter { sampleSnippetBodies.contains($0.body) }
+    let sampleSnippets = try modelContext.fetch(FetchDescriptor<Snippet>()).filter { snippet in
+      sampleSnippetBodies.contains(snippet.body)
+        || (snippet.keyword == developerSampleAttachmentKeyword && snippet.attachmentFileName == developerSampleAttachmentFileName)
+    }
     let sampleSnippetIDs = Set(sampleSnippets.map(\.id))
     let sampleFolderNames = Set(allSampleSnippets.compactMap(\.folderName))
     let sampleFolders = try modelContext.fetch(FetchDescriptor<Folder>()).filter { folder in
@@ -354,6 +371,15 @@
           }
         } label: {
           Text(verbatim: "Insert Manager Sample Data")
+        }
+        Button {
+          do {
+            try insertSampleAttachmentData(modelContext: try appDelegate.modelContainerResult.get().mainContext, now: .now)
+          } catch {
+            developerCommandsLogger.error("Failed to insert the sample image snippet: \(String(describing: error), privacy: .public)")
+          }
+        } label: {
+          Text(verbatim: "Insert Sample Image Snippet")
         }
         Button {
           do {

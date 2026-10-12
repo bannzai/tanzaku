@@ -106,6 +106,9 @@
 		7F1500000000000000000005 /* GeneralSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F1500000000000000000105 /* GeneralSettingsView.swift */; };
 		7F1500000000000000000006 /* HelpCommands.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F1500000000000000000106 /* HelpCommands.swift */; };
 		7F3000000000000000000001 /* SnippetMetadataGeneration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F3000000000000000000101 /* SnippetMetadataGeneration.swift */; };
+		7F4000000000000000000001 /* SnippetAttachmentPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F4000000000000000000101 /* SnippetAttachmentPreview.swift */; };
+		7F4000000000000000000002 /* SnippetAttachmentPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F4000000000000000000102 /* SnippetAttachmentPreview.swift */; };
+		7F4000000000000000000003 /* SnippetAttachmentPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F4000000000000000000102 /* SnippetAttachmentPreview.swift */; };
 		7F1500000000000000000007 /* LauncherShortcutTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F1500000000000000000107 /* LauncherShortcutTests.swift */; };
 		7F1500000000000000000008 /* OnboardingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F1500000000000000000108 /* OnboardingTests.swift */; };
 		7F1500000000000000000009 /* HelpCommandsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F1500000000000000000109 /* HelpCommandsTests.swift */; };
@@ -250,6 +253,8 @@
 		7F1500000000000000000105 /* GeneralSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeneralSettingsView.swift; sourceTree = "<group>"; };
 		7F1500000000000000000106 /* HelpCommands.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HelpCommands.swift; sourceTree = "<group>"; };
 		7F3000000000000000000101 /* SnippetMetadataGeneration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnippetMetadataGeneration.swift; sourceTree = "<group>"; };
+		7F4000000000000000000101 /* SnippetAttachmentPreview.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnippetAttachmentPreview.swift; sourceTree = "<group>"; };
+		7F4000000000000000000102 /* SnippetAttachmentPreview.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnippetAttachmentPreview.swift; sourceTree = "<group>"; };
 		7F1500000000000000000107 /* LauncherShortcutTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LauncherShortcutTests.swift; sourceTree = "<group>"; };
 		7F1500000000000000000108 /* OnboardingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingTests.swift; sourceTree = "<group>"; };
 		7F1500000000000000000109 /* HelpCommandsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HelpCommandsTests.swift; sourceTree = "<group>"; };
@@ -327,6 +332,7 @@
 				7D1000000000000000001006 /* SnippetDetailView.swift */,
 				7D1000000000000000001007 /* SnippetEditorView.swift */,
 				7D1000000000000000001015 /* SnippetBodyEditor.swift */,
+				7F4000000000000000000102 /* SnippetAttachmentPreview.swift */,
 				7D1000000000000000001008 /* SnippetGroupEditorView.swift */,
 				7D1000000000000000001009 /* DeveloperMenu.swift */,
 				7D1000000000000000001010 /* SnippetEmbeddingController.swift */,
@@ -381,6 +387,7 @@
 				7A2000000000000000000103 /* SnippetColorAppearance.swift */,
 				7A2000000000000000000104 /* SnippetEditorView.swift */,
 				7A2000000000000000000109 /* SnippetBodyEditor.swift */,
+				7F4000000000000000000101 /* SnippetAttachmentPreview.swift */,
 				7A2000000000000000000105 /* SnippetGroupEditorView.swift */,
 				7A2000000000000000000106 /* SnippetGroupListView.swift */,
 				7A2000000000000000000107 /* SnippetListView.swift */,
@@ -734,6 +741,7 @@
 				7F1500000000000000000005 /* GeneralSettingsView.swift in Sources */,
 				7F1500000000000000000006 /* HelpCommands.swift in Sources */,
 				7F3000000000000000000001 /* SnippetMetadataGeneration.swift in Sources */,
+				7F4000000000000000000001 /* SnippetAttachmentPreview.swift in Sources */,
 				7F2100000000000000000001 /* UpdateCommands.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -758,6 +766,7 @@
 				7F1000000000000000000001 /* SnippetSpotlightIndex.swift in Sources */,
 				7F1000000000000000000002 /* SnippetIntents.swift in Sources */,
 				7D1000000000000000000015 /* SnippetBodyEditor.swift in Sources */,
+				7F4000000000000000000002 /* SnippetAttachmentPreview.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -780,6 +789,7 @@
 				7F100000000000000000001C /* SnippetEmbeddingIndexer.swift in Sources */,
 				7F100000000000000000001D /* SnippetColorAppearance.swift in Sources */,
 				7F100000000000000000001F /* SnippetBodyEditor.swift in Sources */,
+				7F4000000000000000000003 /* SnippetAttachmentPreview.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

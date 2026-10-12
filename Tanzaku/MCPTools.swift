@@ -51,7 +51,7 @@ let mcpToolDefinitions: [[String: Any]] = [
     "name": "search_snippets",
     "title": "Search snippets",
     "description":
-      "Searches the user's Tanzaku snippets. Returns snippets whose keyword, title, or body matches the query (keywordMatches), and snippets found by on-device semantic search (semanticMatches).",
+      "Searches the user's Tanzaku snippets. Returns snippets whose keyword, title, or body matches the query (keywordMatches), and snippets found by on-device semantic search (semanticMatches). A snippet that holds an image or video instead of a body has an empty body and an attachment with its contentType and fileName; the image or video data is not returned.",
     "inputSchema": [
       "type": "object",
       "properties": [
@@ -67,7 +67,8 @@ let mcpToolDefinitions: [[String: Any]] = [
   [
     "name": "get_snippet",
     "title": "Get a snippet",
-    "description": "Gets one snippet by its id.",
+    "description":
+      "Gets one snippet by its id. For a snippet that holds an image or video, attachment has its contentType and fileName; the image or video data is not returned.",
     "inputSchema": [
       "type": "object",
       "properties": ["id": ["type": "string", "description": "The snippet id (UUID)."]],
@@ -96,7 +97,7 @@ let mcpToolDefinitions: [[String: Any]] = [
     "name": "update_snippet",
     "title": "Update a snippet",
     "description":
-      "Updates a snippet. Only the given fields change. Pass an empty string to clear title, keyword, or language. The snippet is recorded as updated by this MCP client.",
+      "Updates a snippet. Only the given fields change. Pass an empty string to clear title, keyword, or language. The body of a snippet that holds an image or video cannot be set. The snippet is recorded as updated by this MCP client.",
     "inputSchema": [
       "type": "object",
       "properties": [
@@ -179,10 +180,13 @@ func mcpToolErrorResult(message: String) -> [String: Any] {
 }
 
 /// ツールが返すスニペット。属性の意味は `documents/data-model.md`「Snippet」。ツールの応答はエージェントが使うため本文を含める。
+///
+/// 添付 (画像・動画) は種類とファイル名だけを返し、データは返さない (`documents/DIRECTION.md`「決めたこと」)。添付の無いスニペットは `attachment` を `null` にする。
 func mcpSnippetJSONObject(snippet: Snippet) -> [String: Any] {
   [
     "id": snippet.id.uuidString,
     "body": snippet.body,
+    "attachment": mcpSnippetAttachmentJSONValue(snippet: snippet),
     "title": mcpJSONNullable(text: snippet.title),
     "keyword": mcpJSONNullable(text: snippet.keyword),
     "language": mcpJSONNullable(text: snippet.language),
@@ -195,6 +199,17 @@ func mcpSnippetJSONObject(snippet: Snippet) -> [String: Any] {
     "createdByClientName": mcpJSONNullable(text: snippet.createdByClientName),
     "updatedByKind": snippet.updatedByKind,
     "updatedByClientName": mcpJSONNullable(text: snippet.updatedByClientName),
+  ]
+}
+
+/// ツールが返すスニペットの添付。種類 (UTType の識別子) とファイル名だけで、データは入れない。添付が無ければ JSON の `null`。
+func mcpSnippetAttachmentJSONValue(snippet: Snippet) -> Any {
+  guard let attachmentContentType = snippet.attachmentContentType else {
+    return NSNull()
+  }
+  return [
+    "contentType": attachmentContentType,
+    "fileName": snippetAttachmentFileName(originalFileName: snippet.attachmentFileName, contentType: attachmentContentType),
   ]
 }
 
@@ -310,12 +325,17 @@ func createSnippetTool(arguments: [String: Any], client: MCPClient, environment:
 }
 
 /// `update_snippet` で更新したスニペット。検査に通るまでスニペットを書き換えない。
+///
+/// 添付 (画像・動画) のスニペットの本文は変えさせない。MCP では添付を扱わず、本文を入れると本文と添付の両方を持つスニペットになるため (`documents/DIRECTION.md`「決めたこと」)。
 func updateSnippetTool(arguments: [String: Any], client: MCPClient, environment: MCPServerEnvironment) throws -> Snippet {
   let snippet = try fetchSnippetArgument(arguments: arguments, modelContext: environment.modelContext)
   let body = try mcpStringArgument(arguments: arguments, name: "body")
   let title = try mcpStringArgument(arguments: arguments, name: "title")
   let keyword = try mcpStringArgument(arguments: arguments, name: "keyword")
   let language = try mcpStringArgument(arguments: arguments, name: "language")
+  if body != nil && snippetHasAttachment(snippet: snippet) {
+    throw SnippetValidationError.bodyOfAttachmentSnippet
+  }
   if let body {
     try validateSnippetBody(body: body)
   }

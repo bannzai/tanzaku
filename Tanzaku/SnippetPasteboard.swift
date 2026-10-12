@@ -1,10 +1,60 @@
 import AppKit
 import Carbon.HIToolbox
+import TanzakuKit
+import os
 
-/// スニペットの本文をクリップボードに入れる。同じ本文で何度呼んでもクリップボードの中身は同じになる。
-func copySnippetBodyToPasteboard(body: String) {
+/// クリップボードに入れる添付のファイルの書き出しの失敗の記録。添付の中身とファイル名は入れない (`.claude/rules/snippet-content-handling.md`)。
+private let snippetPasteboardLogger = Logger(subsystem: "com.bannzai.tanzaku", category: "SnippetPasteboard")
+
+/// スニペットの中身 (本文か添付) をクリップボードに入れる (`copySnippetContentToPasteboard`)。
+func copySnippetToPasteboard(snippet: Snippet) {
+  copySnippetContentToPasteboard(
+    snippetID: snippet.id,
+    body: snippet.body,
+    attachmentData: snippet.attachmentData,
+    attachmentContentType: snippet.attachmentContentType,
+    attachmentFileName: snippet.attachmentFileName
+  )
+}
+
+/// スニペットの中身をクリップボードに入れる。添付があれば添付、無ければ本文を入れる。同じ中身で何度呼んでもクリップボードの中身は同じになる。
+///
+/// 添付はデータをその種類 (UTType) のまま入れ、同じ項目にファイルの URL も入れる。画像のデータを受け取るアプリ (メモ・プレビューなど) と、
+/// ファイルとして受け取るアプリ (Finder・チャットの添付など) のどちらにも貼れるようにするため。動画のデータを直接受け取るアプリは少なく、ファイルの URL が主な受け渡しになる。
+/// ファイルはアプリのキャッシュの `SnippetAttachments/<スニペットの識別子>/` に書き出し、同じスニペットは同じ場所に上書きする。書き出せなかった時はデータだけを入れる。
+func copySnippetContentToPasteboard(snippetID: UUID, body: String, attachmentData: Data?, attachmentContentType: String?, attachmentFileName: String?) {
   NSPasteboard.general.clearContents()
-  NSPasteboard.general.setString(body, forType: .string)
+  guard let attachmentData, let attachmentContentType else {
+    NSPasteboard.general.setString(body, forType: .string)
+    return
+  }
+  let pasteboardItem = NSPasteboardItem()
+  pasteboardItem.setData(attachmentData, forType: NSPasteboard.PasteboardType(attachmentContentType))
+  do {
+    let attachmentFileURL = try writeSnippetAttachmentFile(
+      snippetID: snippetID,
+      attachmentData: attachmentData,
+      attachmentFileName: snippetAttachmentFileName(originalFileName: attachmentFileName, contentType: attachmentContentType)
+    )
+    pasteboardItem.setString(attachmentFileURL.absoluteString, forType: .fileURL)
+  } catch {
+    snippetPasteboardLogger.error("Failed to write the attachment file: \(String(describing: type(of: error)), privacy: .public)")
+  }
+  NSPasteboard.general.writeObjects([pasteboardItem])
+}
+
+/// 添付をクリップボードに入れるためのファイルに書き出し、その URL を返す。同じスニペットのファイルは上書きし、前に書き出した別の名前のファイルは消すため、何度呼んでもファイルは 1 つになる。
+///
+/// ファイル名はスニペットの識別子のフォルダの中に置き、別のスニペットの同じ名前の添付と取り違えないようにする。
+private func writeSnippetAttachmentFile(snippetID: UUID, attachmentData: Data, attachmentFileName: String) throws -> URL {
+  let directoryURL = URL.cachesDirectory.appending(path: "SnippetAttachments", directoryHint: .isDirectory)
+    .appending(path: snippetID.uuidString, directoryHint: .isDirectory)
+  try? FileManager.default.removeItem(at: directoryURL)
+  try FileManager.default.createDirectory(at: directoryURL, withIntermediateDirectories: true)
+  // ファイル名に区切りの `/` があるとフォルダの外を指すため、名前の最後の部分だけを使う。
+  let fileURL = directoryURL.appending(path: (attachmentFileName as NSString).lastPathComponent, directoryHint: .notDirectory)
+  try attachmentData.write(to: fileURL)
+  return fileURL
 }
 
 /// アクセシビリティの許可があるか。⌘V のイベントを別のアプリへ送るのに要る。
