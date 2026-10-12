@@ -5,7 +5,7 @@ import UniformTypeIdentifiers
 /// 添付 (本文の代わりに出力する画像・動画) のデータの大きさの上限のバイト数。
 ///
 /// CloudKit の Asset の項目の最大のファイルサイズ 50 MB (CloudKit Web Services Reference「Data Size Limits」 https://developer.apple.com/library/archive/documentation/DataManagement/Conceptual/CloudKitWebServicesReference/PropertyMetrics.html )。
-/// 添付は同期 (#19) で CKAsset として送るため、Apple が数値を示している唯一の上限に合わせる。MB を 1000 × 1000 バイトと読む方が上限に収まる側のため、10 進で数える。
+/// 同期 (#19) では 1 MB を超える値を Core Data が Asset に変えて送る (`documents/data-model.md`「Snippet」) ため、Apple が Asset の大きさを数値で示している唯一の上限に合わせる。MB を 1000 × 1000 バイトと読む方が上限に収まる側のため、10 進で数える。
 public let snippetAttachmentMaximumByteCount = 50_000_000
 
 /// スニペットに添付として入れられる種類。画像と動画だけ。

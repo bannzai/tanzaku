@@ -64,7 +64,7 @@ public enum SchemaV3: VersionedSchema {
     public var lastUsedAt: Date?
     /// 本文の代わりに出力する画像・動画のデータ。`nil` は添付なし (本文のスニペット)。
     ///
-    /// ストアの行に入れずファイルに置く (`.externalStorage`)。CloudKit では CKAsset として同期され、レコードの 1 MB の上限に数えられないため。
+    /// 大きなデータをストアの行に入れずファイルに置き (`.externalStorage`)、行を読むたびに添付を読み込まないようにする。CloudKit との同期で 1 MB を超える値の扱いは `documents/data-model.md`「Snippet」。
     @Attribute(.externalStorage) public var attachmentData: Data?
     /// 添付の種類の UTType の識別子 (`public.png` など)。添付がある時だけ値を持ち、添付の有無の判定はこの属性で行う (`snippetHasAttachment(snippet:)`)。
     public var attachmentContentType: String?

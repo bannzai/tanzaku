@@ -37,8 +37,8 @@ iOS では、本体アプリ・共有シート・App Intents・カスタムキ�
 | 属性 | 型 | 既定 | 意味 |
 | --- | --- | --- | --- |
 | `id` | `UUID` | `UUID()` | ストアをまたいだ参照・MCP のツールで使う識別子 |
-| `body` | `String` | `""` | 出力する本文。必須 (空の本文では保存させない。アプリのコードで検査する) |
-| `title` | `String?` | `nil` | 無ければ一覧・ランチャーで本文の 1 行目を表示する |
+| `body` | `String` | `""` | 出力する本文。本文か添付のどちらかが必須 (本文も添付も無いスニペットは保存させない。アプリのコードで検査する)。添付のスニペットは空にする |
+| `title` | `String?` | `nil` | 無ければ一覧・ランチャーで本文の 1 行目、本文も無ければ添付のファイル名を表示する |
 | `keyword` | `String?` | `nil` | キーワード展開・ランチャーで一致させる略語。`SnippetGroup.keyword` と同じ名前空間で一意 |
 | `language` | `String?` | `nil` | シンタックスハイライトの言語。よく使う言語は `SnippetLanguage` の raw value、それ以外は highlight.js の言語名 (`rust` など)。`nil` と、言語の Picker に並ばない値はプレーンテキスト |
 | `colorRawValue` | `String?` | `nil` | 色 (朱・藍・松葉・山吹・紫) の raw value (`SnippetColor` の `shu` / `ai` / `matsuba` / `yamabuki` / `murasaki`)。`nil` と、これ以外の値は色なし |
@@ -49,6 +49,11 @@ iOS では、本体アプリ・共有シート・App Intents・カスタムキ�
 | `createdByKind` / `updatedByKind` | `String` | `"user"` | 作成・更新した主体の種類 (`user` / `mcp`)。`#Predicate` で絞り込めるよう、Codable の複合型にせず平の属性にする |
 | `createdByClientName` / `updatedByClientName` | `String?` | `nil` | 主体が `mcp` の時の MCP クライアント名 |
 | `lastUsedAt` | `Date?` | `nil` | 最後に使った日時。Mac のランチャーでコピー・貼り付けした時、Mac のスニペットグループのメニューで選んだ時、iOS の一覧・詳細・ショートカット (App Intents) でコピーした時に更新する。iOS のキーボードで入れた時は更新しない (キーボードからはストアへ書き込まない)。使っても `updatedAt` と更新の主体は変えない。ランチャーの検索語が空の時に、新しい順に最大 10 件を出す。`SchemaV2` で足した |
+| `attachmentData` | `Data?` | `nil` | 本文の代わりに出力する画像・動画 (添付) のデータ。`@Attribute(.externalStorage)` で大きなデータをストアの行の外のファイルに置き、行を読むたびに添付を読み込まないようにする。CloudKit との同期では、レコードの上限 1 MB に収まらない値を Core Data が Asset (CKAsset) に変えて送る (「If a field's value grows too large to store within the record size limit of 1MB, Core Data automatically converts the value to an external asset.」 https://developer.apple.com/documentation/coredata/reading-cloudkit-records-for-core-data )。大きさは 50,000,000 バイトまで (「Maximum file size of an Asset field: 50 MB」 https://developer.apple.com/library/archive/documentation/DataManagement/Conceptual/CloudKitWebServicesReference/PropertyMetrics.html 。Apple が Asset の大きさの上限を数値で示している文書はこれだけで、CloudKit Web Services の文書。アプリのコードで検査する)。`SchemaV3` で足した |
+| `attachmentContentType` | `String?` | `nil` | 添付の種類の UTType の識別子 (`public.png` など)。画像 (`public.image` に合うもの) と動画 (`public.movie` に合うもの) だけ。添付の有無はこの属性で判定し、データは読まない (データを読むと添付の全体をメモリに載せるため)。`SchemaV3` で足した |
+| `attachmentFileName` | `String?` | `nil` | 添付のファイル名。添付がある時は必ず値を持つ (写真のライブラリから選んだ時など名前が無い時は、種類から `image.png`・`video.mov` のように作る)。クリップボードに入れるファイルの名前と、タイトルも本文も無い時の表示名に使う。`SchemaV3` で足した |
+
+添付の 3 つの属性は、すべて値を持つ (添付のスニペット) か、すべて `nil` (本文のスニペット) のどちらかにする。iOS のキーボードは添付のスニペットを読み込みの条件 (`attachmentContentType == nil`) で外し、添付をメモリに載せない。
 
 ### Folder
 
@@ -127,4 +132,5 @@ MCP サーバーに接続を許可したクライアント。設定画面の一�
 | 版 | 変えたこと | 前の版からの移行段階 |
 | --- | --- | --- |
 | `SchemaV1` | 最初の版 | |
-| `SchemaV2` (現在) | `Snippet.lastUsedAt` を足した | lightweight (既存のスニペットの `lastUsedAt` は `nil` のまま) |
+| `SchemaV2` | `Snippet.lastUsedAt` を足した | lightweight (既存のスニペットの `lastUsedAt` は `nil` のまま) |
+| `SchemaV3` (現在) | `Snippet.attachmentData`・`attachmentContentType`・`attachmentFileName` を足した | lightweight (既存のスニペットは本文のスニペットのまま。添付の 3 つの属性は `nil`) |
