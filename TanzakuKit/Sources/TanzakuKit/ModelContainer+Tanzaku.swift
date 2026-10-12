@@ -21,8 +21,8 @@ public func makeTanzakuModelContainer(
   storeLocation: ModelStoreLocation,
   syncedStoreCloudKitDatabase: ModelConfiguration.CloudKitDatabase
 ) throws -> ModelContainer {
-  let syncedSchema = Schema(SchemaV2.syncedModels)
-  let localSchema = Schema(SchemaV2.localModels)
+  let syncedSchema = Schema(SchemaV3.syncedModels)
+  let localSchema = Schema(SchemaV3.localModels)
   let configurations: [ModelConfiguration] =
     switch storeLocation {
     case .files(let syncedStoreURL, let localStoreURL):
@@ -47,7 +47,7 @@ public func makeTanzakuModelContainer(
       ]
     }
   return try ModelContainer(
-    for: Schema(versionedSchema: SchemaV2.self),
+    for: Schema(versionedSchema: SchemaV3.self),
     migrationPlan: TanzakuMigrationPlan.self,
     configurations: configurations
   )

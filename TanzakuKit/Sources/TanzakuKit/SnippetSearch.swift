@@ -99,7 +99,10 @@ func snippetKeywordMatchKind(snippet: Snippet, normalizedQuery: String) -> Snipp
       return .keywordPrefix
     }
   }
-  let normalizedTitleAndBody = normalizedSnippetSearchText(text: [snippet.title, snippet.body].compactMap { $0 }.joined(separator: "\n"))
+  // 添付のスニペットは本文が空でファイル名を名前に出すため (`snippetDisplayTitle(snippet:)`)、ファイル名も本文と同じく探す。
+  let normalizedTitleAndBody = normalizedSnippetSearchText(
+    text: [snippet.title, snippet.body, snippet.attachmentFileName].compactMap { $0 }.joined(separator: "\n")
+  )
   return normalizedQuery.split(whereSeparator: \.isWhitespace).allSatisfy { normalizedTitleAndBody.contains($0) } ? .titleOrBody : nil
 }
 

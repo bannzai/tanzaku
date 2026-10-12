@@ -6,10 +6,13 @@ import Testing
 
 /// 移行の計画がスキーマの版の並びと合っているか、前の版のストアを今の版で開けるかを確かめる。
 struct TanzakuMigrationPlanTests {
-  @Test("SchemaV1 と SchemaV2 を古い順に持ち、その間の移行段階を 1 つ持つ")
+  @Test("SchemaV1・SchemaV2・SchemaV3 を古い順に持ち、隣り合う版の間の移行段階を 2 つ持つ")
   func schemasAndStages() {
-    #expect(TanzakuMigrationPlan.schemas.map { ObjectIdentifier($0) } == [ObjectIdentifier(SchemaV1.self), ObjectIdentifier(SchemaV2.self)])
-    #expect(TanzakuMigrationPlan.stages.count == 1)
+    #expect(
+      TanzakuMigrationPlan.schemas.map { ObjectIdentifier($0) }
+        == [ObjectIdentifier(SchemaV1.self), ObjectIdentifier(SchemaV2.self), ObjectIdentifier(SchemaV3.self)]
+    )
+    #expect(TanzakuMigrationPlan.stages.count == 2)
   }
 
   @Test("SchemaV1 のモデルは同期するストアと端末内のストアのどちらか一方だけに入る")
@@ -30,6 +33,72 @@ struct TanzakuMigrationPlanTests {
     #expect(syncedModelNames == Set(SchemaV1.syncedModels.map { String(describing: $0) }))
     #expect(localModelNames == Set(SchemaV1.localModels.map { String(describing: $0) }))
     #expect(SchemaV2.versionIdentifier == Schema.Version(2, 0, 0))
+  }
+
+  @Test("SchemaV3 のモデルは SchemaV1 と同じ分け方で、同期するストアと端末内のストアのどちらか一方だけに入る")
+  func schemaV3ModelsAreSplitIntoStores() {
+    let syncedModelNames = Set(SchemaV3.syncedModels.map { String(describing: $0) })
+    let localModelNames = Set(SchemaV3.localModels.map { String(describing: $0) })
+    #expect(syncedModelNames.isDisjoint(with: localModelNames))
+    #expect(SchemaV3.models.count == syncedModelNames.count + localModelNames.count)
+    #expect(syncedModelNames == Set(SchemaV1.syncedModels.map { String(describing: $0) }))
+    #expect(localModelNames == Set(SchemaV1.localModels.map { String(describing: $0) }))
+    #expect(SchemaV3.versionIdentifier == Schema.Version(3, 0, 0))
+  }
+
+  @Test("SchemaV2 で保存したファイルのストアを今の版で開くと、データと lastUsedAt が残り、添付は nil になる")
+  func migratesSchemaV2StoreToCurrentVersion() throws {
+    let storeDirectoryURL = FileManager.default.temporaryDirectory.appending(path: "TanzakuMigrationPlanTests-\(UUID().uuidString)", directoryHint: .isDirectory)
+    try FileManager.default.createDirectory(at: storeDirectoryURL, withIntermediateDirectories: true)
+    defer {
+      try? FileManager.default.removeItem(at: storeDirectoryURL)
+    }
+    let syncedStoreURL = storeDirectoryURL.appending(path: "Synced.store")
+    let localStoreURL = storeDirectoryURL.appending(path: "Local.store")
+    let lastUsedAt = Date(timeIntervalSince1970: 2_000)
+    let snippetID = try saveSchemaV2Store(syncedStoreURL: syncedStoreURL, localStoreURL: localStoreURL, lastUsedAt: lastUsedAt)
+
+    let modelContext = ModelContext(
+      try makeTanzakuModelContainer(storeLocation: .files(syncedStoreURL: syncedStoreURL, localStoreURL: localStoreURL), syncedStoreCloudKitDatabase: .none)
+    )
+    let snippets = try modelContext.fetch(FetchDescriptor<Snippet>())
+    #expect(snippets.map(\.id) == [snippetID])
+    #expect(snippets.map(\.body) == ["export API_TOKEN=dummy-token-for-test"])
+    #expect(snippets.map(\.keyword) == ["envkey"])
+    #expect(snippets.map(\.lastUsedAt) == [lastUsedAt])
+    #expect(snippets.map(\.attachmentData) == [nil])
+    #expect(snippets.map(\.attachmentContentType) == [nil])
+    #expect(snippets.map(\.attachmentFileName) == [nil])
+    #expect(try modelContext.fetch(FetchDescriptor<SnippetGroup>()).flatMap { ($0.items ?? []).compactMap(\.snippet?.id) } == [snippetID])
+    #expect(try modelContext.fetch(FetchDescriptor<SnippetEmbedding>()).map(\.snippetID) == [snippetID])
+  }
+
+  /// `SchemaV2` だけを知る (移行の計画を持たない) コンテナで、使った日時のあるスニペット・スニペットグループ・意味検索のベクトルをファイルのストアに保存し、スニペットの識別子を返す。
+  ///
+  /// 関数を抜けるとコンテナが解放され、今の版のコンテナが同じファイルを開き直せる。
+  private func saveSchemaV2Store(syncedStoreURL: URL, localStoreURL: URL, lastUsedAt: Date) throws -> UUID {
+    let modelContext = ModelContext(
+      try ModelContainer(
+        for: Schema(versionedSchema: SchemaV2.self),
+        configurations: [
+          ModelConfiguration(syncedStoreConfigurationName, schema: Schema(SchemaV2.syncedModels), url: syncedStoreURL, cloudKitDatabase: .none),
+          ModelConfiguration(localStoreConfigurationName, schema: Schema(SchemaV2.localModels), url: localStoreURL, cloudKitDatabase: .none),
+        ]
+      )
+    )
+    let snippet = SchemaV2.Snippet(body: "export API_TOKEN=dummy-token-for-test")
+    snippet.keyword = "envkey"
+    snippet.lastUsedAt = lastUsedAt
+    let snippetGroup = SchemaV2.SnippetGroup(name: "dummy-group")
+    let snippetGroupItem = SchemaV2.SnippetGroupItem(sortIndex: 0)
+    modelContext.insert(snippet)
+    modelContext.insert(snippetGroup)
+    modelContext.insert(snippetGroupItem)
+    snippetGroupItem.group = snippetGroup
+    snippetGroupItem.snippet = snippet
+    modelContext.insert(SchemaV2.SnippetEmbedding(snippetID: snippet.id, modelIdentifier: "dummy-model", sourceHash: "dummy-hash", vector: Data([1, 2, 3, 4])))
+    try modelContext.save()
+    return snippet.id
   }
 
   @Test("SchemaV1 で保存したファイルのストアを今の版で開くと、データが残り lastUsedAt は nil になる")

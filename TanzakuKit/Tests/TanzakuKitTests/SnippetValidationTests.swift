@@ -18,6 +18,33 @@ struct SnippetValidationTests {
     try validateSnippetBody(body: " echo dummy ")
   }
 
+  @Test("本文も添付も無ければ emptyBody にする")
+  func emptyBodyWithoutAttachmentIsRejected() {
+    #expect(throws: SnippetValidationError.emptyBody) {
+      try validateSnippetContent(body: " \n", attachmentData: nil, attachmentContentType: nil)
+    }
+  }
+
+  @Test("添付 (画像・動画) があれば本文が空でも通す", arguments: ["public.png", "public.jpeg", "com.apple.quicktime-movie", "public.mpeg-4"])
+  func attachmentWithEmptyBodyIsAccepted(contentType: String) throws {
+    try validateSnippetContent(body: "", attachmentData: Data([0x00, 0x01]), attachmentContentType: contentType)
+  }
+
+  @Test("添付が上限より大きければ attachmentTooLarge にし、上限ちょうどは通す")
+  func attachmentLargerThanLimitIsRejected() throws {
+    try validateSnippetContent(body: "", attachmentData: Data(count: snippetAttachmentMaximumByteCount), attachmentContentType: "public.png")
+    #expect(throws: SnippetValidationError.attachmentTooLarge(maximumByteCount: snippetAttachmentMaximumByteCount)) {
+      try validateSnippetContent(body: "", attachmentData: Data(count: snippetAttachmentMaximumByteCount + 1), attachmentContentType: "public.png")
+    }
+  }
+
+  @Test("画像でも動画でもない添付は unsupportedAttachmentType にする", arguments: ["public.plain-text", "com.adobe.pdf", "dummy.unknown-type"])
+  func unsupportedAttachmentTypeIsRejected(contentType: String) {
+    #expect(throws: SnippetValidationError.unsupportedAttachmentType(contentType: contentType)) {
+      try validateSnippetContent(body: "", attachmentData: Data([0x00]), attachmentContentType: contentType)
+    }
+  }
+
   @Test("別のスニペットと同じキーワードはエラーにする")
   func keywordUsedByAnotherSnippetIsRejected() throws {
     let modelContext = ModelContext(try makeTanzakuModelContainer(storeLocation: .inMemory, syncedStoreCloudKitDatabase: .none))

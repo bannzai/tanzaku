@@ -185,18 +185,3 @@ public enum SchemaV2: VersionedSchema {
     }
   }
 }
-
-/// 現在の版のスニペット。
-public typealias Snippet = SchemaV2.Snippet
-/// 現在の版のフォルダ。
-public typealias Folder = SchemaV2.Folder
-/// 現在の版のタグ。
-public typealias Tag = SchemaV2.Tag
-/// 現在の版のスニペットグループ。
-public typealias SnippetGroup = SchemaV2.SnippetGroup
-/// 現在の版のスニペットグループの項目。
-public typealias SnippetGroupItem = SchemaV2.SnippetGroupItem
-/// 現在の版の意味検索のベクトル。
-public typealias SnippetEmbedding = SchemaV2.SnippetEmbedding
-/// 現在の版の MCP クライアント。
-public typealias MCPClient = SchemaV2.MCPClient

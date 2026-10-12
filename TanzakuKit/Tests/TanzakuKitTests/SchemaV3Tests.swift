@@ -4,8 +4,8 @@ import Testing
 
 @testable import TanzakuKit
 
-/// 現在の版 (`SchemaV2`) の既定値と削除ルールが `documents/data-model.md` のとおりかを、インメモリのストアで確かめる。
-struct SchemaV2Tests {
+/// 現在の版 (`SchemaV3`) の既定値と削除ルールが `documents/data-model.md` のとおりかを、インメモリのストアで確かめる。
+struct SchemaV3Tests {
   @Test("Snippet は本文以外が既定値で作られる")
   func snippetDefaults() throws {
     let modelContext = ModelContext(try makeTanzakuModelContainer(storeLocation: .inMemory, syncedStoreCloudKitDatabase: .none))
@@ -24,6 +24,26 @@ struct SchemaV2Tests {
     #expect(snippet.createdByClientName == nil)
     #expect(snippet.updatedByClientName == nil)
     #expect(snippet.lastUsedAt == nil)
+    #expect(snippet.attachmentData == nil)
+    #expect(snippet.attachmentContentType == nil)
+    #expect(snippet.attachmentFileName == nil)
+  }
+
+  @Test("添付のスニペットを保存すると、別の ModelContext から添付のデータ・種類・ファイル名を読み出せる")
+  func saveAndFetchAttachmentSnippet() throws {
+    let container = try makeTanzakuModelContainer(storeLocation: .inMemory, syncedStoreCloudKitDatabase: .none)
+    let writingContext = ModelContext(container)
+    let snippet = Snippet(body: "")
+    snippet.attachmentData = Data([0x89, 0x50, 0x4E, 0x47])
+    snippet.attachmentContentType = "public.png"
+    snippet.attachmentFileName = "dummy.png"
+    writingContext.insert(snippet)
+    try writingContext.save()
+
+    let fetchedSnippets = try ModelContext(container).fetch(FetchDescriptor<Snippet>())
+    #expect(fetchedSnippets.map(\.attachmentData) == [Data([0x89, 0x50, 0x4E, 0x47])])
+    #expect(fetchedSnippets.map(\.attachmentContentType) == ["public.png"])
+    #expect(fetchedSnippets.map(\.attachmentFileName) == ["dummy.png"])
   }
 
   @Test("保存したスニペットを別の ModelContext から読み出せる")
@@ -62,7 +82,7 @@ struct SchemaV2Tests {
   @Test("タグを消してもスニペットは残る")
   func deletingTagKeepsSnippets() throws {
     let modelContext = ModelContext(try makeTanzakuModelContainer(storeLocation: .inMemory, syncedStoreCloudKitDatabase: .none))
-    let tag = SchemaV2.Tag(name: "dummy-tag")
+    let tag = SchemaV3.Tag(name: "dummy-tag")
     let snippet = Snippet(body: "echo dummy")
     modelContext.insert(tag)
     modelContext.insert(snippet)
@@ -72,7 +92,7 @@ struct SchemaV2Tests {
     modelContext.delete(tag)
     try modelContext.save()
 
-    #expect(try modelContext.fetchCount(FetchDescriptor<SchemaV2.Tag>()) == 0)
+    #expect(try modelContext.fetchCount(FetchDescriptor<SchemaV3.Tag>()) == 0)
     #expect(try modelContext.fetch(FetchDescriptor<Snippet>()).map { $0.tags ?? [] } == [[]])
   }
 

@@ -3,7 +3,7 @@ import Testing
 
 @testable import TanzakuKit
 
-/// `snippetDisplayTitle(snippet:)` と `snippetBodyFirstLine(body:)` が、タイトルが無いスニペットを本文の 1 行目で代えることを確かめる。
+/// `snippetDisplayTitle(snippet:)` と `snippetBodyFirstLine(body:)` が、タイトルが無いスニペットを本文の 1 行目 (本文も無ければ添付のファイル名) で代えることを確かめる。
 struct SnippetDisplayTitleTests {
   /// タイトルと本文を持つスニペットをインメモリのストアに入れる。ほかのテストと同じく、ストアに入れたモデルで確かめる。
   private func insertSnippet(modelContext: ModelContext, body: String, title: String?) -> Snippet {
@@ -29,6 +29,18 @@ struct SnippetDisplayTitleTests {
         == "export API_TOKEN=dummy-token-for-test"
     )
     #expect(snippetDisplayTitle(snippet: insertSnippet(modelContext: modelContext, body: "\n\n  echo dummy  \nsecond", title: "  ")) == "echo dummy")
+  }
+
+  @Test("タイトルも本文も無い添付のスニペットは添付のファイル名を返し、タイトルがあればタイトルを返す")
+  func attachmentFileNameIsUsedWithoutTitleAndBody() throws {
+    let modelContext = ModelContext(try makeTanzakuModelContainer(storeLocation: .inMemory, syncedStoreCloudKitDatabase: .none))
+    let attachmentSnippet = insertSnippet(modelContext: modelContext, body: "", title: nil)
+    attachmentSnippet.attachmentContentType = "public.png"
+    attachmentSnippet.attachmentFileName = "dummy-screenshot.png"
+
+    #expect(snippetDisplayTitle(snippet: attachmentSnippet) == "dummy-screenshot.png")
+    attachmentSnippet.title = "ダミーの画面"
+    #expect(snippetDisplayTitle(snippet: attachmentSnippet) == "ダミーの画面")
   }
 
   @Test("本文が空白だけなら空文字を返す")
