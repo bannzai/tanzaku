@@ -238,7 +238,7 @@ struct SnippetEditorView: View {
           attachmentContentType = attachmentFile.attachmentContentType
           attachmentFileName = attachmentFile.attachmentFileName
         } catch {
-          errorMessage = String(describing: error)
+          errorMessage = (error as? SnippetValidationError)?.description ?? error.localizedDescription
         }
       }
       .task(id: photosPickerItem) {
@@ -251,7 +251,7 @@ struct SnippetEditorView: View {
           attachmentContentType = attachment.attachmentContentType
           attachmentFileName = nil
         } catch {
-          errorMessage = String(describing: error)
+          errorMessage = (error as? SnippetValidationError)?.description ?? error.localizedDescription
         }
         // 同じ項目をもう一度選んだ時も読み直すため、選んだ項目を外す。
         self.photosPickerItem = nil

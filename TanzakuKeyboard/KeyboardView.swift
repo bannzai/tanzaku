@@ -253,12 +253,19 @@ struct KeyboardView: View {
     if documentContextBeforeInput != dismissedDocumentContextBeforeInput {
       dismissedDocumentContextBeforeInput = nil
     }
+    // キーワードが入力欄の末尾に一致するグループがある時だけ、メニューに並べてよいスニペットを読む。キー入力のたびにすべてのスニペットを読むと、スニペットが増えるほど打つのが遅くなるため。
+    let candidateSnippetGroups = ((try? modelContainer.mainContext.fetch(FetchDescriptor<SnippetGroup>())) ?? []).filter { snippetGroup in
+      guard let keyword = snippetGroup.keyword, !keyword.isEmpty else {
+        return false
+      }
+      return documentContextBeforeInput?.hasSuffix(keyword) == true
+    }
     // 読めなかった時は、選べるスニペットが無いものとしてメニューを出さない (グループを読めなかった時と同じ)。
-    textSnippetModelIDs = (try? keyboardTextSnippetModelIDs(modelContext: modelContainer.mainContext)) ?? []
+    textSnippetModelIDs = candidateSnippetGroups.isEmpty ? [] : (try? keyboardTextSnippetModelIDs(modelContext: modelContainer.mainContext)) ?? []
     matchedSnippetGroup = snippetGroupMatchingDocumentContext(
       documentContextBeforeInput: documentContextBeforeInput,
       dismissedDocumentContextBeforeInput: dismissedDocumentContextBeforeInput,
-      snippetGroups: (try? modelContainer.mainContext.fetch(FetchDescriptor<SnippetGroup>())) ?? [],
+      snippetGroups: candidateSnippetGroups,
       textSnippetModelIDs: textSnippetModelIDs
     )
   }
