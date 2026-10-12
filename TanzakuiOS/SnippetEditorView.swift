@@ -26,7 +26,7 @@ struct SnippetEditorView: View {
   @State private var attachmentData: Data?
   /// 選んだ添付の種類 (UTType の識別子)。
   @State private var attachmentContentType: String?
-  /// 選んだ添付のファイル名。写真のライブラリから選んだ時は `nil` で、保存の時に種類から作る。
+  /// 選んだ添付のファイル名。名前が無い時は保存の時に種類から作る (`snippetAttachmentFileName(originalFileName:contentType:)`)。
   @State private var attachmentFileName: String?
   /// 写真のライブラリで選んだ項目。選ぶと添付として読む。
   @State private var photosPickerItem: PhotosPickerItem?
@@ -245,16 +245,28 @@ struct SnippetEditorView: View {
         guard let photosPickerItem else {
           return
         }
+        // 読み込みを待つ間に別の写真を選んだ時は、この処理が取り消され、新しく選んだ写真の処理に任せる。
+        // 取り消された処理は選んだ項目を外さない (外すと新しい写真の処理まで取り消すため)。そうでなければ、同じ項目をもう一度選んだ時も読み直せるよう外す。
         do {
           let attachment = try await loadSnippetAttachment(photosPickerItem: photosPickerItem)
+          guard !Task.isCancelled else {
+            return
+          }
+          self.photosPickerItem = nil
+          // 読み込みを待つ間に本文を書いた・ファイルから添付を選んだ時は、その入力を上書きしないよう読んだ写真を使わない。
+          guard bodyText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty, attachmentData == nil else {
+            return
+          }
           attachmentData = attachment.attachmentData
           attachmentContentType = attachment.attachmentContentType
-          attachmentFileName = nil
+          attachmentFileName = attachment.attachmentFileName
         } catch {
+          guard !Task.isCancelled else {
+            return
+          }
+          self.photosPickerItem = nil
           errorMessage = (error as? SnippetValidationError)?.description ?? error.localizedDescription
         }
-        // 同じ項目をもう一度選んだ時も読み直すため、選んだ項目を外す。
-        self.photosPickerItem = nil
       }
     }
   }

@@ -52,21 +52,34 @@ struct SnippetAttachmentPreviewOfSnippet: View {
   }
 }
 
-/// 写真のライブラリで選んだ画像・動画を、添付のデータと種類 (UTType の識別子) として読む。
+/// 写真のライブラリで選んだ画像・動画を、ファイルとして受け取ったもの。データの全体をメモリに載せる前に大きさを確かめるため、データ (`Data`) ではなくファイルで受け取る。
+/// 写真のライブラリはメインスレッドの外で受け取りの処理を呼ぶため nonisolated にする。
+private nonisolated struct PhotosPickerAttachmentFile: Transferable {
+  /// 受け取ったファイルを写した、このアプリの一時フォルダの中のファイル。
+  let fileURL: URL
+
+  /// 写真のライブラリが渡すファイルは受け取りの処理の間しか残らないため、一時フォルダへ写す。画像・動画のどちらも受け取れるよう、すべてのファイル (`.item`) を受け付け、種類は読む時に確かめる。
+  static var transferRepresentation: some TransferRepresentation {
+    FileRepresentation(importedContentType: .item) { receivedFile in
+      let directoryURL = URL.temporaryDirectory.appending(path: "PhotosPickerAttachments/\(UUID().uuidString)", directoryHint: .isDirectory)
+      try FileManager.default.createDirectory(at: directoryURL, withIntermediateDirectories: true)
+      let fileURL = directoryURL.appending(path: receivedFile.file.lastPathComponent, directoryHint: .notDirectory)
+      try FileManager.default.copyItem(at: receivedFile.file, to: fileURL)
+      return PhotosPickerAttachmentFile(fileURL: fileURL)
+    }
+  }
+}
+
+/// 写真のライブラリで選んだ画像・動画を、添付のデータ・種類 (UTType の識別子)・ファイル名として読む。
 ///
-/// 写真のライブラリの項目はファイル名を持たないため、ファイル名は返さない (保存の時に種類から作る。`snippetAttachmentFileName(originalFileName:contentType:)`)。
-/// 画像・動画でない項目は `SnippetValidationError.unsupportedAttachmentType` を投げる。大きさは読んだ後の保存前の検査 (`validateSnippetContent`) で確かめる。
-/// 写真のライブラリはデータの大きさを読む前に教えないため。
-func loadSnippetAttachment(photosPickerItem: PhotosPickerItem) async throws -> (attachmentData: Data, attachmentContentType: String) {
-  guard
-    let contentType = photosPickerItem.supportedContentTypes.first(where: { contentType in
-      snippetAttachmentAllowedContentTypes.contains { contentType.conforms(to: $0) }
-    })
-  else {
+/// ファイルとして受け取ってから `readSnippetAttachmentFile(fileURL:)` で読むため、画像・動画でない項目と大きさの上限を超える項目は、データを読まずに `SnippetValidationError` を投げる。
+/// 数 GB の動画を選んでもメモリに載せずに断るため。読んだ後は一時フォルダに写したファイルを消す。
+func loadSnippetAttachment(photosPickerItem: PhotosPickerItem) async throws -> (attachmentData: Data, attachmentContentType: String, attachmentFileName: String) {
+  guard let attachmentFile = try await photosPickerItem.loadTransferable(type: PhotosPickerAttachmentFile.self) else {
     throw SnippetValidationError.unsupportedAttachmentType(contentType: photosPickerItem.supportedContentTypes.first?.identifier ?? "")
   }
-  guard let attachmentData = try await photosPickerItem.loadTransferable(type: Data.self) else {
-    throw SnippetValidationError.unsupportedAttachmentType(contentType: contentType.identifier)
+  defer {
+    try? FileManager.default.removeItem(at: attachmentFile.fileURL.deletingLastPathComponent())
   }
-  return (attachmentData, contentType.identifier)
+  return try readSnippetAttachmentFile(fileURL: attachmentFile.fileURL)
 }

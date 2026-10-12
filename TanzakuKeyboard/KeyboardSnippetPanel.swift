@@ -17,8 +17,11 @@ struct KeyboardSnippetList: View {
   @Environment(\.modelContext) private var modelContext
 
   var body: some View {
+    // 検索の入力がある時の文字列の一致はストアのすべてのスニペットから探すため、添付のスニペットも返る。`snippets` (本文のスニペット) にあるものだけを残す。
+    let textSnippetIDs = Set(snippets.map(\.id))
     // 検索に失敗した時 (ストアの読み込みの失敗) は、誤った結果を出さないよう空の一覧にする (iOS 本体の一覧と同じ)。
-    let listedSnippets = (try? filteredSnippets(query: searchQuery, filter: .all, snippets: snippets, modelContext: modelContext, embedder: nil)) ?? []
+    let listedSnippets = ((try? filteredSnippets(query: searchQuery, filter: .all, snippets: snippets, modelContext: modelContext, embedder: nil)) ?? [])
+      .filter { textSnippetIDs.contains($0.id) }
     if listedSnippets.isEmpty {
       // ContentUnavailableView は大きな文字で組まれ、キーボードの低い欄では切れるため、小さな文字で並べる。
       VStack(spacing: 4) {
