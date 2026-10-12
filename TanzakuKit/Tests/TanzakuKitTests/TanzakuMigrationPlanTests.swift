@@ -5,6 +5,11 @@ import Testing
 @testable import TanzakuKit
 
 /// 移行の計画がスキーマの版の並びと合っているか、前の版のストアを今の版で開けるかを確かめる。
+///
+/// テストを 1 つずつ実行する。前の版のストアを作るテストは、同じ名前のモデル (`Snippet` など) を版ごとに別の型で持つコンテナを作る。
+/// 2 つの版のストアを並行して作って開いた CI の実行 (run 38203590529 の 1 回目) で、SchemaV2 のストアの `lastUsedAt` が移行の後に消えた (同じコードの run 38200959056 では残った)。
+/// 並行して作ったコンテナが干渉したという仮説で、並行して実行しない。
+@Suite(.serialized)
 struct TanzakuMigrationPlanTests {
   @Test("SchemaV1・SchemaV2・SchemaV3 を古い順に持ち、隣り合う版の間の移行段階を 2 つ持つ")
   func schemasAndStages() {
