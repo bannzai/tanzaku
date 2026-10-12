@@ -50,6 +50,14 @@
         } label: {
           Text(verbatim: "Insert Sample Snippets")
         }
+        Button {
+          insertSampleAttachmentSnippet(modelContext: modelContext)
+          Task {
+            await snippetEmbeddingController.refreshEmbeddings()
+          }
+        } label: {
+          Text(verbatim: "Insert Sample Image Snippet")
+        }
         Button(role: .destructive) {
           deleteAllSnippets(modelContext: modelContext)
           Task {
@@ -104,6 +112,9 @@
         try applySnippetEdit(
           snippet: snippet,
           body: sampleSnippet.body,
+          attachmentData: nil,
+          attachmentContentType: nil,
+          attachmentFileName: nil,
           title: sampleSnippet.title,
           keyword: sampleSnippet.keyword,
           language: sampleSnippet.language?.rawValue,
@@ -135,6 +146,17 @@
     } catch {
       modelContext.rollback()
       developerMenuLogger.error("Failed to insert sample snippets: \(String(describing: error), privacy: .public)")
+    }
+  }
+
+  /// 見本の画像のスニペットを入れて保存する (`insertDeveloperSampleAttachmentSnippet(modelContext:now:)`)。同じキーワードのスニペットがあれば入れないため、何度押しても増えない。失敗しても落とさず記録だけにする。
+  private func insertSampleAttachmentSnippet(modelContext: ModelContext) {
+    do {
+      try insertDeveloperSampleAttachmentSnippet(modelContext: modelContext, now: .now)
+      try modelContext.save()
+    } catch {
+      modelContext.rollback()
+      developerMenuLogger.error("Failed to insert the sample image snippet: \(String(describing: error), privacy: .public)")
     }
   }
 

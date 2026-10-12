@@ -91,6 +91,26 @@
         }
       }
     },
+    "Choose from Files" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ファイルから選ぶ"
+          }
+        }
+      }
+    },
+    "Choose from Photos" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "写真から選ぶ"
+          }
+        }
+      }
+    },
     "Clear" : {
       "localizations" : {
         "ja" : {
@@ -301,6 +321,16 @@
         }
       }
     },
+    "Image or Video" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "画像・動画"
+          }
+        }
+      }
+    },
     "Indigo" : {
       "localizations" : {
         "ja" : {
@@ -497,6 +527,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "紫"
+          }
+        }
+      }
+    },
+    "Remove Image or Video" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "画像・動画を外す"
           }
         }
       }

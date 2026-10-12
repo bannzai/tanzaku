@@ -2,7 +2,7 @@ import SwiftData
 import SwiftUI
 import TanzakuKit
 
-/// iPad の詳細の列に出すスニペット。本文を等幅で全部見せ、キーワード・タグ・フォルダ・作成と更新の主体を並べる (`documents/design/Manager.dc.html` の右側)。
+/// iPad の詳細の列に出すスニペット。本文を等幅で全部見せ (添付のスニペットは添付を見せ)、キーワード・タグ・フォルダ・作成と更新の主体を並べる (`documents/design/Manager.dc.html` の右側)。
 ///
 /// 書き換えは編集画面 (sheet) で行い、検査を通った時だけ保存する (`applySnippetEdit`)。
 struct SnippetDetailView: View {
@@ -44,20 +44,29 @@ struct SnippetDetailView: View {
             Text(verbatim: folder.name)
           }
         }
-        LabeledContent("Language") {
-          // 編集画面の Picker と同じく、Picker に並ばない値はハイライトしないためプレーンテキストと出す。
-          if let language = snippetLanguagePickerSelection(language: snippet.language, highlightLanguageNames: snippetHighlightLanguageNames()) {
-            Text(verbatim: snippetLanguageDisplayName(language: language))
-          } else {
-            Text("Plain Text")
+        // 添付のスニペットは本文が無く、言語を使わないため出さない。
+        if !snippetHasAttachment(snippet: snippet) {
+          LabeledContent("Language") {
+            // 編集画面の Picker と同じく、Picker に並ばない値はハイライトしないためプレーンテキストと出す。
+            if let language = snippetLanguagePickerSelection(language: snippet.language, highlightLanguageNames: snippetHighlightLanguageNames()) {
+              Text(verbatim: snippetLanguageDisplayName(language: language))
+            } else {
+              Text("Plain Text")
+            }
           }
         }
       }
-      Section("Body") {
-        Text(highlightedSnippetBody(body: snippet.body, language: snippet.language, colorScheme: colorScheme))
-          .font(.callout.monospaced())
-          .textSelection(.enabled)
-          .frame(maxWidth: .infinity, alignment: .leading)
+      if snippetHasAttachment(snippet: snippet) {
+        Section("Image or Video") {
+          SnippetAttachmentPreviewOfSnippet(snippet: snippet)
+        }
+      } else {
+        Section("Body") {
+          Text(highlightedSnippetBody(body: snippet.body, language: snippet.language, colorScheme: colorScheme))
+            .font(.callout.monospaced())
+            .textSelection(.enabled)
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
       }
       Section {
         SnippetAuthorshipView(snippet: snippet)
@@ -68,9 +77,12 @@ struct SnippetDetailView: View {
     .toolbar {
       ToolbarItemGroup(placement: .primaryAction) {
         Button("Copy", systemImage: "doc.on.doc") {
-          copySnippetBodyAndRecordUse(snippet: snippet, modelContext: modelContext)
+          copySnippetAndRecordUse(snippet: snippet, modelContext: modelContext)
         }
-        ShareLink(item: snippet.body)
+        // 添付 (画像・動画) のスニペットの共有はこの版では入れない (`documents/DIRECTION.md`「決めたこと」)。本文が空のため、本文を共有しても何も渡らない。
+        if !snippetHasAttachment(snippet: snippet) {
+          ShareLink(item: snippet.body)
+        }
         Button("Edit", systemImage: "pencil") {
           snippetEditor = SnippetEditorTarget(snippet: snippet, sidebarItem: .library(filter: .all))
         }
