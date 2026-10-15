@@ -167,9 +167,23 @@ struct AgentDeleteConfirmationView: View {
     .fixedSize(horizontal: false, vertical: true)
   }
 
-  /// 削除するスニペットの全文。本文は言語を問わず等幅で出す (`documents/DIRECTION.md`「決めたこと」)。
+  /// 削除するスニペットの全文。本文は言語を問わず等幅で出す (`documents/DIRECTION.md`「決めたこと」)。添付のスニペットは本文の代わりに添付を出す。
   @ViewBuilder
   private var snippetBodyView: some View {
+    if snippetHasAttachment(snippet: request.snippet) {
+      SnippetAttachmentPreviewOfSnippet(snippet: request.snippet)
+        .padding(10)
+        // パネルの高さは内容に合わせる (`fixedSize`) ため、画像の元の高さでパネルが伸びないよう、本文をスクロールせずに出す高さに収める。
+        .frame(height: bodyMaximumHeightWithoutScroll)
+        .background(.quaternary.opacity(0.4), in: RoundedRectangle(cornerRadius: 6))
+    } else {
+      snippetBodyTextView
+    }
+  }
+
+  /// 削除するスニペットの本文。
+  @ViewBuilder
+  private var snippetBodyTextView: some View {
     // ScrollView は内容の高さを自分の高さにしないため、折り返した後の本文の高さを測って枠の高さを決める。
     ScrollView {
       Text(request.snippet.body)

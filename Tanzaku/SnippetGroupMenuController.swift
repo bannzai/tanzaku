@@ -269,7 +269,7 @@ final class SnippetGroupMenuController {
     insertSnippet(snippet: snippet, backspaceCount: snippetGroupKeywordBackspaceCount(keyword: keyword))
   }
 
-  /// 打ったキーワードをバックスペース `backspaceCount` 回で消し、`snippet` の本文をクリップボードに入れて ⌘V で貼り付ける。
+  /// 打ったキーワードをバックスペース `backspaceCount` 回で消し、`snippet` の中身 (本文か添付の画像・動画) をクリップボードに入れて ⌘V で貼り付ける。
   ///
   /// 本文を文字のキー入力として送らず貼り付けるのは、改行を Return として受け取って送信するアプリ (チャットなど) で本文の途中で送信されないため (`documents/DIRECTION.md`「決めたこと」)。
   /// 入れた後に使った日時を記録する。保存に失敗しても記録だけにする。本文は入っており、ランチャーの最近使ったスニペットに出ないだけのため。
@@ -278,7 +278,7 @@ final class SnippetGroupMenuController {
     for _ in 0..<backspaceCount {
       postSyntheticKeyStroke(virtualKey: kVK_Delete, flags: [])
     }
-    copySnippetBodyToPasteboard(body: snippet.body)
+    copySnippetToPasteboard(snippet: snippet)
     postSyntheticKeyStroke(virtualKey: kVK_ANSI_V, flags: .maskCommand)
     do {
       try recordSnippetUse(snippet: snippet, usedAt: .now, modelContext: modelContainer.mainContext)

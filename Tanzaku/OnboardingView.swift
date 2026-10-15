@@ -171,6 +171,9 @@ struct OnboardingView: View {
       try applySnippetEdit(
         snippet: snippet,
         body: bodyText,
+        attachmentData: nil,
+        attachmentContentType: nil,
+        attachmentFileName: nil,
         title: title,
         keyword: keyword,
         language: nil,

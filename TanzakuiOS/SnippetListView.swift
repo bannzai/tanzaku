@@ -138,7 +138,7 @@ struct SnippetListView: View {
   /// 一覧の 1 行。タップでコピーし、スワイプと長押しで編集・削除・共有する。
   private func snippetRow(snippet: Snippet) -> some View {
     Button {
-      copySnippetBodyAndRecordUse(snippet: snippet, modelContext: modelContext)
+      copySnippetAndRecordUse(snippet: snippet, modelContext: modelContext)
       withAnimation {
         copiedSnippetTitle = snippetDisplayTitle(snippet: snippet)
       }
@@ -160,12 +160,15 @@ struct SnippetListView: View {
     }
     .contextMenu {
       Button("Copy", systemImage: "doc.on.doc") {
-        copySnippetBodyAndRecordUse(snippet: snippet, modelContext: modelContext)
+        copySnippetAndRecordUse(snippet: snippet, modelContext: modelContext)
       }
       Button("Edit", systemImage: "pencil") {
         snippetEditor = SnippetEditorTarget(snippet: snippet, sidebarItem: sidebarItem)
       }
-      ShareLink(item: snippet.body)
+      // 添付 (画像・動画) のスニペットの共有はこの版では入れない (`documents/DIRECTION.md`「決めたこと」)。本文が空のため、本文を共有しても何も渡らない。
+      if !snippetHasAttachment(snippet: snippet) {
+        ShareLink(item: snippet.body)
+      }
       Button("Delete", systemImage: "trash", role: .destructive) {
         delete(snippet: snippet)
       }
@@ -267,7 +270,7 @@ struct SnippetRow: View {
             .font(.caption)
             .foregroundStyle(.secondary)
         }
-        Text(verbatim: snippetBodyFirstLine(body: snippet.body))
+        Text(verbatim: snippetContentSummary(snippet: snippet))
           .font(.caption.monospaced())
           .foregroundStyle(.secondary)
         if let keyword = snippet.keyword {

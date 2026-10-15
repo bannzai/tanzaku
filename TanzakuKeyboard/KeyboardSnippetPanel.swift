@@ -11,14 +11,14 @@ struct KeyboardSnippetList: View {
   /// スニペットを選んだ。
   var onSelect: (Snippet) -> Void
 
-  /// すべてのスニペット。更新日時の新しい順 (iOS 本体の一覧と同じ)。
-  @Query(sort: \Snippet.updatedAt, order: .reverse) private var snippets: [Snippet]
-  /// 検索に使う。
-  @Environment(\.modelContext) private var modelContext
+  /// 本文のスニペット。更新日時の新しい順 (iOS 本体の一覧と同じ)。添付 (画像・動画) のスニペットは `insertText` で入れられず、読み込むと添付をメモリに載せかねないため、読み込みの条件で外す (`keyboardTextSnippetModelIDs(modelContext:)`)。
+  @Query(filter: #Predicate<Snippet> { $0.attachmentContentType == nil }, sort: \Snippet.updatedAt, order: .reverse) private var snippets: [Snippet]
 
   var body: some View {
-    // 検索に失敗した時 (ストアの読み込みの失敗) は、誤った結果を出さないよう空の一覧にする (iOS 本体の一覧と同じ)。
-    let listedSnippets = (try? filteredSnippets(query: searchQuery, filter: .all, snippets: snippets, modelContext: modelContext, embedder: nil)) ?? []
+    // 検索は `snippets` (添付を外した本文のスニペット) の中だけで行い、ストアから読み直さない。読み直すと添付のスニペットも読み込むため。
+    let listedSnippets =
+      searchQuery.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+      ? snippets : snippetKeywordMatches(query: searchQuery, snippets: snippets).map(\.snippet)
     if listedSnippets.isEmpty {
       // ContentUnavailableView は大きな文字で組まれ、キーボードの低い欄では切れるため、小さな文字で並べる。
       VStack(spacing: 4) {
@@ -40,15 +40,20 @@ struct KeyboardSnippetList: View {
   }
 }
 
-/// スニペットグループのメニュー。グループに登録した順にスニペットを出す (Mac のメニューと同じ)。
+/// スニペットグループのメニュー。グループに登録した順にスニペットを出す (Mac のメニューと同じ)。添付 (画像・動画) のスニペットは出さない (`keyboardSnippetGroupMenuSnippets(snippetGroup:textSnippetModelIDs:)`)。
 struct KeyboardSnippetGroupMenu: View {
   /// メニューを出すスニペットグループ。
   var snippetGroup: SnippetGroup
+  /// キーボードに並べてよい本文のスニペット (`keyboardTextSnippetModelIDs(modelContext:)`)。
+  var textSnippetModelIDs: Set<PersistentIdentifier>
   /// スニペットを選んだ。
   var onSelect: (Snippet) -> Void
 
   var body: some View {
-    KeyboardSnippetRows(snippets: snippetGroupMenuSnippets(snippetGroup: snippetGroup), onSelect: onSelect)
+    KeyboardSnippetRows(
+      snippets: keyboardSnippetGroupMenuSnippets(snippetGroup: snippetGroup, textSnippetModelIDs: textSnippetModelIDs),
+      onSelect: onSelect
+    )
   }
 }
 

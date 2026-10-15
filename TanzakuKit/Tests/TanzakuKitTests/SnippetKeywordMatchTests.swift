@@ -20,6 +20,9 @@ struct SnippetKeywordMatchTests {
     try applySnippetEdit(
       snippet: snippet,
       body: body,
+      attachmentData: nil,
+      attachmentContentType: nil,
+      attachmentFileName: nil,
       title: "",
       keyword: keyword,
       language: nil,

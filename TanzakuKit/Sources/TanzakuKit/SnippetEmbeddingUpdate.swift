@@ -3,8 +3,10 @@ import Foundation
 import SwiftData
 
 /// 意味検索のベクトルの元にするテキスト。ランチャーの意味検索の欄は「キーワード・タイトル・本文の意味から探しました」と表示するため (`documents/design/Main.dc.html`)、この 3 つをつなげる。
+///
+/// 添付のスニペットは本文が空のため、添付のファイル名を足す。タイトルが無い添付のスニペットはファイル名を名前に出すため (`snippetDisplayTitle(snippet:)`)。本文のスニペットはファイル名が `nil` で、テキストは変わらない。
 func snippetEmbeddingSourceText(snippet: Snippet) -> String {
-  [snippet.keyword, snippet.title, snippet.body].compactMap { $0 }.joined(separator: "\n")
+  [snippet.keyword, snippet.title, snippet.body, snippet.attachmentFileName].compactMap { $0 }.joined(separator: "\n")
 }
 
 /// ベクトルの元にしたテキストのハッシュ (SHA-256 の 16 進表記)。本文を復元できない値にするため、テキストそのものではなくハッシュを持つ (`.claude/rules/snippet-content-handling.md`)。

@@ -63,10 +63,10 @@ private func languageModelResponse(instructions: String, prompt: String) async t
 /// 編集を終えたスニペットに、設定でオンにした自動のタイトル・タグを付けて保存する。どちらかを付けたら `true`。
 ///
 /// タイトルはタイトルが無い時、タグはタグが 1 つも無い時だけ作る。言語モデルを使えない時・作るのに失敗した時は何も付けない (失敗は記録だけにする。タイトルとタグは無くても使え、次に編集を終えた時にまた試すため)。
-/// 応答を待つ間にスニペットが消された時は何もしない。
+/// 応答を待つ間にスニペットが消された時は何もしない。添付 (画像・動画) のスニペットは本文が空で、言語モデルに渡すテキストが無いため何も付けない。
 /// 冪等ではない: 言語モデルの応答は呼ぶたびに変わり得る。ただしタイトル・タグを付けた後は、もう一度呼んでも付け直さない。
 func generateSnippetMetadata(snippet: Snippet, userDefaults: UserDefaults, modelContext: ModelContext) async -> Bool {
-  guard isSnippetMetadataGenerationAvailable(), isSnippetInStore(snippet: snippet) else {
+  guard isSnippetMetadataGenerationAvailable(), isSnippetInStore(snippet: snippet), !snippetHasAttachment(snippet: snippet) else {
     return false
   }
   let sourceBody = snippet.body

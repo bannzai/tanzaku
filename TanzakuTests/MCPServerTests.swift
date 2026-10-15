@@ -115,6 +115,17 @@ struct MCPServerTests {
     return snippet
   }
 
+  /// ストアに添付 (画像) のスニペットを入れる。添付のデータは画像として読めなくてよいため、PNG の先頭の 8 バイトだけにする。
+  func insertAttachmentSnippet(environment: MCPServerEnvironment) throws -> Snippet {
+    let snippet = Snippet(body: "")
+    snippet.attachmentData = Data([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A])
+    snippet.attachmentContentType = "public.png"
+    snippet.attachmentFileName = "dummy-screenshot.png"
+    environment.modelContext.insert(snippet)
+    try environment.modelContext.save()
+    return snippet
+  }
+
   @Test("トークンが無い・一致しないリクエストは 401 で拒否する")
   func rejectsMissingOrUnknownToken() async throws {
     let environment = try makeEnvironment()
@@ -338,7 +349,7 @@ struct MCPServerTests {
   @Test("追加のツールは、クライアント名と同じ名前のタグが既にあればそれを使い、タグを増やさない")
   func createSnippetReusesExistingClientNameTag() async throws {
     let environment = try makeEnvironment()
-    let existingTag = SchemaV2.Tag(name: "Claude Code")
+    let existingTag = SchemaV3.Tag(name: "Claude Code")
     environment.modelContext.insert(existingTag)
     try environment.modelContext.save()
 
@@ -348,7 +359,7 @@ struct MCPServerTests {
 
     let snippet = try #require(try fetchSnippets(environment: environment).first)
     #expect(snippet.tags?.map(\.id) == [existingTag.id])
-    #expect(try environment.modelContext.fetchCount(FetchDescriptor<SchemaV2.Tag>()) == 1)
+    #expect(try environment.modelContext.fetchCount(FetchDescriptor<SchemaV3.Tag>()) == 1)
   }
 
   @Test("追加・更新・削除を保存した後に意味検索のベクトルの作り直しを頼み、検索と取得では頼まない")
@@ -427,6 +438,57 @@ struct MCPServerTests {
 
     #expect(((foundResult["structuredContent"] as? [String: Any])?["snippet"] as? [String: Any])?["body"] as? String == "echo dummy")
     #expect(missingResult["isError"] as? Bool == true)
+  }
+
+  @Test("取得の結果は、添付のスニペットに添付の種類とファイル名だけを入れてデータは入れず、本文のスニペットの添付は null にする")
+  func getSnippetReturnsAttachmentWithoutData() async throws {
+    let environment = try makeEnvironment()
+    let attachmentSnippet = try insertAttachmentSnippet(environment: environment)
+    let textSnippet = try insertSnippet(environment: environment, body: "echo dummy")
+
+    let attachmentResult = try toolResult(
+      response: await handleMCPHTTPRequest(
+        request: try makeToolCallRequest(name: "get_snippet", arguments: ["id": attachmentSnippet.id.uuidString]),
+        environment: environment
+      )
+    )
+    let textResult = try toolResult(
+      response: await handleMCPHTTPRequest(request: try makeToolCallRequest(name: "get_snippet", arguments: ["id": textSnippet.id.uuidString]), environment: environment)
+    )
+
+    let attachmentSnippetJSON = try #require((attachmentResult["structuredContent"] as? [String: Any])?["snippet"] as? [String: Any])
+    #expect(attachmentSnippetJSON["body"] as? String == "")
+    #expect(attachmentSnippetJSON["attachment"] as? [String: String] == ["contentType": "public.png", "fileName": "dummy-screenshot.png"])
+    // データは Base64 などに変えても入れない。テキストの内容にも添付のバイト列の Base64 が無いことを確かめる。
+    let attachmentResultText = try #require((attachmentResult["content"] as? [[String: Any]])?.first?["text"] as? String)
+    #expect(!attachmentResultText.contains(Data([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]).base64EncodedString()))
+    #expect(((textResult["structuredContent"] as? [String: Any])?["snippet"] as? [String: Any])?["attachment"] is NSNull)
+  }
+
+  @Test("添付のスニペットの本文を変える更新はツールのエラーにして変えず、本文を渡さない更新は通す")
+  func updateSnippetRejectsBodyOfAttachmentSnippet() async throws {
+    let environment = try makeEnvironment()
+    let snippet = try insertAttachmentSnippet(environment: environment)
+
+    let bodyResult = try toolResult(
+      response: await handleMCPHTTPRequest(
+        request: try makeToolCallRequest(name: "update_snippet", arguments: ["id": snippet.id.uuidString, "body": "echo dummy"]),
+        environment: environment
+      )
+    )
+    #expect(bodyResult["isError"] as? Bool == true)
+    #expect(snippet.body == "")
+    #expect(snippet.attachmentContentType == "public.png")
+
+    let titleResult = try toolResult(
+      response: await handleMCPHTTPRequest(
+        request: try makeToolCallRequest(name: "update_snippet", arguments: ["id": snippet.id.uuidString, "title": "ダミーの画面"]),
+        environment: environment
+      )
+    )
+    #expect(titleResult["isError"] as? Bool == false)
+    #expect(snippet.title == "ダミーの画面")
+    #expect(snippet.attachmentContentType == "public.png")
   }
 
   @Test("更新のツールは渡した属性だけを変え、空文字で消し、更新の主体に MCP のクライアント名を記録する")

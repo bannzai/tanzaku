@@ -1,8 +1,9 @@
+import PhotosUI
 import SwiftData
 import SwiftUI
 import TanzakuKit
 
-/// スニペットの追加・編集の画面 (sheet)。Mac の管理ウィンドウと同じ項目 (本文・言語・タイトル・キーワード・フォルダ・タグ・色) を並べる (`documents/design/Manager.dc.html` の右側)。
+/// スニペットの追加・編集の画面 (sheet)。Mac の管理ウィンドウと同じ項目 (本文か本文の代わりの画像・動画・言語・タイトル・キーワード・フォルダ・タグ・色) を並べる (`documents/design/Manager.dc.html` の右側)。
 ///
 /// 入力はこの画面の状態に持ち、「保存」で検査を通った時だけスニペットに書き込む (`applySnippetEdit`。Mac の編集画面と同じ)。
 /// SwiftData は自動で保存するため、スニペットを直接書き換えると空の本文や重複したキーワードのまま保存されてしまうため。
@@ -21,6 +22,16 @@ struct SnippetEditorView: View {
   @Query(sort: \Tag.name) private var tags: [Tag]
   /// 入力中の本文。
   @State private var bodyText: String
+  /// 選んだ添付 (本文の代わりの画像・動画) のデータ。`nil` は添付なし。添付がある間は本文の欄を出さない (出力する内容は本文か添付のどちらか。`documents/DIRECTION.md`「決めたこと」)。
+  @State private var attachmentData: Data?
+  /// 選んだ添付の種類 (UTType の識別子)。
+  @State private var attachmentContentType: String?
+  /// 選んだ添付のファイル名。名前が無い時は保存の時に種類から作る (`snippetAttachmentFileName(originalFileName:contentType:)`)。
+  @State private var attachmentFileName: String?
+  /// 写真のライブラリで選んだ項目。選ぶと添付として読む。
+  @State private var photosPickerItem: PhotosPickerItem?
+  /// 添付にするファイルを選ぶ画面を出しているか。
+  @State private var isImportingAttachment = false
   /// 入力中のタイトル。
   @State private var title: String
   /// 入力中のキーワード。
@@ -57,6 +68,9 @@ struct SnippetEditorView: View {
     self.snippet = snippet
     self.onClose = onClose
     _bodyText = State(initialValue: snippet?.body ?? initialBody)
+    _attachmentData = State(initialValue: snippet?.attachmentData)
+    _attachmentContentType = State(initialValue: snippet?.attachmentContentType)
+    _attachmentFileName = State(initialValue: snippet?.attachmentFileName)
     _title = State(initialValue: snippet?.title ?? "")
     _keyword = State(initialValue: snippet?.keyword ?? "")
     _language = State(initialValue: snippetLanguagePickerSelection(language: snippet?.language, highlightLanguageNames: snippetHighlightLanguageNames()))
@@ -82,28 +96,53 @@ struct SnippetEditorView: View {
     NavigationStack {
       Form {
         Section("Body") {
-          SnippetBodyEditor(text: $bodyText, language: language)
-            .frame(minHeight: 160)
-          // highlight.js の言語を全部 (約 190) 並べるため、メニューではなく一覧の画面で選ばせる。
-          Picker("Language", selection: $language) {
-            Section {
-              Text("Plain Text")
-                .tag(String?.none)
+          if let attachmentData, let attachmentContentType {
+            SnippetAttachmentPreview(
+              attachmentData: attachmentData,
+              attachmentContentType: attachmentContentType,
+              attachmentFileName: snippetAttachmentFileName(originalFileName: attachmentFileName, contentType: attachmentContentType)
+            )
+            Button("Remove Image or Video", systemImage: "xmark.circle", role: .destructive) {
+              self.attachmentData = nil
+              self.attachmentContentType = nil
+              attachmentFileName = nil
             }
-            Section {
-              ForEach(SnippetLanguage.allCases, id: \.self) { snippetLanguage in
-                Text(verbatim: snippetLanguage.displayName)
-                  .tag(String?.some(snippetLanguage.rawValue))
+            .accessibilityIdentifier("snippet-remove-attachment-button")
+          } else {
+            SnippetBodyEditor(text: $bodyText, language: language)
+              .frame(minHeight: 160)
+            // highlight.js の言語を全部 (約 190) 並べるため、メニューではなく一覧の画面で選ばせる。
+            Picker("Language", selection: $language) {
+              Section {
+                Text("Plain Text")
+                  .tag(String?.none)
+              }
+              Section {
+                ForEach(SnippetLanguage.allCases, id: \.self) { snippetLanguage in
+                  Text(verbatim: snippetLanguage.displayName)
+                    .tag(String?.some(snippetLanguage.rawValue))
+                }
+              }
+              Section {
+                ForEach(snippetLanguagePickerOtherLanguageNames(highlightLanguageNames: snippetHighlightLanguageNames()), id: \.self) { languageName in
+                  Text(verbatim: languageName)
+                    .tag(String?.some(languageName))
+                }
               }
             }
-            Section {
-              ForEach(snippetLanguagePickerOtherLanguageNames(highlightLanguageNames: snippetHighlightLanguageNames()), id: \.self) { languageName in
-                Text(verbatim: languageName)
-                  .tag(String?.some(languageName))
+            .pickerStyle(.navigationLink)
+            // 本文を書いた後に添付を選ぶと本文が消えるため、本文が空の時だけ選ばせる。
+            if bodyText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+              PhotosPicker(selection: $photosPickerItem, matching: .any(of: [.images, .videos])) {
+                Label("Choose from Photos", systemImage: "photo.on.rectangle")
               }
+              .accessibilityIdentifier("snippet-choose-photo-button")
+              Button("Choose from Files", systemImage: "folder") {
+                isImportingAttachment = true
+              }
+              .accessibilityIdentifier("snippet-choose-file-button")
             }
           }
-          .pickerStyle(.navigationLink)
         }
         Section {
           TextField("Title", text: $title, prompt: Text("Uses the first line of the body"))
@@ -192,6 +231,43 @@ struct SnippetEditorView: View {
           tagNames.append(tag.name)
         }
       }
+      .fileImporter(isPresented: $isImportingAttachment, allowedContentTypes: snippetAttachmentAllowedContentTypes) { result in
+        do {
+          let attachmentFile = try readSnippetAttachmentFile(fileURL: try result.get())
+          attachmentData = attachmentFile.attachmentData
+          attachmentContentType = attachmentFile.attachmentContentType
+          attachmentFileName = attachmentFile.attachmentFileName
+        } catch {
+          errorMessage = (error as? SnippetValidationError)?.description ?? error.localizedDescription
+        }
+      }
+      .task(id: photosPickerItem) {
+        guard let photosPickerItem else {
+          return
+        }
+        // 読み込みを待つ間に別の写真を選んだ時は、この処理が取り消され、新しく選んだ写真の処理に任せる。
+        // 取り消された処理は選んだ項目を外さない (外すと新しい写真の処理まで取り消すため)。そうでなければ、同じ項目をもう一度選んだ時も読み直せるよう外す。
+        do {
+          let attachment = try await loadSnippetAttachment(photosPickerItem: photosPickerItem)
+          guard !Task.isCancelled else {
+            return
+          }
+          self.photosPickerItem = nil
+          // 読み込みを待つ間に本文を書いた・ファイルから添付を選んだ時は、その入力を上書きしないよう読んだ写真を使わない。
+          guard bodyText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty, attachmentData == nil else {
+            return
+          }
+          attachmentData = attachment.attachmentData
+          attachmentContentType = attachment.attachmentContentType
+          attachmentFileName = attachment.attachmentFileName
+        } catch {
+          guard !Task.isCancelled else {
+            return
+          }
+          self.photosPickerItem = nil
+          errorMessage = (error as? SnippetValidationError)?.description ?? error.localizedDescription
+        }
+      }
     }
   }
 
@@ -210,6 +286,9 @@ struct SnippetEditorView: View {
       try applySnippetEdit(
         snippet: editingSnippet,
         body: bodyText,
+        attachmentData: attachmentData,
+        attachmentContentType: attachmentContentType,
+        attachmentFileName: attachmentFileName,
         title: title,
         keyword: keyword,
         language: language,

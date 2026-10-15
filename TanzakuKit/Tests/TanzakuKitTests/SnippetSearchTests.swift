@@ -40,6 +40,33 @@ struct SnippetSearchTests {
     #expect(result.semanticMatches.isEmpty)
   }
 
+  @Test("添付のスニペットは添付のファイル名でも見つかる")
+  func attachmentFileNameMatches() throws {
+    let modelContext = ModelContext(try makeTanzakuModelContainer(storeLocation: .inMemory, syncedStoreCloudKitDatabase: .none))
+    let attachmentSnippet = insertSnippet(modelContext: modelContext, body: "")
+    attachmentSnippet.attachmentContentType = "public.png"
+    attachmentSnippet.attachmentFileName = "dummy-screenshot.png"
+    _ = insertSnippet(modelContext: modelContext, body: "echo unrelated")
+
+    let result = try searchSnippets(query: "screenshot", modelContext: modelContext, embedder: nil)
+
+    #expect(result.keywordMatches.map(\.snippet.id) == [attachmentSnippet.id])
+    #expect(result.keywordMatches.map(\.kind) == [.titleOrBody])
+  }
+
+  @Test("渡したスニペットの中だけを探す文字列の一致は、渡していないスニペットを返さない")
+  func keywordMatchesSearchOnlyGivenSnippets() throws {
+    let modelContext = ModelContext(try makeTanzakuModelContainer(storeLocation: .inMemory, syncedStoreCloudKitDatabase: .none))
+    let givenSnippet = insertSnippet(modelContext: modelContext, body: "echo dummy given", keyword: "dummy")
+    _ = insertSnippet(modelContext: modelContext, body: "echo dummy not given")
+
+    let keywordMatches = snippetKeywordMatches(query: "dummy", snippets: [givenSnippet])
+
+    #expect(keywordMatches.map(\.snippet.id) == [givenSnippet.id])
+    #expect(keywordMatches.map(\.kind) == [.keywordExact])
+    #expect(snippetKeywordMatches(query: " ", snippets: [givenSnippet]).isEmpty)
+  }
+
   @Test("同じ種類の一致は更新日時の新しい順に並べる")
   func sameKindIsOrderedByUpdatedAt() throws {
     let modelContext = ModelContext(try makeTanzakuModelContainer(storeLocation: .inMemory, syncedStoreCloudKitDatabase: .none))

@@ -27,6 +27,14 @@ struct SnippetEditorView: View {
   @Query(sort: \Folder.name) private var folders: [Folder]
   /// 入力中の本文 (置き換える内容)。
   @State private var bodyText: String
+  /// 選んだ添付 (本文の代わりの画像・動画) のデータ。`nil` は添付なし。添付がある間は本文の欄を出さない (出力する内容は本文か添付のどちらか。`documents/DIRECTION.md`「決めたこと」)。
+  @State private var attachmentData: Data?
+  /// 選んだ添付の種類 (UTType の識別子)。
+  @State private var attachmentContentType: String?
+  /// 選んだ添付のファイル名。
+  @State private var attachmentFileName: String?
+  /// 添付にするファイルを選ぶ画面を出しているか。
+  @State private var isImportingAttachment = false
   /// 入力中のタイトル。
   @State private var title: String
   /// 入力中のキーワード。
@@ -83,6 +91,9 @@ struct SnippetEditorView: View {
     self.onFinishEditingFailure = onFinishEditingFailure
     _selection = selection
     _bodyText = State(initialValue: snippet?.body ?? "")
+    _attachmentData = State(initialValue: snippet?.attachmentData)
+    _attachmentContentType = State(initialValue: snippet?.attachmentContentType)
+    _attachmentFileName = State(initialValue: snippet?.attachmentFileName)
     _title = State(initialValue: snippet?.title ?? draftTitle)
     _keyword = State(initialValue: snippet?.keyword ?? "")
     _language = State(initialValue: snippetLanguagePickerSelection(language: snippet?.language, highlightLanguageNames: snippetHighlightLanguageNames()))
@@ -113,31 +124,70 @@ struct SnippetEditorView: View {
         HStack(spacing: 12) {
           Text("Replacement")
             .foregroundStyle(.secondary)
-          Picker("Language", selection: $language) {
-            Text("Plain Text").tag(String?.none)
-            Divider()
-            ForEach(SnippetLanguage.allCases, id: \.self) { snippetLanguage in
-              Text(verbatim: snippetLanguage.displayName).tag(String?.some(snippetLanguage.rawValue))
+          if attachmentData == nil {
+            Picker("Language", selection: $language) {
+              Text("Plain Text").tag(String?.none)
+              Divider()
+              ForEach(SnippetLanguage.allCases, id: \.self) { snippetLanguage in
+                Text(verbatim: snippetLanguage.displayName).tag(String?.some(snippetLanguage.rawValue))
+              }
+              Divider()
+              ForEach(snippetLanguagePickerOtherLanguageNames(highlightLanguageNames: snippetHighlightLanguageNames()), id: \.self) { languageName in
+                Text(verbatim: languageName).tag(String?.some(languageName))
+              }
             }
-            Divider()
-            ForEach(snippetLanguagePickerOtherLanguageNames(highlightLanguageNames: snippetHighlightLanguageNames()), id: \.self) { languageName in
-              Text(verbatim: languageName).tag(String?.some(languageName))
-            }
+            .labelsHidden()
+            .fixedSize()
           }
-          .labelsHidden()
-          .fixedSize()
           Spacer()
+          if attachmentData == nil {
+            // 本文を書いた後に添付を選ぶと本文が消えるため、本文が空の時だけ選ばせる。
+            Button("Choose Image or Video…") {
+              isImportingAttachment = true
+            }
+            .disabled(!bodyText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+            .help(Text("To use an image or video, empty the replacement first"))
+            .accessibilityIdentifier("snippet-choose-attachment-button")
+          } else {
+            Button("Remove Image or Video") {
+              attachmentData = nil
+              attachmentContentType = nil
+              attachmentFileName = nil
+              inputRevision += 1
+            }
+            .accessibilityIdentifier("snippet-remove-attachment-button")
+          }
           Button("Copy") {
-            NSPasteboard.general.clearContents()
-            NSPasteboard.general.setString(bodyText, forType: .string)
+            copySnippetContentToPasteboard(
+              snippetID: editingSnippet.id,
+              body: bodyText,
+              attachmentData: attachmentData,
+              attachmentContentType: attachmentContentType,
+              attachmentFileName: attachmentFileName
+            )
           }
         }
-        // 新規作成 (⌘N) は置き換える内容から書き始めるため、開いた時にカーソルを入れる。既存のスニペットを選んだ時は、一覧を ↑↓ で動かし続けられるよう入れない。
-        SnippetBodyEditor(text: $bodyText, language: language, focusesOnAppear: snippet == nil)
+        if let attachmentData, let attachmentContentType {
+          SnippetAttachmentPreview(
+            attachmentData: attachmentData,
+            attachmentContentType: attachmentContentType,
+            attachmentFileName: snippetAttachmentFileName(originalFileName: attachmentFileName, contentType: attachmentContentType)
+          )
           .padding(10)
-          // 本文の背景はデザインの code の値 (`documents/design/Manager.dc.html` の LIGHT / DARK)。
+          .frame(minHeight: 160)
           .background(appearanceAdaptiveColor(lightHex: 0xF6F7F9, darkHex: 0x19191B), in: RoundedRectangle(cornerRadius: 8))
           .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color(nsColor: .separatorColor)))
+        } else {
+          // 新規作成 (⌘N) は置き換える内容から書き始めるため、開いた時にカーソルを入れる。既存のスニペットを選んだ時は、一覧を ↑↓ で動かし続けられるよう入れない。
+          SnippetBodyEditor(text: $bodyText, language: language, focusesOnAppear: snippet == nil)
+            .padding(10)
+            // 本文の背景はデザインの code の値 (`documents/design/Manager.dc.html` の LIGHT / DARK)。
+            .background(appearanceAdaptiveColor(lightHex: 0xF6F7F9, darkHex: 0x19191B), in: RoundedRectangle(cornerRadius: 8))
+            .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color(nsColor: .separatorColor)))
+        }
+      }
+      .fileImporter(isPresented: $isImportingAttachment, allowedContentTypes: snippetAttachmentAllowedContentTypes) { result in
+        importAttachment(result: result)
       }
       DisclosureGroup(isExpanded: $isAdditionalInfoExpanded) {
         Grid(alignment: .leading, horizontalSpacing: 14, verticalSpacing: 12) {
@@ -420,8 +470,8 @@ struct SnippetEditorView: View {
     guard hasUnsavedInput || tagNames != self.tagNames else {
       return false
     }
-    // 新規で置き換える内容をまだ書いていない間は、キーワードやタイトルを先に入れても検査の理由を出さず、書くのを待つ。
-    if isNewSnippet && bodyText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+    // 新規で置き換える内容 (本文か添付) をまだ入れていない間は、キーワードやタイトルを先に入れても検査の理由を出さず、入れるのを待つ。
+    if isNewSnippet && bodyText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && attachmentData == nil {
       errorMessage = nil
       return false
     }
@@ -429,6 +479,9 @@ struct SnippetEditorView: View {
       try applySnippetEdit(
         snippet: editingSnippet,
         body: bodyText,
+        attachmentData: attachmentData,
+        attachmentContentType: attachmentContentType,
+        attachmentFileName: attachmentFileName,
         title: title,
         keyword: keyword,
         language: language,
@@ -485,6 +538,24 @@ struct SnippetEditorView: View {
       if await generateSnippetMetadata(snippet: editingSnippet, userDefaults: .standard, modelContext: modelContext) {
         onSnippetsChange()
       }
+    }
+  }
+
+  /// ファイルを選ぶ画面で選んだ画像・動画を添付にする。読めなかった時・画像と動画以外・大きすぎる時は、添付を変えずに理由を編集の列に出す。
+  ///
+  /// 本文が空の時だけ選ばせるため、本文は空のまま。保存は入力が止まった後の自動の保存に任せる。
+  private func importAttachment(result: Result<URL, any Error>) {
+    do {
+      let attachmentFile = try readSnippetAttachmentFile(fileURL: try result.get())
+      attachmentData = attachmentFile.attachmentData
+      attachmentContentType = attachmentFile.attachmentContentType
+      attachmentFileName = attachmentFile.attachmentFileName
+      inputRevision += 1
+      errorMessage = nil
+    } catch let validationError as SnippetValidationError {
+      errorMessage = validationError.description
+    } catch {
+      errorMessage = error.localizedDescription
     }
   }
 

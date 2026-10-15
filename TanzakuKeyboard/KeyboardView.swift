@@ -57,6 +57,8 @@ struct KeyboardView: View {
   @State private var snippetSearchQuery = ""
   /// メニューを出しているスニペットグループ。
   @State private var matchedSnippetGroup: SnippetGroup?
+  /// メニューに並べてよい本文のスニペット (`keyboardTextSnippetModelIDs(modelContext:)`)。メニューを出すグループを決め直す時に、同じ時点のストアから読む。
+  @State private var textSnippetModelIDs: Set<PersistentIdentifier> = []
   /// メニューを閉じた時の入力欄のカーソルより前の文字。同じ文字の間はメニューを出し直さないために、キーボードを出している間だけメモリに持つ。
   @State private var dismissedDocumentContextBeforeInput: String?
   /// 画面の高さの広さ。iPhone の横向きでは `.compact` になり、キーと一覧を低くする。
@@ -169,7 +171,7 @@ struct KeyboardView: View {
         KeyboardStoreUnavailableView(hasFullAccess: keyboardHostState.hasFullAccess, error: error)
       }
     } else if let matchedSnippetGroup {
-      KeyboardSnippetGroupMenu(snippetGroup: matchedSnippetGroup) { snippet in
+      KeyboardSnippetGroupMenu(snippetGroup: matchedSnippetGroup, textSnippetModelIDs: textSnippetModelIDs) { snippet in
         insertSnippetGroupItem(snippet: snippet, snippetGroup: matchedSnippetGroup)
       }
     }
@@ -251,10 +253,20 @@ struct KeyboardView: View {
     if documentContextBeforeInput != dismissedDocumentContextBeforeInput {
       dismissedDocumentContextBeforeInput = nil
     }
+    // キーワードが入力欄の末尾に一致するグループがある時だけ、メニューに並べてよいスニペットを読む。キー入力のたびにすべてのスニペットを読むと、スニペットが増えるほど打つのが遅くなるため。
+    let candidateSnippetGroups = ((try? modelContainer.mainContext.fetch(FetchDescriptor<SnippetGroup>())) ?? []).filter { snippetGroup in
+      guard let keyword = snippetGroup.keyword, !keyword.isEmpty else {
+        return false
+      }
+      return documentContextBeforeInput?.hasSuffix(keyword) == true
+    }
+    // 読めなかった時は、選べるスニペットが無いものとしてメニューを出さない (グループを読めなかった時と同じ)。
+    textSnippetModelIDs = candidateSnippetGroups.isEmpty ? [] : (try? keyboardTextSnippetModelIDs(modelContext: modelContainer.mainContext)) ?? []
     matchedSnippetGroup = snippetGroupMatchingDocumentContext(
       documentContextBeforeInput: documentContextBeforeInput,
       dismissedDocumentContextBeforeInput: dismissedDocumentContextBeforeInput,
-      snippetGroups: (try? modelContainer.mainContext.fetch(FetchDescriptor<SnippetGroup>())) ?? []
+      snippetGroups: candidateSnippetGroups,
+      textSnippetModelIDs: textSnippetModelIDs
     )
   }
 

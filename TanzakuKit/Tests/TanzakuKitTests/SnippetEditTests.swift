@@ -13,13 +13,13 @@ struct SnippetEditTests {
 
     #expect(throws: SnippetValidationError.emptyBody) {
       try applySnippetEdit(
-        snippet: snippet, body: " \n", title: "dummy", keyword: "", language: nil, color: nil, folder: nil, tagNames: ["dummy-tag"],
+        snippet: snippet, body: " \n", attachmentData: nil, attachmentContentType: nil, attachmentFileName: nil, title: "dummy", keyword: "", language: nil, color: nil, folder: nil, tagNames: ["dummy-tag"],
         modelContext: modelContext, now: .now
       )
     }
     #expect(snippet.modelContext == nil)
     #expect(try modelContext.fetchCount(FetchDescriptor<Snippet>()) == 0)
-    #expect(try modelContext.fetchCount(FetchDescriptor<SchemaV2.Tag>()) == 0)
+    #expect(try modelContext.fetchCount(FetchDescriptor<SchemaV3.Tag>()) == 0)
   }
 
   @Test("別のスニペットかスニペットグループと同じキーワードはエラーにし、既存のスニペットを書き換えない")
@@ -38,7 +38,7 @@ struct SnippetEditTests {
     for keyword in [";snippet", ";group"] {
       #expect(throws: SnippetValidationError.keywordAlreadyUsed(keyword: keyword)) {
         try applySnippetEdit(
-          snippet: snippet, body: "echo after", title: "", keyword: keyword, language: nil, color: nil, folder: nil, tagNames: [],
+          snippet: snippet, body: "echo after", attachmentData: nil, attachmentContentType: nil, attachmentFileName: nil, title: "", keyword: keyword, language: nil, color: nil, folder: nil, tagNames: [],
           modelContext: modelContext, now: .now
         )
       }
@@ -56,7 +56,7 @@ struct SnippetEditTests {
     let snippet = Snippet(body: "")
 
     try applySnippetEdit(
-      snippet: snippet, body: "echo dummy-token-for-test", title: "Dummy title", keyword: ";dummy", language: SnippetLanguage.shell.rawValue, color: .ai,
+      snippet: snippet, body: "echo dummy-token-for-test", attachmentData: nil, attachmentContentType: nil, attachmentFileName: nil, title: "Dummy title", keyword: ";dummy", language: SnippetLanguage.shell.rawValue, color: .ai,
       folder: folder, tagNames: [], modelContext: modelContext, now: now
     )
 
@@ -81,7 +81,7 @@ struct SnippetEditTests {
     modelContext.insert(snippet)
 
     try applySnippetEdit(
-      snippet: snippet, body: "echo dummy", title: "  ", keyword: "", language: nil, color: nil, folder: nil, tagNames: [],
+      snippet: snippet, body: "echo dummy", attachmentData: nil, attachmentContentType: nil, attachmentFileName: nil, title: "  ", keyword: "", language: nil, color: nil, folder: nil, tagNames: [],
       modelContext: modelContext, now: .now
     )
 
@@ -105,7 +105,7 @@ struct SnippetEditTests {
     let now = Date(timeIntervalSince1970: 1000)
 
     try applySnippetEdit(
-      snippet: snippet, body: "echo edited", title: "", keyword: "", language: nil, color: nil, folder: nil, tagNames: [],
+      snippet: snippet, body: "echo edited", attachmentData: nil, attachmentContentType: nil, attachmentFileName: nil, title: "", keyword: "", language: nil, color: nil, folder: nil, tagNames: [],
       modelContext: modelContext, now: now
     )
 
@@ -117,20 +117,74 @@ struct SnippetEditTests {
     #expect(snippet.updatedByClientName == nil)
   }
 
+  @Test("添付を渡すと本文を空にして添付を保存し、写真から選んだ添付のファイル名は種類から作る")
+  func attachmentReplacesBody() throws {
+    let modelContext = ModelContext(try makeTanzakuModelContainer(storeLocation: .inMemory, syncedStoreCloudKitDatabase: .none))
+    let snippet = Snippet(body: "")
+
+    try applySnippetEdit(
+      snippet: snippet, body: "echo ignored", attachmentData: Data([0x89, 0x50]), attachmentContentType: "public.png", attachmentFileName: nil,
+      title: "", keyword: ";shot", language: nil, color: nil, folder: nil, tagNames: [], modelContext: modelContext, now: .now
+    )
+
+    #expect(snippet.modelContext != nil)
+    #expect(snippet.body == "")
+    #expect(snippet.attachmentData == Data([0x89, 0x50]))
+    #expect(snippet.attachmentContentType == "public.png")
+    #expect(snippet.attachmentFileName == "image.png")
+    #expect(snippetHasAttachment(snippet: snippet))
+  }
+
+  @Test("添付のスニペットを本文で保存し直すと、添付の 3 つの属性を消す")
+  func bodyEditRemovesAttachment() throws {
+    let modelContext = ModelContext(try makeTanzakuModelContainer(storeLocation: .inMemory, syncedStoreCloudKitDatabase: .none))
+    let snippet = Snippet(body: "")
+    try applySnippetEdit(
+      snippet: snippet, body: "", attachmentData: Data([0x00]), attachmentContentType: "com.apple.quicktime-movie", attachmentFileName: "dummy.mov",
+      title: "", keyword: "", language: nil, color: nil, folder: nil, tagNames: [], modelContext: modelContext, now: .now
+    )
+    #expect(snippet.attachmentFileName == "dummy.mov")
+
+    try applySnippetEdit(
+      snippet: snippet, body: "echo dummy", attachmentData: nil, attachmentContentType: nil, attachmentFileName: nil,
+      title: "", keyword: "", language: nil, color: nil, folder: nil, tagNames: [], modelContext: modelContext, now: .now
+    )
+
+    #expect(snippet.body == "echo dummy")
+    #expect(snippet.attachmentData == nil)
+    #expect(snippet.attachmentContentType == nil)
+    #expect(snippet.attachmentFileName == nil)
+    #expect(!snippetHasAttachment(snippet: snippet))
+  }
+
+  @Test("本文も添付も無い新規のスニペットはストアに入れない")
+  func emptyContentIsNotInserted() throws {
+    let modelContext = ModelContext(try makeTanzakuModelContainer(storeLocation: .inMemory, syncedStoreCloudKitDatabase: .none))
+    let snippet = Snippet(body: "")
+
+    #expect(throws: SnippetValidationError.emptyBody) {
+      try applySnippetEdit(
+        snippet: snippet, body: "", attachmentData: nil, attachmentContentType: nil, attachmentFileName: nil,
+        title: "", keyword: "", language: nil, color: nil, folder: nil, tagNames: [], modelContext: modelContext, now: .now
+      )
+    }
+    #expect(try modelContext.fetchCount(FetchDescriptor<Snippet>()) == 0)
+  }
+
   @Test("タグは同じ名前の既存のタグを使い、無い名前だけ作る。空の名前と重複した名前は除く")
   func tagNamesAreResolved() throws {
     let modelContext = ModelContext(try makeTanzakuModelContainer(storeLocation: .inMemory, syncedStoreCloudKitDatabase: .none))
-    let existingTag = SchemaV2.Tag(name: "shell")
+    let existingTag = SchemaV3.Tag(name: "shell")
     modelContext.insert(existingTag)
     let snippet = Snippet(body: "")
 
     try applySnippetEdit(
-      snippet: snippet, body: "echo dummy", title: "", keyword: "", language: nil, color: nil, folder: nil,
+      snippet: snippet, body: "echo dummy", attachmentData: nil, attachmentContentType: nil, attachmentFileName: nil, title: "", keyword: "", language: nil, color: nil, folder: nil,
       tagNames: ["shell", " ci ", "", "ci", "Shell"], modelContext: modelContext, now: .now
     )
 
     #expect(snippet.tags?.map(\.name).sorted() == ["Shell", "ci", "shell"])
     #expect(snippet.tags?.contains { $0.id == existingTag.id } == true)
-    #expect(try modelContext.fetchCount(FetchDescriptor<SchemaV2.Tag>()) == 3)
+    #expect(try modelContext.fetchCount(FetchDescriptor<SchemaV3.Tag>()) == 3)
   }
 }

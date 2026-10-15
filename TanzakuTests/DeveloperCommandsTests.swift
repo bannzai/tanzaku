@@ -106,6 +106,30 @@
       #expect(userSnippetInSampleFolder.folder?.name == "開発環境")
     }
 
+    @Test("見本の画像のスニペットは 2 回入れても 1 件で、「Delete Sample Data」で消え、本文が空のユーザーの添付のスニペットは残す")
+    func sampleAttachmentSnippetIsInsertedOnceAndDeletedAlone() throws {
+      let modelContext = ModelContext(try makeTanzakuModelContainer(storeLocation: .inMemory, syncedStoreCloudKitDatabase: .none))
+      let userAttachmentSnippet = Snippet(body: "")
+      userAttachmentSnippet.attachmentData = Data([0x89, 0x50])
+      userAttachmentSnippet.attachmentContentType = "public.png"
+      userAttachmentSnippet.attachmentFileName = "dummy-user.png"
+      modelContext.insert(userAttachmentSnippet)
+      try modelContext.save()
+
+      try insertSampleAttachmentData(modelContext: modelContext, now: .now)
+      try insertSampleAttachmentData(modelContext: modelContext, now: .now)
+
+      let sampleAttachmentSnippets = try modelContext.fetch(FetchDescriptor<Snippet>()).filter { $0.keyword == developerSampleAttachmentKeyword }
+      #expect(sampleAttachmentSnippets.count == 1)
+      #expect(sampleAttachmentSnippets.first?.attachmentFileName == developerSampleAttachmentFileName)
+      #expect(sampleAttachmentSnippets.first?.attachmentContentType == "public.png")
+      #expect(sampleAttachmentSnippets.first?.attachmentData?.isEmpty == false)
+
+      try deleteDeveloperSampleData(modelContext: modelContext)
+
+      #expect(try modelContext.fetch(FetchDescriptor<Snippet>()).map(\.id) == [userAttachmentSnippet.id])
+    }
+
     @Test("フォルダ・タグ・スニペットグループの項目・意味検索のベクトルを持つスニペットをすべて消し、何度呼んでも失敗しない")
     func deleteAllSnippetDataDeletesSnippetsWithRelationships() throws {
       let modelContext = ModelContext(try makeTanzakuModelContainer(storeLocation: .inMemory, syncedStoreCloudKitDatabase: .none))

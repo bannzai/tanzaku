@@ -139,7 +139,7 @@ private struct SnippetRow: View {
             .font(.caption)
             .foregroundStyle(.secondary)
         }
-        Text(verbatim: snippetBodyFirstLine(body: snippet.body))
+        Text(verbatim: snippetContentSummary(snippet: snippet))
           .font(.subheadline)
           .foregroundStyle(.secondary)
           .lineLimit(1)

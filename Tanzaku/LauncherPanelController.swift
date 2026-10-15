@@ -289,7 +289,7 @@ final class LauncherPanelController: NSObject, NSWindowDelegate {
     else {
       return
     }
-    copySnippetBodyToPasteboard(body: snippet.body)
+    copySnippetToPasteboard(snippet: snippet)
     do {
       try recordSnippetUse(snippet: snippet, usedAt: .now, modelContext: modelContainer.mainContext)
     } catch {

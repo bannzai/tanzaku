@@ -4,7 +4,7 @@ import Testing
 
 @testable import TanzakuKit
 
-/// App Intents の検索 (`snippetIntentSearchResults`) とコピー (`copySnippetBody`) を、クリップボードと埋め込みモデルの資産を使わずに確かめる。
+/// App Intents の検索 (`snippetIntentSearchResults`) とコピー (`copySnippet`) を、クリップボードと埋め込みモデルの資産を使わずに確かめる。
 struct SnippetIntentSearchTests {
   /// タイトル・キーワード・本文を持つスニペットをストアに入れる。
   private func insertSnippet(modelContext: ModelContext, body: String, title: String? = nil, keyword: String? = nil) -> Snippet {
@@ -50,7 +50,7 @@ struct SnippetIntentSearchTests {
     var pasteboardStrings: [String] = []
     let usedAt = Date(timeIntervalSince1970: 1_000)
 
-    let copiedSnippet = try copySnippetBody(snippetID: snippet.id, modelContext: modelContext, usedAt: usedAt) { pasteboardStrings.append($0) }
+    let copiedSnippet = try copySnippet(snippetID: snippet.id, modelContext: modelContext, usedAt: usedAt) { pasteboardStrings.append($0.body) }
 
     #expect(copiedSnippet.id == snippet.id)
     #expect(pasteboardStrings == ["export API_TOKEN=dummy-token-for-test"])
@@ -67,7 +67,7 @@ struct SnippetIntentSearchTests {
     var pasteboardStrings: [String] = []
 
     #expect(throws: SnippetIntentError.snippetNotFound(snippetID: missingSnippetID)) {
-      try copySnippetBody(snippetID: missingSnippetID, modelContext: modelContext, usedAt: Date(timeIntervalSince1970: 1_000)) { pasteboardStrings.append($0) }
+      try copySnippet(snippetID: missingSnippetID, modelContext: modelContext, usedAt: Date(timeIntervalSince1970: 1_000)) { pasteboardStrings.append($0.body) }
     }
     #expect(pasteboardStrings.isEmpty)
   }

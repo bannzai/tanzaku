@@ -7,9 +7,14 @@ import SwiftData
 /// SwiftData は自動で保存するため、検査の前にストアに入れると空の本文や重複したキーワードのスニペットが保存されてしまうため。
 /// 空のタイトル・キーワードは「なし」として `nil` にする。タグは名前で渡し、同じ名前のタグがあればそれを使い、無ければ作る。
 /// 入力中のタグを都度ストアに入れると、保存しなかったタグが残るため、検査を通った後に作る。
+/// 出力する内容は本文か添付 (画像・動画 1 つ) のどちらかにする (`documents/DIRECTION.md`「決めたこと」)。`attachmentData` と `attachmentContentType` の両方を渡すと添付のスニペットにし、本文は渡した値によらず空で保存する。
+/// どちらかが `nil` なら本文のスニペットにし、添付の 3 つの属性をすべて `nil` にする。添付のファイル名は `snippetAttachmentFileName(originalFileName:contentType:)` で必ず値を持たせる。
 public func applySnippetEdit(
   snippet: Snippet,
   body: String,
+  attachmentData: Data?,
+  attachmentContentType: String?,
+  attachmentFileName: String?,
   title: String,
   keyword: String,
   language: String?,
@@ -19,10 +24,23 @@ public func applySnippetEdit(
   modelContext: ModelContext,
   now: Date
 ) throws {
-  try validateSnippetBody(body: body)
+  try validateSnippetContent(body: body, attachmentData: attachmentData, attachmentContentType: attachmentContentType)
   let optionalKeyword = keyword.isEmpty ? nil : keyword
   try validateKeywordIsUnique(keyword: optionalKeyword, ownerID: snippet.id, modelContext: modelContext)
-  snippet.body = body
+  if let attachmentData, let attachmentContentType {
+    snippet.body = ""
+    // 本文・タイトルだけを変えた保存のたびに、ストアの外のファイルを書き直して同期で送り直さないよう、添付が変わった時だけ書く。
+    if snippet.attachmentContentType != attachmentContentType || snippet.attachmentData != attachmentData {
+      snippet.attachmentData = attachmentData
+    }
+    snippet.attachmentContentType = attachmentContentType
+    snippet.attachmentFileName = snippetAttachmentFileName(originalFileName: attachmentFileName, contentType: attachmentContentType)
+  } else {
+    snippet.body = body
+    snippet.attachmentData = nil
+    snippet.attachmentContentType = nil
+    snippet.attachmentFileName = nil
+  }
   snippet.title = title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : title
   snippet.keyword = optionalKeyword
   snippet.language = language

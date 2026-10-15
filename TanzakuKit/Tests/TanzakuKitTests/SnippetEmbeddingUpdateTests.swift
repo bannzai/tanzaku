@@ -27,6 +27,23 @@ struct SnippetEmbeddingUpdateTests {
     #expect(embeddings.map(\.sourceHash) == [snippetEmbeddingSourceHash(sourceText: "echo dummy")])
   }
 
+  @Test("ベクトルの元のテキストは、本文のスニペットでは添付の属性を足す前と同じで、添付のスニペットでは添付のファイル名を足す")
+  func sourceTextAppendsAttachmentFileNameOnlyForAttachmentSnippets() throws {
+    let modelContext = ModelContext(try makeTanzakuModelContainer(storeLocation: .inMemory, syncedStoreCloudKitDatabase: .none))
+    let textSnippet = Snippet(body: "echo dummy")
+    textSnippet.keyword = "dummy"
+    textSnippet.title = "ダミー"
+    let attachmentSnippet = Snippet(body: "")
+    attachmentSnippet.attachmentContentType = "public.png"
+    attachmentSnippet.attachmentFileName = "dummy-screenshot.png"
+    modelContext.insert(textSnippet)
+    modelContext.insert(attachmentSnippet)
+
+    // 添付の属性を足す前 (SchemaV2) のテキストと同じであれば、既存のベクトルを作り直さずに済む。
+    #expect(snippetEmbeddingSourceText(snippet: textSnippet) == "dummy\nダミー\necho dummy")
+    #expect(snippetEmbeddingSourceText(snippet: attachmentSnippet) == "\ndummy-screenshot.png")
+  }
+
   @Test("本文を変えると sourceHash が変わり、ベクトルを作り直す")
   func rebuildsEmbeddingWhenBodyChanges() throws {
     let modelContext = ModelContext(try makeTanzakuModelContainer(storeLocation: .inMemory, syncedStoreCloudKitDatabase: .none))

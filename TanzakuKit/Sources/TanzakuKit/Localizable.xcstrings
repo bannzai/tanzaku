@@ -1,6 +1,36 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "Image" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "画像"
+          }
+        }
+      }
+    },
+    "Only images and videos can be added. This file is %@." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "追加できるのは画像と動画だけです。このファイルの種類は %@ です"
+          }
+        }
+      }
+    },
+    "The image or video is too large. Choose one that is %@ or smaller." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "画像・動画が大きすぎます。%@ 以下のものを選んでください"
+          }
+        }
+      }
+    },
     "The keyword \"%@\" is already used by another snippet or snippet group." : {
       "localizations" : {
         "ja" : {
@@ -27,6 +57,26 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "スニペットが見つかりません。削除された可能性があります"
+          }
+        }
+      }
+    },
+    "This snippet holds an image or video, so its body cannot be set." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "このスニペットは画像・動画を持つため本文を設定できません"
+          }
+        }
+      }
+    },
+    "Video" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "動画"
           }
         }
       }
