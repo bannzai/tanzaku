@@ -2,6 +2,10 @@ import AppKit
 import ApplicationServices
 import SwiftData
 import TanzakuKit
+import os
+
+/// 開き直しの失敗の記録。
+private let snippetGroupKeywordPermissionLogger = Logger(subsystem: "com.bannzai.tanzaku", category: "SnippetGroupKeywordPermission")
 
 /// 入力監視の許可があるか。ほかのアプリへのキー入力を見てキーワードを判定するのに要る。
 func isInputMonitoringAllowed() -> Bool {
@@ -20,7 +24,7 @@ func isSnippetGroupKeywordExpansionAllowed() -> Bool {
 
 /// アクセシビリティの一覧でオンにした (`AXIsProcessTrusted()` が true) のに、キーワード展開に要るアクセシビリティの許可 (`isSnippetGroupAccessibilityAllowed()`) が無いか。
 ///
-/// イベント送信の許可 (`CGPreflightPostEventAccess`) は実行中に許可しても値が変わらず、開き直すと変わる。Apple の DTS も、システム設定がアプリの終了と開き直しを勧めるのはこのためと答えている ( https://developer.apple.com/forums/thread/727984 )。`AXIsProcessTrusted()` は実行中の変化を返す (Rectangle は値の変化を待って先へ進む: https://github.com/rxhanson/Rectangle/blob/main/Rectangle/AccessibilityAuthorization/AccessibilityAuthorization.swift )。
+/// イベント送信の許可 (`CGPreflightPostEventAccess`) は実行中に許可しても値が変わらず、開き直すと変わる。Apple の DTS も、システム設定がアプリの終了と開き直しを勧めるのはこのためと答えている ( https://developer.apple.com/forums/thread/727984 )。`AXIsProcessTrusted()` が実行中に変わるかは Tanzaku では確かめていない (仮説)。Rectangle は値が true に変わるのを実行中に待つ実装にしている ( https://github.com/rxhanson/Rectangle/blob/main/Rectangle/AccessibilityAuthorization/AccessibilityAuthorization.swift )。変わらなければ、この関数は false のままで、開き直すボタンは目立たないだけになる。
 func isKeywordPermissionRelaunchNeeded() -> Bool {
   isAccessibilityTrusted() && !isSnippetGroupAccessibilityAllowed()
 }
@@ -54,6 +58,7 @@ func relaunchApplication() {
     try process.run()
   } catch {
     // 開き直せないまま終了すると、ユーザーが自分で開くまでランチャーもキーワード展開も使えないため、終了しない。
+    snippetGroupKeywordPermissionLogger.error("Failed to relaunch the app: \(String(describing: error), privacy: .public)")
     return
   }
   NSApp.terminate(nil)
