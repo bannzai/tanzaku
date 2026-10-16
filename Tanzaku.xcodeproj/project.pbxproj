@@ -111,6 +111,7 @@
 		7F4000000000000000000003 /* SnippetAttachmentPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F4000000000000000000102 /* SnippetAttachmentPreview.swift */; };
 		7F1500000000000000000007 /* LauncherShortcutTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F1500000000000000000107 /* LauncherShortcutTests.swift */; };
 		7F1500000000000000000008 /* OnboardingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F1500000000000000000108 /* OnboardingTests.swift */; };
+		7F150000000000000000000A /* SnippetGroupKeywordPermissionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F150000000000000000010A /* SnippetGroupKeywordPermissionTests.swift */; };
 		7F1500000000000000000009 /* HelpCommandsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F1500000000000000000109 /* HelpCommandsTests.swift */; };
 		7F3000000000000000000002 /* SnippetMetadataGenerationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F3000000000000000000102 /* SnippetMetadataGenerationTests.swift */; };
 		7F2000000000000000000001 /* KeyboardViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F20000000000000000000A1 /* KeyboardViewController.swift */; };
@@ -257,6 +258,7 @@
 		7F4000000000000000000102 /* SnippetAttachmentPreview.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnippetAttachmentPreview.swift; sourceTree = "<group>"; };
 		7F1500000000000000000107 /* LauncherShortcutTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LauncherShortcutTests.swift; sourceTree = "<group>"; };
 		7F1500000000000000000108 /* OnboardingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingTests.swift; sourceTree = "<group>"; };
+		7F150000000000000000010A /* SnippetGroupKeywordPermissionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnippetGroupKeywordPermissionTests.swift; sourceTree = "<group>"; };
 		7F1500000000000000000109 /* HelpCommandsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HelpCommandsTests.swift; sourceTree = "<group>"; };
 		7F3000000000000000000102 /* SnippetMetadataGenerationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnippetMetadataGenerationTests.swift; sourceTree = "<group>"; };
 		7F20000000000000000000A1 /* KeyboardViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyboardViewController.swift; sourceTree = "<group>"; };
@@ -458,6 +460,7 @@
 				7F1500000000000000000107 /* LauncherShortcutTests.swift */,
 				7F1500000000000000000108 /* OnboardingTests.swift */,
 				7F1500000000000000000109 /* HelpCommandsTests.swift */,
+				7F150000000000000000010A /* SnippetGroupKeywordPermissionTests.swift */,
 				7F3000000000000000000102 /* SnippetMetadataGenerationTests.swift */,
 				7F2100000000000000000103 /* UpdateCommandsTests.swift */,
 			);
@@ -683,6 +686,7 @@
 				7F1500000000000000000007 /* LauncherShortcutTests.swift in Sources */,
 				7F1500000000000000000008 /* OnboardingTests.swift in Sources */,
 				7F1500000000000000000009 /* HelpCommandsTests.swift in Sources */,
+				7F150000000000000000000A /* SnippetGroupKeywordPermissionTests.swift in Sources */,
 				7F3000000000000000000002 /* SnippetMetadataGenerationTests.swift in Sources */,
 				7F2100000000000000000003 /* UpdateCommandsTests.swift in Sources */,
 			);

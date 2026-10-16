@@ -37,7 +37,6 @@ struct SnippetGroupEditorView: View {
 
   var body: some View {
     VStack(alignment: .leading, spacing: 16) {
-      SnippetGroupPermissionGuide()
       Grid(alignment: .leading, horizontalSpacing: 14, verticalSpacing: 12) {
         GridRow {
           Text("Name")

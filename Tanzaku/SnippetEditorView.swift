@@ -107,11 +107,6 @@ struct SnippetEditorView: View {
 
   var body: some View {
     VStack(alignment: .leading, spacing: 16) {
-      if !keyword.isEmpty {
-        SnippetGroupPermissionGuide()
-          // 高さが足りない時は、案内の文を切り詰める前に置き換える内容の欄を縮める。案内の文には、打った内容を保存も送信もしないことが書いてあるため。
-          .layoutPriority(1)
-      }
       HStack(spacing: 14) {
         Text("Keyword")
           .foregroundStyle(.secondary)

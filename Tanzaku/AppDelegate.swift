@@ -45,13 +45,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
   let updaterController = SPUStandardUpdaterController(startingUpdater: true, updaterDelegate: nil, userDriverDelegate: nil)
   /// 初回起動のウィンドウ。出していない時は `nil`。
   private var onboardingWindow: NSWindow?
+  /// キーワード展開の許可のウィンドウ。出していない時は `nil`。
+  private var keywordPermissionWindow: NSWindow?
   /// 起動時の準備の失敗の記録。
   private let logger = Logger(subsystem: "com.bannzai.tanzaku", category: "AppDelegate")
 
-  /// ストアを開いてランチャーを作り、ショートカットを登録し、意味検索の埋め込みモデルの用意を始める。許可があればスニペットグループのキー入力の監視を始める。初回起動を終えていなければ初回起動のウィンドウを出す。
+  /// ストアを開いてランチャーを作り、ショートカットを登録し、意味検索の埋め込みモデルの用意を始める。許可があればスニペットグループのキー入力の監視を始める。初回起動を終えていなければ初回起動のウィンドウを出す。キーワード展開の許可が要れば許可のウィンドウを出す。
   ///
   /// 失敗しても落とさず記録だけにする。ユニットテストはこのアプリを起動して走るため、落とすとテストが走らない。
-  /// 許可が無い時に許可を求めるダイアログを出さない。ユニットテストの CI でダイアログが出たままになるため、許可はスニペットグループの編集画面の案内から求める。
+  /// 許可が無い時に許可を求めるダイアログを出さない。ユニットテストの CI でダイアログが出たままになるため、許可は許可のウィンドウのボタンから求める。
   func applicationDidFinishLaunching(_ notification: Notification) {
     let modelContainer: ModelContainer
     do {
@@ -84,6 +86,55 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     if !isOnboardingCompleted(userDefaults: .standard) {
       showOnboardingWindow()
     }
+    showKeywordPermissionWindowIfNeeded()
+  }
+
+  /// Dock のアイコンのクリック・起動中の `open` で開き直した時に、キーワード展開の許可が要れば許可のウィンドウを出す。
+  ///
+  /// `true` を返し、ウィンドウが無い時に管理ウィンドウを開く既定の動きは残す。
+  func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+    showKeywordPermissionWindowIfNeeded()
+    return true
+  }
+
+  /// キーワード展開の許可が無く、キーワードを持つスニペットかスニペットグループがある時 (`isKeywordPermissionWindowNeeded`)、許可のウィンドウを出す。出していれば前に出すだけで、2 つ目は作らない。ストアを開けなかった時は出さない。
+  ///
+  /// 許可がそろったら、キー入力の監視を始めてウィンドウを閉じる。閉じても次の起動・開き直しで許可が無ければまた出す。
+  func showKeywordPermissionWindowIfNeeded() {
+    guard let modelContainer = try? modelContainerResult.get() else {
+      return
+    }
+    do {
+      guard try isKeywordPermissionWindowNeeded(isKeywordExpansionAllowed: isSnippetGroupKeywordExpansionAllowed(), modelContext: modelContainer.mainContext) else {
+        return
+      }
+    } catch {
+      logger.error("Failed to count snippets with keywords: \(String(describing: error), privacy: .public)")
+      return
+    }
+    let window =
+      keywordPermissionWindow
+      ?? {
+        let hostingController = NSHostingController(
+          rootView: SnippetGroupPermissionGuide(onAllowed: { [weak self] in
+            self?.snippetGroupMenuController?.startKeyboardMonitoringIfAllowed()
+            self?.keywordPermissionWindow?.close()
+          })
+        )
+        let window = NSWindow(contentViewController: hostingController)
+        window.styleMask = [.titled, .closable]
+        // 初回起動のウィンドウと同じく、大きさが決まる前に `center()` が走って画面からはみ出さないよう、内容の大きさを先に決める。
+        window.setContentSize(hostingController.view.fittingSize)
+        window.title = String(localized: "Keyboard Access")
+        window.isReleasedWhenClosed = false
+        window.delegate = self
+        window.setAccessibilityIdentifier("keywordPermissionWindow")
+        window.center()
+        keywordPermissionWindow = window
+        return window
+      }()
+    NSApp.activate()
+    window.makeKeyAndOrderFront(nil)
   }
 
   /// 初回起動のウィンドウを出す。出していれば前に出すだけで、2 つ目は作らない。ストアを開けなかった時は出さない。
@@ -133,7 +184,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
   /// 初回起動のウィンドウを閉じたら、初回起動を終えたことにする。
   ///
   /// 「はじめる」だけでなく閉じるボタンで閉じた時も終えたことにする。常駐するアプリで、閉じたウィンドウを起動のたびに出し直すと邪魔になり、手順の内容は設定からいつでも変えられるため。
+  /// 許可のウィンドウは閉じたら作り直せるよう手放す。
   func windowWillClose(_ notification: Notification) {
+    if (notification.object as? NSWindow) === keywordPermissionWindow {
+      keywordPermissionWindow = nil
+      return
+    }
     guard (notification.object as? NSWindow) === onboardingWindow else {
       return
     }

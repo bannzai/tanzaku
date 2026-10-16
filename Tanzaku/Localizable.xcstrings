@@ -739,16 +739,6 @@
         }
       }
     },
-    "If keywords don’t expand after you allow access, quit and reopen Tanzaku." : {
-      "localizations" : {
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "許可してもキーワードが展開されない時は、Tanzaku を終了して開き直してください。"
-          }
-        }
-      }
-    },
     "Indigo" : {
       "localizations" : {
         "ja" : {
@@ -765,6 +755,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "入力監視"
+          }
+        }
+      }
+    },
+    "Keyboard Access" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "キーボードの許可"
           }
         }
       }
@@ -1249,6 +1249,16 @@
         }
       }
     },
+    "Reopen Tanzaku" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tanzaku を開き直す"
+          }
+        }
+      }
+    },
     "Replacement" : {
       "localizations" : {
         "ja" : {
@@ -1495,6 +1505,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Tanzaku"
+          }
+        }
+      }
+    },
+    "Tanzaku can’t see permission changes while it’s running. After you allow access, reopen Tanzaku." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tanzaku は起動中に許可の変更を受け取れません。許可した後に Tanzaku を開き直してください。"
           }
         }
       }
