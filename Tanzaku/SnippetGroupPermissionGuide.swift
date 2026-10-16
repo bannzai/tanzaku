@@ -48,6 +48,8 @@ struct SnippetGroupPermissionGuide: View {
     }
     .padding(20)
     .frame(width: 520, alignment: .leading)
+    // 子の要素の identifier (開き直すボタン等) を、まとまりの identifier で上書きしないため。
+    .accessibilityElement(children: .contain)
     .accessibilityIdentifier("snippet-group-permission-guide")
     .task {
       while !Task.isCancelled {
