@@ -29,8 +29,9 @@ struct JevSettingsSection: View {
       } else {
         LabeledContent {
           HStack(spacing: 8) {
-            SecureField("API key", text: $jevAPIKeyInput)
-              .labelsHidden()
+            // Form の中では題が欄の外の見出しになり欄が空に見えるため、題を空にして欄の中の薄い文字 (prompt) で示す。
+            SecureField("", text: $jevAPIKeyInput, prompt: Text("API key"))
+              .textFieldStyle(.roundedBorder)
               .frame(width: 220)
               .accessibilityIdentifier("jev-api-key-field")
             Button("Save") {
