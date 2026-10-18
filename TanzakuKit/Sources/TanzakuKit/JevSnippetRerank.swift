@@ -86,9 +86,9 @@ func jevCandidateQuestionID(candidateIndex: Int) -> String {
 func snippetTextMaskingSecrets(text: String) -> String {
   let replacements: [(pattern: String, template: String)] = [
     (#"-----BEGIN [A-Z ]*PRIVATE KEY-----[\s\S]*?(-----END [A-Z ]*PRIVATE KEY-----|$)"#, "[REDACTED]"),
-    // 引用符で囲んだ値は空白を含んでも閉じる引用符まで伏せる。名前も引用符で囲む JSON・YAML (`"password": "..."`) を含める。
+    // 引用符で囲んだ値は空白やエスケープした引用符 (`\"`) を含んでも閉じる引用符まで伏せる。名前も引用符で囲む JSON・YAML (`"password": "..."`) を含める。
     (
-      #"(?i)\b([A-Z0-9_]*(?:TOKEN|SECRET|PASSWORD|PASSWD|API_?KEY|ACCESS_?KEY|PRIVATE_?KEY|CREDENTIAL)[A-Z0-9_]*["']?\s*[:=]\s*)(["'])(?:(?!\2)[^\n])*\2"#,
+      #"(?i)\b([A-Z0-9_]*(?:TOKEN|SECRET|PASSWORD|PASSWD|API_?KEY|ACCESS_?KEY|PRIVATE_?KEY|CREDENTIAL)[A-Z0-9_]*["']?\s*[:=]\s*)(["'])(?:\\.|(?!\2)[^\\\n])*\2"#,
       "$1$2[REDACTED]$2"
     ),
     // 引用符の無い値。上で伏せた引用符付きの値を伏せ直さないよう、引用符と `[` で始まる値は除く。
