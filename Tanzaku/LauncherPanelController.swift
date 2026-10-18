@@ -187,8 +187,11 @@ final class LauncherPanelController: NSObject, NSWindowDelegate {
             try await URLSession.shared.data(for: request)
           },
           onJevError: { error in
-            // エラーは HTTP の状態コードか通信のエラーで、API キー・検索語・スニペットの本文を含まない (`JevRequestError`)。
-            self.logger.error("Failed to rank with Jev: \(String(describing: error), privacy: .public)")
+            // 応答を読めないエラー (`DecodingError`) は応答の本文の一部を、通信のエラー (`URLError`) は URL を説明に含み得るため、
+            // 状態コードだけの `JevRequestError` 以外は型の名前と通信のエラーのコードだけを出す。
+            self.logger.error(
+              "Failed to rank with Jev: \((error as? JevRequestError)?.description ?? "\(type(of: error)) \((error as? URLError)?.code.rawValue ?? 0)", privacy: .public)"
+            )
           }
         )
       } catch is CancellationError {

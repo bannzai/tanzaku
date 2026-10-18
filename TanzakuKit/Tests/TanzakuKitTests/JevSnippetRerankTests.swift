@@ -199,6 +199,8 @@ struct JevSnippetRerankTests {
       ("PASSWORD=\"dummy secret phrase\" next", "PASSWORD=\"[REDACTED]\" next"),
       ("{\"password\":\"dummy-password\",\"user\":\"dummy\"}", "{\"password\":\"[REDACTED]\",\"user\":\"dummy\"}"),
       ("api_key: 'dummy key value'", "api_key: '[REDACTED]'"),
+      ("password: \"dummy unclosed value\nnext line", "password: \"[REDACTED]\nnext line"),
+      ("PASSWORD=dummy,secret next", "PASSWORD=[REDACTED] next"),
       ("curl -H 'Authorization: Basic ZHVtbXk6eA==' https://example.com", "curl -H 'Authorization: Basic [REDACTED]' https://example.com"),
       (#"{"password":"dummy\"remaining-secret"}"#, #"{"password":"[REDACTED]"}"#),
       ("https://dummyuser:dummypass@example.com/repo.git", "https://[REDACTED]@example.com/repo.git"),

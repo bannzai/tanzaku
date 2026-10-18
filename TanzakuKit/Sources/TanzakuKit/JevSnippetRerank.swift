@@ -20,7 +20,8 @@ public let jevRerankCandidateCount = 15
 /// 0.3 秒は打鍵の間隔 (速く打つ時は 0.1〜0.2 秒) より長く、2026-10-19 の実測の Jev の応答の中央値 (0.17 秒) と足しても 0.5 秒に収まる長さ。
 let jevRequestDelay = Duration.milliseconds(300)
 
-/// Jev の応答を待つ上限 (秒)。超えたら失敗として今の意味検索 (埋め込み + しきい値) に戻る。
+/// Jev の要求で、データが届かない時間の上限 (秒。`URLRequest.timeoutInterval`)。超えたら失敗として今の意味検索 (埋め込み + しきい値) に戻る。
+/// 応答全体の上限ではなく、少しずつデータが届き続ける間は待ち続ける。
 /// 既定の 60 秒のままだと、通信が詰まった間はランチャーの意味検索の欄が出ないため短くする。2026-10-19 の実測の 1 回の要求は p90 で 0.21 秒以下だったため、
 /// その 10 倍ほどの 2 秒にし、遅い回線でも通常は待ちきれる長さにした。
 let jevRequestTimeoutSeconds: TimeInterval = 2
@@ -96,9 +97,14 @@ func snippetTextMaskingSecrets(text: String) -> String {
       #"(?i)\b([A-Z0-9_]*(?:TOKEN|SECRET|PASSWORD|PASSWD|API_?KEY|ACCESS_?KEY|PRIVATE_?KEY|CREDENTIAL)[A-Z0-9_]*["']?\s*[:=]\s*)(["'])(?:\\.|(?!\2)[^\\\n])*\2"#,
       "$1$2[REDACTED]$2"
     ),
-    // 引用符の無い値。上で伏せた引用符付きの値を伏せ直さないよう、引用符と `[` で始まる値は除く。
+    // 閉じる引用符が同じ行に無い値 (閉じ忘れ・複数行の値)。上で伏せた値を伏せ直さないよう `[REDACTED]` で始まる値は除き、行末まで伏せる。
     (
-      #"(?i)\b([A-Z0-9_]*(?:TOKEN|SECRET|PASSWORD|PASSWD|API_?KEY|ACCESS_?KEY|PRIVATE_?KEY|CREDENTIAL)[A-Z0-9_]*["']?\s*[:=]\s*)(?!["'\[])[^\s"',}]+"#,
+      #"(?i)\b([A-Z0-9_]*(?:TOKEN|SECRET|PASSWORD|PASSWD|API_?KEY|ACCESS_?KEY|PRIVATE_?KEY|CREDENTIAL)[A-Z0-9_]*["']?\s*[:=]\s*)(["'])(?!\[REDACTED\])[^\n]*"#,
+      "$1$2[REDACTED]"
+    ),
+    // 引用符の無い値。`,` を含む値 (`PASSWORD=ab,cd`) も伏せるよう、空白と `}` までを値とする。上で伏せた値は除く。
+    (
+      #"(?i)\b([A-Z0-9_]*(?:TOKEN|SECRET|PASSWORD|PASSWD|API_?KEY|ACCESS_?KEY|PRIVATE_?KEY|CREDENTIAL)[A-Z0-9_]*["']?\s*[:=]\s*)(?!["'\[])[^\s}]+"#,
       "$1[REDACTED]"
     ),
     // `Authorization` の値は短い Basic 認証 (`dummy:x` の Base64 等) でも秘匿情報のため、長さによらず伏せる。
@@ -198,7 +204,11 @@ func jevRerankedCandidateIndices(
   apiKey: String,
   sendJevRequest: (URLRequest) async throws -> (Data, URLResponse)
 ) async throws -> [Int] {
-  let (data, response) = try await sendJevRequest(try jevRerankRequest(query: query, candidateTexts: candidateTexts, apiKey: apiKey))
+  // 秘匿情報を伏せる処理は候補の本文の全文に掛かり (200 文字に切る前に伏せないと、境目をまたぐ秘密値の一部が残るため)、長い本文ではメインスレッドを止めるため、メインの外で作る。
+  let request = try await Task.detached(priority: .userInitiated) {
+    try jevRerankRequest(query: query, candidateTexts: candidateTexts, apiKey: apiKey)
+  }.value
+  let (data, response) = try await sendJevRequest(request)
   guard let httpResponse = response as? HTTPURLResponse, (200..<300).contains(httpResponse.statusCode) else {
     throw JevRequestError(statusCode: (response as? HTTPURLResponse)?.statusCode)
   }
