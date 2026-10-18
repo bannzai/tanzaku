@@ -178,6 +178,18 @@ struct JevSnippetRerankTests {
     #expect(Set((body["questions"] as? [String: Any])?.keys.map { $0 } ?? []) == ["snippet_1", "snippet_2"])
   }
 
+  @Test("数字を含まない長い英字だけの文字列は伏せず、文字数が増えても短い時間で終わる")
+  func snippetTextMaskingSecretsHandlesLongLetterRun() {
+    let longLetterRun = String(repeating: "a", count: 100_000)
+    let startedAt = Date.now
+
+    let maskedText = snippetTextMaskingSecrets(text: longLetterRun + " dummy0123456789dummy0123456789dummy")
+
+    #expect(maskedText == longLetterRun + " [REDACTED]")
+    // 走査が文字数の二乗になると 10 万文字で数十秒かかるため、それより十分短い上限にした。
+    #expect(Date.now.timeIntervalSince(startedAt) < 2)
+  }
+
   @Test("秘匿情報らしい文字列を伏せ、ふつうの文章・コマンド・ファイルのパスは残す")
   func snippetTextMaskingSecretsMasksOnlySecretLikeText() {
     let cases: [(text: String, maskedText: String)] = [

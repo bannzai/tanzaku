@@ -102,18 +102,30 @@ func snippetTextMaskingSecrets(text: String) -> String {
       #"\b(sk-[A-Za-z0-9_\-]{16,}|gh[pousr]_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,}|xox[abprs]-[A-Za-z0-9\-]{10,}|AKIA[0-9A-Z]{16}|AIza[0-9A-Za-z_\-]{35})"#,
       "[REDACTED]"
     ),
-    // `/` を含めると数字を含むファイルのパスまで伏せ、検索に効く語が消えるため含めない。
-    (#"(?=[A-Za-z0-9_\-+=]*[A-Za-z])(?=[A-Za-z0-9_\-+=]*[0-9])[A-Za-z0-9_\-+=]{32,}"#, "[REDACTED]"),
   ]
-  return replacements.reduce(text) { maskedText, replacement in
-    // パターンはこの関数の中の固定の文字列で、作れなければ実装の誤りのため止める。
-    let regularExpression = try! NSRegularExpression(pattern: replacement.pattern)
-    return regularExpression.stringByReplacingMatches(
+  // パターンはこの関数の中の固定の文字列で、作れなければ実装の誤りのため止める。
+  let maskedText = replacements.reduce(text) { maskedText, replacement in
+    try! NSRegularExpression(pattern: replacement.pattern).stringByReplacingMatches(
       in: maskedText,
       range: NSRange(maskedText.startIndex..., in: maskedText),
       withTemplate: replacement.template
     )
   }
+  // 英字と数字を両方含む 32 文字以上の切れ目の無い文字列。英字と数字の有無を正規表現の先読みで調べると、長い英字だけの文字列で走査が文字数の二乗になるため、
+  // 切れ目の無い文字列を一度だけ取り出してから調べる。`/` を含めると数字を含むファイルのパスまで伏せ、検索に効く語が消えるため含めない。
+  // 後ろの一致から置き換え、前の一致の位置をずらさない。
+  return try! NSRegularExpression(pattern: #"[A-Za-z0-9_\-+=]{32,}"#)
+    .matches(in: maskedText, range: NSRange(maskedText.startIndex..., in: maskedText))
+    .reversed()
+    .reduce(maskedText) { maskedText, match in
+      guard let range = Range(match.range, in: maskedText),
+        maskedText[range].contains(where: \.isLetter),
+        maskedText[range].contains(where: \.isNumber)
+      else {
+        return maskedText
+      }
+      return maskedText.replacingCharacters(in: range, with: "[REDACTED]")
+    }
 }
 
 /// 検索語と候補のテキストから、Jev の判定の要求を作る。候補のテキストは秘匿情報らしい文字列を伏せてから先頭 `jevRerankCandidateMaxLength` 文字にする。
