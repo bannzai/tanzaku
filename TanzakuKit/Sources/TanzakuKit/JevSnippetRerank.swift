@@ -86,7 +86,7 @@ func jevCandidateQuestionID(candidateIndex: Int) -> String {
 
 /// 秘匿情報らしい文字列を `[REDACTED]` に置き換える。Jev へ送る前に検索語と候補のテキストに掛ける (`.claude/rules/snippet-content-handling.md`)。
 ///
-/// 伏せるのは、秘密鍵の PEM のブロック、名前に TOKEN・SECRET・PASSWORD・API_KEY などを含む変数への代入の値、`Authorization` の Bearer・Basic の値、URL の中の利用者名とパスワード、
+/// 伏せるのは、秘密鍵の PEM のブロック、名前に TOKEN・SECRET・PASSWORD・API_KEY などを含む変数への代入の値、`Authorization` の値 (長さによらない) と Bearer・Basic の後の 16 文字以上の値、URL の中の利用者名とパスワード、
 /// 決まった接頭辞を持つ API キー (OpenAI・GitHub・Slack・AWS・Google)、英字と数字を両方含む 32 文字以上の切れ目の無い文字列 (`/` で切れる)。これに当たらない秘匿情報は伏せられない。
 func snippetTextMaskingSecrets(text: String) -> String {
   let replacements: [(pattern: String, template: String)] = [
@@ -101,6 +101,8 @@ func snippetTextMaskingSecrets(text: String) -> String {
       #"(?i)\b([A-Z0-9_]*(?:TOKEN|SECRET|PASSWORD|PASSWD|API_?KEY|ACCESS_?KEY|PRIVATE_?KEY|CREDENTIAL)[A-Z0-9_]*["']?\s*[:=]\s*)(?!["'\[])[^\s"',}]+"#,
       "$1[REDACTED]"
     ),
+    // `Authorization` の値は短い Basic 認証 (`dummy:x` の Base64 等) でも秘匿情報のため、長さによらず伏せる。
+    (#"(?i)(\bauthorization["']?\s*[:=]\s*["']?(?:bearer|basic|token|digest)?\s*)[^\s"']+"#, "$1[REDACTED]"),
     (#"(?i)\b(bearer|basic)\s+[A-Za-z0-9\-._~+/]{16,}=*"#, "$1 [REDACTED]"),
     (#"://[^/\s:@]+:[^/\s@]+@"#, "://[REDACTED]@"),
     (
