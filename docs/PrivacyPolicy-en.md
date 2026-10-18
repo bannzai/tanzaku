@@ -11,7 +11,12 @@ The snippets you save in the Service (titles, bodies, keywords, tags, folders an
 If you use iCloud, your snippets, folders, tags and snippet groups are stored in your own area of iCloud provided by Apple Inc. (the CloudKit private database) so that they sync between your Mac and iOS devices. Only you can access that area, and we cannot view it. Information stored in iCloud is handled under Apple Inc.'s privacy policy ( https://www.apple.com/legal/privacy/ ).
 <!-- source: https://developer.apple.com/documentation/cloudkit/ckcontainer/privateclouddatabase "Only the user can access their private database, by default. They own all of the database's content and can view and modify that content. Data in the private database isn't visible in the developer portal." -->
 
-Searches, including semantic search, run on your device, and the contents of your snippets are not sent outside it. The data used for semantic search is created on each device and is not synced.
+Searches, including semantic search, run on your device, and the contents of your snippets are not sent outside it (except when you turn on "Ranking semantic search with Jev" below). The data used for semantic search is created on each device and is not synced.
+
+### Ranking semantic search with Jev (Mac only, only when you enter an API key)
+
+Only when you save an API key of TypeSafe AI, Inc. (which hosts its service in the United States) in the Mac version's settings, each semantic search in the launcher sends your search text and the first 200 characters of the keyword, title and body joined together, for each of up to 15 snippets closest in meaning, to the TypeSafe API (Jev), which ranks the results. Text that looks like a token or password is masked before sending, but not every secret can be masked. Nothing is sent when no API key is saved or after you remove the saved key. The API key is stored in the Mac's Keychain and is not synced with iCloud. The content sent is handled under TypeSafe AI, Inc.'s privacy policy ( https://typesafe.ai/privacy ). We do not receive the content sent.
+<!-- source: TanzakuKit/Sources/TanzakuKit/JevSnippetRerank.swift: jevRerankCandidateCount = 15, jevRerankCandidateMaxLength = 200, snippetTextMaskingSecrets(text:) is applied before sending, and no request is made when jevAPIKey is nil / Tanzaku/JevAPIKeyStore.swift: a generic password item without kSecAttrSynchronizable / https://developer.apple.com/documentation/security/ksecattrsynchronizable "If the key is not supplied, or has a value of kCFBooleanFalse, then no synchronizable items are added or returned." / https://typesafe.ai/privacy "TypeSafe AI, Inc.", "hosted in the United States" -->
 
 - You are responsible for backing up your snippets. We cannot recover snippets lost by replacing or resetting a device, deleting the Service, or deleting the data from iCloud.
 
@@ -91,3 +96,5 @@ For opinions, questions, complaints or other inquiries about the handling of use
 We may change this Policy as needed. Where a change requires your consent under law, the changed Policy applies only to users who have agreed to it in the manner we specify. When we change this Policy, we will announce the effective date and content of the changed Policy in the app or by other appropriate means, or notify you.
 
 Established: September 28, 2026
+
+Revised: October 19, 2026 (added ranking semantic search with Jev)
