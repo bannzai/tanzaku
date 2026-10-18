@@ -32,7 +32,8 @@ struct SemanticSearchFoundationModelsComparisonTests {
         return try await requestContextualEmbeddingAssets(language: .japanese)
       }
     )
-    @MainActor
+    // MainActor にすると、Xcode 26 の Swift が言語モデルの await をまたいで埋め込みや選び方 (Sendable でない) を使う箇所を data race として止めるため、
+    // `SemanticSearchMethodComparisonTests` と同じく actor に隔離しない。
     func compareFoundationModelsMethods() async throws {
       let modelContext = ModelContext(try makeTanzakuModelContainer(storeLocation: .inMemory, syncedStoreCloudKitDatabase: .none))
       let snippets = semanticSearchFixtureSnippets.map { fixtureSnippet in
