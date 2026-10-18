@@ -97,10 +97,10 @@ func snippetTextMaskingSecrets(text: String) -> String {
     #"(?i)(?<![A-Z0-9_\-])([A-Z0-9_\-]*(?:TOKEN|SECRET|PASSWORD|PASSWD|API[-_ ]?KEY|ACCESS[-_ ]?KEY|PRIVATE[-_ ]?KEY|CREDENTIAL|パスワード|トークン|API ?キー|秘密鍵|シークレット)[A-Z0-9_\-]*["']?[ \t]*[:=：][ \t]*)"#
   let replacements: [(pattern: String, template: String)] = [
     (#"-----BEGIN [A-Z ]*PRIVATE KEY-----[\s\S]*?(-----END [A-Z ]*PRIVATE KEY-----|$)"#, "[REDACTED]"),
-    // 引用符で囲んだ値は空白やエスケープした引用符 (`\"`) を含んでも閉じる引用符まで伏せる。名前も引用符で囲む JSON・YAML (`"password": "..."`) を含める。
-    (secretName + #"(["'])(?:\\.|(?!\2)[^\\\n])*\2"#, "$1$2[REDACTED]$2"),
-    // 閉じる引用符が同じ行に無い値 (閉じ忘れ・複数行の値)。上で伏せた値を伏せ直さないよう `[REDACTED]` で始まる値は除き、行末まで伏せる。
-    (secretName + #"(["'])(?!\[REDACTED\])[^\n]*"#, "$1$2[REDACTED]"),
+    // 引用符で囲んだ値は空白・改行・エスケープした引用符 (`\"`) を含んでも閉じる引用符まで伏せる。名前も引用符で囲む JSON・YAML (`"password": "..."`) を含める。
+    (secretName + #"(["'])(?:\\[\s\S]|(?!\2)[^\\])*\2"#, "$1$2[REDACTED]$2"),
+    // 閉じる引用符が無い値 (閉じ忘れ)。値がどこで終わるかを決められないため、送る側に残さないよう末尾まで伏せる。上で伏せた値は除く。
+    (secretName + #"(["'])(?!\[REDACTED\])[\s\S]*"#, "$1$2[REDACTED]"),
     // 引用符の無い値。`,` や `[` を含む値 (`PASSWORD=ab,cd`・`PASSWORD=[ab]`) も伏せるよう、空白・引用符・`}` までを値とする。上で伏せた値は除く。
     (secretName + #"(?!["']|\[REDACTED\])[^\s"'}]+"#, "$1[REDACTED]"),
     // `Authorization` の値は短い Basic 認証 (`dummy:x` の Base64 等) でも秘匿情報のため、長さによらず伏せる。
