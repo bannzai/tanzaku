@@ -19,6 +19,7 @@ build-ios:
 	xcodebuild -project $(XCODEPROJ) -scheme $(IOS_SCHEME) -configuration $(CONFIGURATION) -derivedDataPath $(DERIVED_DATA) -destination 'generic/platform=iOS Simulator' $(SIGNING_FLAGS) build
 
 test:
+	bash scripts/ios/test_resolve_device.sh
 	xcodebuild -project $(XCODEPROJ) -scheme $(SCHEME) -configuration $(CONFIGURATION) -derivedDataPath $(DERIVED_DATA) -destination 'platform=macOS' $(SIGNING_FLAGS) test
 	cd $(PACKAGE_DIR) && xcodebuild -scheme TanzakuKit -derivedDataPath $(CURDIR)/$(DERIVED_DATA) -destination 'platform=macOS' $(SIGNING_FLAGS) test
 
@@ -67,6 +68,23 @@ macos-debug:
 	$(LSREGISTER) -f $(INSTALL_APP)
 	@echo "起動するには: open $(INSTALL_APP)"
 	@echo "Release に戻すには: make macos"
+
+# つないだ iPhone に iOS アプリ (キーボード・共有の拡張を含む) の Debug ビルドを入れる。
+# 入れる先は scripts/ios/resolve_device.sh が決める (接続中の実機が 1 台ならそれ。DEVICE=<UDID か名前> で指定もできる)
+# 起動は自動では行わない (make macos に揃える。画面がロック中だと起動は失敗する)
+.PHONY: ios-device
+IOS_DEVICE_APP := $(DERIVED_DATA)/Build/Products/Debug-iphoneos/TanzakuiOS.app
+
+ios-device:
+	udid="$$(bash scripts/ios/resolve_device.sh)" && \
+	xcodebuild -project $(XCODEPROJ) -scheme $(IOS_SCHEME) \
+		-configuration Debug \
+		-destination "id=$$udid" \
+		-derivedDataPath $(DERIVED_DATA) \
+		-allowProvisioningUpdates -allowProvisioningDeviceRegistration \
+		build && \
+	xcrun devicectl device install app --device "$$udid" $(IOS_DEVICE_APP) && \
+	echo "起動するには: xcrun devicectl device process launch --device $$udid com.bannzai.tanzaku"
 
 # 引数なしの make で macos を実行する (人が手で動作確認するための入口。検査・テストは CI が行う)
 .DEFAULT_GOAL := macos
