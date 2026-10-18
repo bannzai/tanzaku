@@ -91,8 +91,10 @@ func jevCandidateQuestionID(candidateIndex: Int) -> String {
 /// 決まった接頭辞を持つ API キー (OpenAI・GitHub・Slack・AWS・Google)、英字と数字を両方含む 32 文字以上の切れ目の無い文字列 (`/` で切れる)。これに当たらない秘匿情報は伏せられない。
 func snippetTextMaskingSecrets(text: String) -> String {
   // 秘匿情報を入れる名前と、名前と値の区切り。`x-api-key`・`--api-key=` のようなハイフン区切りと、日本語の名前・全角のコロンを含める。
+  // 名前の前は `\b` ではなく英数字が無いことで区切る。ICU の `\b` は日本語の文字と英字の間 (`接続のPASSWORD=`) に境目を認めないため。
+  // 区切りの前後は改行をまたがない。値が空の行 (`API_KEY=`) で次の行を値と見なさないため。
   let secretName =
-    #"(?i)\b([A-Z0-9_\-]*(?:TOKEN|SECRET|PASSWORD|PASSWD|API[-_ ]?KEY|ACCESS[-_ ]?KEY|PRIVATE[-_ ]?KEY|CREDENTIAL|パスワード|トークン|API ?キー|秘密鍵|シークレット)[A-Z0-9_\-]*["']?\s*[:=：]\s*)"#
+    #"(?i)(?<![A-Z0-9_\-])([A-Z0-9_\-]*(?:TOKEN|SECRET|PASSWORD|PASSWD|API[-_ ]?KEY|ACCESS[-_ ]?KEY|PRIVATE[-_ ]?KEY|CREDENTIAL|パスワード|トークン|API ?キー|秘密鍵|シークレット)[A-Z0-9_\-]*["']?[ \t]*[:=：][ \t]*)"#
   let replacements: [(pattern: String, template: String)] = [
     (#"-----BEGIN [A-Z ]*PRIVATE KEY-----[\s\S]*?(-----END [A-Z ]*PRIVATE KEY-----|$)"#, "[REDACTED]"),
     // 引用符で囲んだ値は空白やエスケープした引用符 (`\"`) を含んでも閉じる引用符まで伏せる。名前も引用符で囲む JSON・YAML (`"password": "..."`) を含める。
@@ -102,11 +104,12 @@ func snippetTextMaskingSecrets(text: String) -> String {
     // 引用符の無い値。`,` や `[` を含む値 (`PASSWORD=ab,cd`・`PASSWORD=[ab]`) も伏せるよう、空白・引用符・`}` までを値とする。上で伏せた値は除く。
     (secretName + #"(?!["']|\[REDACTED\])[^\s"'}]+"#, "$1[REDACTED]"),
     // `Authorization` の値は短い Basic 認証 (`dummy:x` の Base64 等) でも秘匿情報のため、長さによらず伏せる。
-    (#"(?i)(\bauthorization["']?\s*[:=]\s*["']?(?:bearer|basic|token|digest)?\s*)[^\s"']+"#, "$1[REDACTED]"),
-    (#"(?i)\b(bearer|basic)\s+[A-Za-z0-9\-._~+/]{16,}=*"#, "$1 [REDACTED]"),
-    (#"://[^/\s:@]+:[^/\s@]+@"#, "://[REDACTED]@"),
+    (#"(?i)((?<![A-Z0-9_\-])authorization["']?[ \t]*[:=][ \t]*["']?(?:bearer|basic|token|digest)?[ \t]*)[^\s"']+"#, "$1[REDACTED]"),
+    (#"(?i)(?<![A-Z0-9_\-])(bearer|basic)\s+[A-Za-z0-9\-._~+/]{16,}=*"#, "$1 [REDACTED]"),
+    // 利用者名が空の形 (`redis://:password@host`) も伏せる。
+    (#"://[^/\s:@]*:[^/\s@]+@"#, "://[REDACTED]@"),
     (
-      #"\b(sk-[A-Za-z0-9_\-]{16,}|gh[pousr]_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,}|xox[abprs]-[A-Za-z0-9\-]{10,}|AKIA[0-9A-Z]{16}|AIza[0-9A-Za-z_\-]{35})"#,
+      #"(?<![A-Za-z0-9_\-])(sk-[A-Za-z0-9_\-]{16,}|gh[pousr]_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,}|xox[abprs]-[A-Za-z0-9\-]{10,}|AKIA[0-9A-Z]{16}|AIza[0-9A-Za-z_\-]{35})"#,
       "[REDACTED]"
     ),
   ]
@@ -202,6 +205,8 @@ func jevRerankedCandidateIndices(
   let request = try await Task.detached(priority: .userInitiated) {
     try jevRerankRequest(query: query, candidateTexts: candidateTexts, apiKey: apiKey)
   }.value
+  // 切り離したタスクは呼び出し側の取り消しを引き継がないため、送る前に取り消しを確かめる。
+  try Task.checkCancellation()
   let (data, response) = try await sendJevRequest(request)
   guard let httpResponse = response as? HTTPURLResponse, (200..<300).contains(httpResponse.statusCode) else {
     throw JevRequestError(statusCode: (response as? HTTPURLResponse)?.statusCode)
