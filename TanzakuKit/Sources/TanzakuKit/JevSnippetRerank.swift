@@ -104,7 +104,8 @@ func snippetTextMaskingSecrets(text: String) -> String {
     // 引用符の無い値。`,` や `[` を含む値 (`PASSWORD=ab,cd`・`PASSWORD=[ab]`) も伏せるよう、空白・引用符・`}` までを値とする。上で伏せた値は除く。
     (secretName + #"(?!["']|\[REDACTED\])[^\s"'}]+"#, "$1[REDACTED]"),
     // `Authorization` の値は短い Basic 認証 (`dummy:x` の Base64 等) でも秘匿情報のため、長さによらず伏せる。
-    (#"(?i)((?<![A-Z0-9_\-])authorization["']?[ \t]*[:=][ \t]*["']?(?:bearer|basic|token|digest)?[ \t]*)[^\s"']+"#, "$1[REDACTED]"),
+    // 認証の方式は決まっておらず (`ApiKey`・`AWS4-HMAC-SHA256` 等)、方式名の後に空白を含む値も続くため、方式名を含む値全体を引用符か行末まで伏せる。
+    (#"(?i)((?<![A-Z0-9_\-])authorization["']?[ \t]*[:=][ \t]*["']?)[^"'\n]+"#, "$1[REDACTED]"),
     (#"(?i)(?<![A-Z0-9_\-])(bearer|basic)\s+[A-Za-z0-9\-._~+/]{16,}=*"#, "$1 [REDACTED]"),
     // 利用者名が空の形 (`redis://:password@host`) も伏せる。
     (#"://[^/\s:@]*:[^/\s@]+@"#, "://[REDACTED]@"),

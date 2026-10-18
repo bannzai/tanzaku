@@ -230,7 +230,7 @@ struct JevSnippetRerankTests {
     #expect(!String(decoding: request.httpBody ?? Data(), as: UTF8.self).contains(dummyAPIKey))
     #expect(body["model"] as? String == jevModelName)
     #expect(state["query"] as? String == "export API_TOKEN=[REDACTED]")
-    #expect(snippetsByQuestionID["snippet_1"] == "curl -H 'Authorization: Bearer [REDACTED]' https://example.com")
+    #expect(snippetsByQuestionID["snippet_1"] == "curl -H 'Authorization: [REDACTED]' https://example.com")
     #expect(snippetsByQuestionID["snippet_2"]?.count == jevRerankCandidateMaxLength)
     #expect(Set((body["questions"] as? [String: Any])?.keys.map { $0 } ?? []) == ["snippet_1", "snippet_2"])
   }
@@ -267,7 +267,8 @@ struct JevSnippetRerankTests {
       ("接続のPASSWORD=dummy-pass", "接続のPASSWORD=[REDACTED]"),
       ("API_KEY=\nDATABASE_URL=postgres://host/db", "API_KEY=\nDATABASE_URL=postgres://host/db"),
       ("redis://:dummysecret@localhost:6379", "redis://[REDACTED]@localhost:6379"),
-      ("curl -H 'Authorization: Basic ZHVtbXk6eA==' https://example.com", "curl -H 'Authorization: Basic [REDACTED]' https://example.com"),
+      ("curl -H 'Authorization: Basic ZHVtbXk6eA==' https://example.com", "curl -H 'Authorization: [REDACTED]' https://example.com"),
+      ("Authorization: ApiKey dummy-secret\nnext line", "Authorization: [REDACTED]\nnext line"),
       (#"{"password":"dummy\"remaining-secret"}"#, #"{"password":"[REDACTED]"}"#),
       ("https://dummyuser:dummypass@example.com/repo.git", "https://[REDACTED]@example.com/repo.git"),
       ("sk-dummyDummyDummyDummy1234", "[REDACTED]"),
