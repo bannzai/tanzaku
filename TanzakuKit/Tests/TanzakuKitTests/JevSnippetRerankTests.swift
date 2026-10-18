@@ -135,6 +135,36 @@ struct JevSnippetRerankTests {
     }
   }
 
+  @Test("送る前の待ちの間に取り消された検索 (次の文字を打った時) は Jev に送らず、CancellationError を投げる")
+  func cancellationDuringDelaySendsNothing() async throws {
+    let modelContext = ModelContext(try makeTanzakuModelContainer(storeLocation: .inMemory, syncedStoreCloudKitDatabase: .none))
+    _ = insertSnippet(modelContext: modelContext, body: "near dummy")
+    let embedder = lookupEmbedder(vectorsByText: ["query": [1, 0, 0], "near dummy": [1, 0, 0]])
+    try updateSnippetEmbeddings(modelContext: modelContext, embedder: embedder)
+    var requestCount = 0
+
+    // 結果 (`SnippetSearchResult`) は Sendable でなく main actor の外へ出せないため、捨てて取り消しの有無だけを見る。
+    let searchTask = Task {
+      _ = try await searchSnippets(
+        query: "query",
+        modelContext: modelContext,
+        embedder: embedder,
+        jevAPIKey: dummyAPIKey,
+        sendJevRequest: { _ in
+          requestCount += 1
+          return try self.jevResponse(noulsByQuestionID: [:])
+        },
+        onJevError: { _ in }
+      )
+    }
+    searchTask.cancel()
+
+    await #expect(throws: CancellationError.self) {
+      try await searchTask.value
+    }
+    #expect(requestCount == 0)
+  }
+
   @Test("2xx 以外の状態コードのエラーの説明には、状態コードだけを入れ API キーを入れない")
   func jevRequestErrorDescriptionHasNoAPIKey() async throws {
     var errors: [Error] = []
@@ -201,6 +231,11 @@ struct JevSnippetRerankTests {
       ("api_key: 'dummy key value'", "api_key: '[REDACTED]'"),
       ("password: \"dummy unclosed value\nnext line", "password: \"[REDACTED]\nnext line"),
       ("PASSWORD=dummy,secret next", "PASSWORD=[REDACTED] next"),
+      ("PASSWORD=[dummy] next", "PASSWORD=[REDACTED] next"),
+      ("curl -H \"x-api-key: dummy\" https://example.com", "curl -H \"x-api-key: [REDACTED]\" https://example.com"),
+      ("tool --api-key=dummy --verbose", "tool --api-key=[REDACTED] --verbose"),
+      ("パスワード：dummy-pass です", "パスワード：[REDACTED] です"),
+      ("APIキー: dummy", "APIキー: [REDACTED]"),
       ("curl -H 'Authorization: Basic ZHVtbXk6eA==' https://example.com", "curl -H 'Authorization: Basic [REDACTED]' https://example.com"),
       (#"{"password":"dummy\"remaining-secret"}"#, #"{"password":"[REDACTED]"}"#),
       ("https://dummyuser:dummypass@example.com/repo.git", "https://[REDACTED]@example.com/repo.git"),

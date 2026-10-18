@@ -17,7 +17,7 @@ bannzai（以下「提供者」といいます。）は、提供者の提供す�
 
 ### Jev による意味検索の並べ替え（Mac のみ、ユーザーが API キーを入れた場合のみ）
 
-Mac 版の設定でユーザーが TypeSafe AI, Inc.（米国でサービスを提供）の API キーを保存した場合に限り、ランチャーで意味検索を行うたびに、検索語と、意味が近いスニペット最大 15 件について、キーワード・タイトル・本文をつないだテキストの先頭 200 文字を TypeSafe の API（Jev）へ送信し、結果の並べ替えに使います。送信の前に、トークンやパスワードらしい文字列を伏せますが、すべての秘匿情報を伏せられるとは限りません。API キーを保存していない場合と、保存した API キーを削除した場合は送信しません。API キーは Mac の Keychain に保存し、iCloud と同期しません。送信した内容は TypeSafe AI, Inc. のプライバシーポリシー（ https://typesafe.ai/privacy ）に従って扱われます。提供者は送信した内容を受け取りません。
+Mac 版の設定でユーザーが TypeSafe AI, Inc.（米国でサービスを提供）の API キーを保存した場合に限り、ランチャーで意味検索を行うたびに、検索語と、意味が近い順に選んだスニペット最大 15 件（検索語との関連の強さにかかわらず、スニペットが 15 件以上あれば 15 件）について、キーワード・タイトル・本文・添付のファイル名をつないだテキストの先頭 200 文字を TypeSafe の API（Jev）へ送信し、結果の並べ替えに使います。送信の前に、トークンやパスワードらしい文字列を伏せますが、すべての秘匿情報を伏せられるとは限りません。API キーを保存していない場合と、保存した API キーを削除した場合は送信しません。API キーは Mac の Keychain に保存し、iCloud と同期しません。送信した内容は TypeSafe AI, Inc. のプライバシーポリシー（ https://typesafe.ai/privacy ）に従って扱われます。提供者は送信した内容を受け取りません。
 <!-- source: TanzakuKit/Sources/TanzakuKit/JevSnippetRerank.swift: jevRerankCandidateCount = 15、jevRerankCandidateMaxLength = 200、送る前に snippetTextMaskingSecrets(text:) を掛け、jevAPIKey が nil の時は要求を作らない / Tanzaku/JevAPIKeyStore.swift: kSecAttrSynchronizable を指定しない汎用パスワードの項目 / https://developer.apple.com/documentation/security/ksecattrsynchronizable 「If the key is not supplied, or has a value of kCFBooleanFalse, then no synchronizable items are added or returned.」 / https://typesafe.ai/privacy 「TypeSafe AI, Inc.」「hosted in the United States」 -->
 
 - スニペットのバックアップはユーザー自身の責任で行っていただきます。端末の変更・初期化、本サービスの削除、iCloud からのデータの削除によりスニペットが失われた場合、提供者は復旧できません
@@ -68,6 +68,7 @@ Mac 版は、更新の確認のため GitHub Pages（ https://bannzai.github.io/
 
 - スニペット等は、ユーザーが本サービス内で削除するか本サービスを削除するまで端末内に、iCloud で同期している場合はユーザーが削除するまでユーザーの iCloud に保存されます
 - Mac 版のライセンスキーは、ユーザーが本サービスでライセンスを解除するまで Mac の Keychain に保存されます
+- Mac 版に保存した TypeSafe の API キーは、ユーザーが設定で削除するまで Mac の Keychain に保存されます
 - Lemon Squeezy から受け取る購入者の情報は、ライセンスの提供、お問い合わせへの対応、法令上の義務の履行に必要な期間保存します。Lemon Squeezy が取得した情報は、Lemon Squeezy のプライバシーポリシーに定める期間保存されます
 - 問い合わせの連絡先と内容は、対応の完了後、提供者が対応の記録として必要と判断する期間保存し、その後削除します
 

@@ -70,8 +70,9 @@ struct JevSettingsSection: View {
   private func updateJevAPIKey(operation: () throws -> Void) {
     do {
       try operation()
-      isJevAPIKeySaved = try loadJevAPIKey() != nil
+      // 保存の後に読み直しが失敗しても、保存したキーが入力の欄に残らないよう、読み直しの前に空にする。
       jevAPIKeyInput = ""
+      isJevAPIKeySaved = try loadJevAPIKey() != nil
       jevAPIKeyErrorMessage = nil
     } catch {
       jevAPIKeyErrorMessage = String(describing: error)
