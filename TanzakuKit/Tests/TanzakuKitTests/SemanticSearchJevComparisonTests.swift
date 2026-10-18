@@ -64,8 +64,13 @@ struct SemanticSearchJevComparisonTests {
                 sendJevRequest: { request in
                   let (data, response) = try await URLSession.shared.data(for: request)
                   let usage = (try? JSONSerialization.jsonObject(with: data) as? [String: Any])?["usage"] as? [String: Any]
-                  inputTokens.append((usage?["input_tokens"] as? Double) ?? .nan)
-                  outputTokens.append((usage?["output_tokens"] as? Double) ?? .nan)
+                  // 失敗した要求の応答には usage が無く、件数は errors の行に出るため、トークン数を持つ応答だけを数える (NaN を混ぜると並べ替えの順序が定まらない)。
+                  if let inputTokenCount = usage?["input_tokens"] as? Double {
+                    inputTokens.append(inputTokenCount)
+                  }
+                  if let outputTokenCount = usage?["output_tokens"] as? Double {
+                    outputTokens.append(outputTokenCount)
+                  }
                   return (data, response)
                 }
               ).map { candidateIndices[$0] }

@@ -135,6 +135,32 @@ struct JevSnippetRerankTests {
     }
   }
 
+  @Test("Jev の応答を待つ間に削除されたスニペットは、Jev が当てはまると答えても結果に入れない")
+  func snippetDeletedDuringJevRequestIsExcluded() async throws {
+    let modelContext = ModelContext(try makeTanzakuModelContainer(storeLocation: .inMemory, syncedStoreCloudKitDatabase: .none))
+    let nearSnippet = insertSnippet(modelContext: modelContext, body: "near dummy")
+    let farSnippet = insertSnippet(modelContext: modelContext, body: "far dummy")
+    let embedder = lookupEmbedder(vectorsByText: ["query": [1, 0, 0], "near dummy": [1, 0, 0], "far dummy": [0, 1, 0]])
+    try updateSnippetEmbeddings(modelContext: modelContext, embedder: embedder)
+
+    let result = try await searchSnippets(
+      query: "query",
+      modelContext: modelContext,
+      embedder: embedder,
+      jevAPIKey: dummyAPIKey,
+      sendJevRequest: { _ in
+        modelContext.delete(nearSnippet)
+        try modelContext.save()
+        return try self.jevResponse(noulsByQuestionID: ["snippet_1": 0.9, "snippet_2": 0.8])
+      },
+      onJevError: { error in
+        Issue.record("Unexpected Jev error: \(error)")
+      }
+    )
+
+    #expect(result.semanticMatches.map(\.id) == [farSnippet.id])
+  }
+
   @Test("送る前の待ちの間に取り消された検索 (次の文字を打った時) は Jev に送らず、CancellationError を投げる")
   func cancellationDuringDelaySendsNothing() async throws {
     let modelContext = ModelContext(try makeTanzakuModelContainer(storeLocation: .inMemory, syncedStoreCloudKitDatabase: .none))

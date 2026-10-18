@@ -245,18 +245,36 @@ public func searchSnippets(
   guard !candidateSnippets.isEmpty else {
     return searchResult
   }
-  try await Task.sleep(for: jevRequestDelay)
+  // 待ちと Jev の応答の間に、MCP が別の ModelContext からスニペットを削除・更新し得る。
+  // await の前に ID・一致の種類・送るテキストを取り出し、await の後は今あるスニペットを取り直して結果を組み立てる。
+  let keywordMatchIDsAndKinds = searchResult.keywordMatches.map { (snippetID: $0.snippet.id, kind: $0.kind) }
+  let semanticMatchIDs = searchResult.semanticMatches.map(\.id)
+  let candidateSnippetIDs = candidateSnippets.map(\.id)
+  let candidateTexts = candidateSnippets.map { snippetEmbeddingSourceText(snippet: $0) }
+  let semanticMatchIDsAfterJev: [UUID]
   do {
-    let candidateIndices = try await jevRerankedCandidateIndices(
+    try await Task.sleep(for: jevRequestDelay)
+    semanticMatchIDsAfterJev = try await jevRerankedCandidateIndices(
       query: query,
-      candidateTexts: candidateSnippets.map { snippetEmbeddingSourceText(snippet: $0) },
+      candidateTexts: candidateTexts,
       apiKey: jevAPIKey,
       sendJevRequest: sendJevRequest
-    )
-    return SnippetSearchResult(keywordMatches: searchResult.keywordMatches, semanticMatches: candidateIndices.map { candidateSnippets[$0] })
+    ).map { candidateSnippetIDs[$0] }
+  } catch is CancellationError {
+    throw CancellationError()
   } catch {
     try Task.checkCancellation()
     onJevError(error)
-    return searchResult
+    semanticMatchIDsAfterJev = semanticMatchIDs
   }
+  let currentSnippetsByID = Dictionary(
+    try modelContext.fetch(FetchDescriptor<Snippet>()).map { ($0.id, $0) },
+    uniquingKeysWith: { snippet, _ in snippet }
+  )
+  return SnippetSearchResult(
+    keywordMatches: keywordMatchIDsAndKinds.compactMap { keywordMatch in
+      currentSnippetsByID[keywordMatch.snippetID].map { SnippetKeywordMatch(snippet: $0, kind: keywordMatch.kind) }
+    },
+    semanticMatches: semanticMatchIDsAfterJev.compactMap { currentSnippetsByID[$0] }
+  )
 }
