@@ -169,6 +169,7 @@ struct JevSnippetRerankTests {
 
     #expect(request.url == jevAPIEndpoint)
     #expect(request.httpMethod == "POST")
+    #expect(request.timeoutInterval == jevRequestTimeoutSeconds)
     #expect(request.value(forHTTPHeaderField: "Authorization") == "Bearer \(dummyAPIKey)")
     #expect(!String(decoding: request.httpBody ?? Data(), as: UTF8.self).contains(dummyAPIKey))
     #expect(body["model"] as? String == jevModelName)

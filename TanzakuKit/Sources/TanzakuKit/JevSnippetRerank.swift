@@ -20,6 +20,11 @@ public let jevRerankCandidateCount = 15
 /// 0.3 秒は打鍵の間隔 (速く打つ時は 0.1〜0.2 秒) より長く、2026-10-19 の実測の Jev の応答の中央値 (0.17 秒) と足しても 0.5 秒に収まる長さ。
 let jevRequestDelay = Duration.milliseconds(300)
 
+/// Jev の応答を待つ上限 (秒)。超えたら失敗として今の意味検索 (埋め込み + しきい値) に戻る。
+/// 既定の 60 秒のままだと、通信が詰まった間はランチャーの意味検索の欄が出ないため短くする。2026-10-19 の実測の 1 回の要求は p90 で 0.21 秒以下だったため、
+/// その 10 倍ほどの 2 秒にし、遅い回線でも通常は待ちきれる長さにした。
+let jevRequestTimeoutSeconds: TimeInterval = 2
+
 /// Jev に渡す候補 1 件のテキストの最大の文字数。キーワード・タイトル・本文の先頭で用途は分かり、送る本文を減らすため。
 let jevRerankCandidateMaxLength = 200
 
@@ -132,6 +137,7 @@ func snippetTextMaskingSecrets(text: String) -> String {
 func jevRerankRequest(query: String, candidateTexts: [String], apiKey: String) throws -> URLRequest {
   var request = URLRequest(url: jevAPIEndpoint)
   request.httpMethod = "POST"
+  request.timeoutInterval = jevRequestTimeoutSeconds
   request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
   request.setValue("application/json", forHTTPHeaderField: "Content-Type")
   request.httpBody = try JSONEncoder().encode(
