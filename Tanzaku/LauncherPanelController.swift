@@ -200,12 +200,14 @@ final class LauncherPanelController: NSObject, NSWindowDelegate {
       guard !Task.isCancelled, self.state.query == query else {
         return
       }
+      // `selectedSnippetID()` は今の結果と選択の位置から ID を求めるため、結果を入れ替える前に読む。
+      let selectedSnippetID = self.selectedSnippetID()
       self.state.isSemanticSearchPending = false
       self.state.searchResult = searchResult
       self.state.selectedSnippetIndex = launcherSelectionIndexAfterResultUpdate(
         recentSnippets: self.state.recentSnippets,
         searchResult: searchResult,
-        selectedSnippetID: self.selectedSnippetID()
+        selectedSnippetID: selectedSnippetID
       )
     }
   }

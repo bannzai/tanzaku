@@ -183,6 +183,9 @@ struct JevSnippetRerankTests {
     let cases: [(text: String, maskedText: String)] = [
       ("password: dummy-password", "password: [REDACTED]"),
       ("GITHUB_TOKEN=\"dummy-token\"", "GITHUB_TOKEN=\"[REDACTED]\""),
+      ("PASSWORD=\"dummy secret phrase\" next", "PASSWORD=\"[REDACTED]\" next"),
+      ("{\"password\":\"dummy-password\",\"user\":\"dummy\"}", "{\"password\":\"[REDACTED]\",\"user\":\"dummy\"}"),
+      ("api_key: 'dummy key value'", "api_key: '[REDACTED]'"),
       ("https://dummyuser:dummypass@example.com/repo.git", "https://[REDACTED]@example.com/repo.git"),
       ("sk-dummyDummyDummyDummy1234", "[REDACTED]"),
       // 秘匿情報の検査 (コミット前の hook・secret scanning) に本物と取り違えられないよう、偽の値を分けて書いてつなぐ。
