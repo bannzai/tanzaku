@@ -28,6 +28,9 @@ final class LauncherPanelController: NSObject, NSWindowDelegate {
   var onSnippetEmbeddingsUpdate: (() -> Void)?
   /// 実行中の意味検索。入力が変わったら古い入力の意味検索を取り消す。
   private var semanticSearchTask: Task<Void, Never>?
+  /// 設定で保存した Jev の API キー。ある時だけ意味検索を Jev で並べ替える (`searchSnippets(query:modelContext:embedder:jevAPIKey:sendJevRequest:onJevError:)`)。
+  /// 設定はパネルを閉じて設定へ移った時にしか変わらないため、開く時に Keychain から読む。
+  private var jevAPIKey: String?
   /// 画面の状態。
   private let state = LauncherState()
   /// ランチャーのパネル。初めて開く時に作る。
@@ -70,6 +73,13 @@ final class LauncherPanelController: NSObject, NSWindowDelegate {
       isDirectPasteEnabled: UserDefaults.standard.bool(forKey: directPasteEnabledUserDefaultsKey),
       isSyntheticKeyStrokeAllowed: isSyntheticKeyStrokeAllowed()
     )
+    do {
+      jevAPIKey = try loadJevAPIKey()
+    } catch {
+      // 読めない時は Jev を使わず、今の意味検索にする。エラーは Keychain の結果コードだけでキーを含まない (`MCPTokenStoreError`)。
+      logger.error("Failed to load the Jev API key: \(String(describing: error), privacy: .public)")
+      jevAPIKey = nil
+    }
     let panel = panel ?? makePanel()
     self.panel = panel
     if let visibleFrame = (NSScreen.main ?? NSScreen.screens.first)?.visibleFrame {
@@ -161,15 +171,42 @@ final class LauncherPanelController: NSObject, NSWindowDelegate {
       guard !Task.isCancelled, let self, self.state.query == query else {
         return
       }
-      self.state.isSemanticSearchPending = false
-      if let queryVector {
-        // 入力のベクトルは作り終えているため、検索にはそれを返すだけの埋め込みモデルを渡す。
-        self.applySearchResult(
-          query: query,
-          embedder: SnippetTextEmbedder(modelIdentifier: snippetEmbeddingModelIdentifier) { _ in queryVector },
-          selectedSnippetID: self.selectedSnippetID()
-        )
+      guard let queryVector else {
+        self.state.isSemanticSearchPending = false
+        return
       }
+      let searchResult: SnippetSearchResult
+      do {
+        // 入力のベクトルは作り終えているため、検索にはそれを返すだけの埋め込みモデルを渡す。
+        searchResult = try await searchSnippets(
+          query: query,
+          modelContext: self.modelContainer.mainContext,
+          embedder: SnippetTextEmbedder(modelIdentifier: snippetEmbeddingModelIdentifier) { _ in queryVector },
+          jevAPIKey: self.jevAPIKey,
+          sendJevRequest: { request in
+            try await URLSession.shared.data(for: request)
+          },
+          onJevError: { error in
+            // エラーは HTTP の状態コードか通信のエラーで、API キー・検索語・スニペットの本文を含まない (`JevRequestError`)。
+            self.logger.error("Failed to rank with Jev: \(String(describing: error), privacy: .public)")
+          }
+        )
+      } catch is CancellationError {
+        return
+      } catch {
+        self.logger.error("Failed to search snippets: \(String(describing: error))")
+        searchResult = SnippetSearchResult(keywordMatches: [], semanticMatches: [])
+      }
+      guard !Task.isCancelled, self.state.query == query else {
+        return
+      }
+      self.state.isSemanticSearchPending = false
+      self.state.searchResult = searchResult
+      self.state.selectedSnippetIndex = launcherSelectionIndexAfterResultUpdate(
+        recentSnippets: self.state.recentSnippets,
+        searchResult: searchResult,
+        selectedSnippetID: self.selectedSnippetID()
+      )
     }
   }
 
