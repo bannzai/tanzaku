@@ -22,6 +22,8 @@ public final class ICloudSyncMonitor {
   private var latestSyncErrorCode: CKError.Code?
   /// アカウントの変化と同期のイベントの購読。
   @ObservationIgnored private var notificationSubscriptions: Set<AnyCancellable> = []
+  /// 他の端末の変更の受信 (import) が成功して終わった時に呼ぶ。受信したスニペットの意味検索のベクトルを作るため。`start()` の前に入れる。
+  @ObservationIgnored public var onImportFinish: (() -> Void)?
 
   /// `modelContainer` の同期するストアの構成から、CloudKit を使うかとコンテナを読む。
   public init(modelContainer: ModelContainer) {
@@ -51,6 +53,14 @@ public final class ICloudSyncMonitor {
         }
       }
       .store(in: &notificationSubscriptions)
+    Self.succeededImports()
+      .receive(on: DispatchQueue.main)
+      .sink { [weak self] in
+        MainActor.assumeIsolated {
+          self?.onImportFinish?()
+        }
+      }
+      .store(in: &notificationSubscriptions)
     refreshAccountStatus(cloudKitContainerIdentifier: cloudKitContainerIdentifier)
   }
 
@@ -68,6 +78,19 @@ public final class ICloudSyncMonitor {
       .map { event in
         cloudKitSyncErrorCode(error: event.error)
       }
+      .eraseToAnyPublisher()
+  }
+
+  /// 受信 (import) が成功して終わるたびに流す。組み立てを nonisolated にする理由は `finishedSyncErrorCodes()` と同じ。
+  private nonisolated static func succeededImports() -> AnyPublisher<Void, Never> {
+    NotificationCenter.default.publisher(for: NSPersistentCloudKitContainer.eventChangedNotification)
+      .compactMap { notification in
+        notification.userInfo?[NSPersistentCloudKitContainer.eventNotificationUserInfoKey] as? NSPersistentCloudKitContainer.Event
+      }
+      .filter { event in
+        event.type == .import && event.endDate != nil && event.succeeded
+      }
+      .map { _ in () }
       .eraseToAnyPublisher()
   }
 

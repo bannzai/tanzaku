@@ -80,6 +80,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     self.launcherPanelController = launcherPanelController
     // 設定のウィンドウを開かなくても AI エージェントが接続できるよう、起動時にサーバーを起動する (`documents/DIRECTION.md`「決めたこと」)。
     _ = mcpServerController
+    iCloudSyncMonitor?.onImportFinish = { [weak launcherPanelController] in
+      launcherPanelController?.refreshSnippetEmbeddingsAndSearch()
+    }
     iCloudSyncMonitor?.start()
     launcherShortcutController.start {
       launcherPanelController.toggle()

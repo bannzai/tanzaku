@@ -30,6 +30,12 @@ struct TanzakuiOSApp: App {
           .environment(iCloudSyncMonitor)
           .modelContainer(modelContainer)
           .task {
+            // 前面にある間に他の端末から届いたスニペットも、意味検索で見つかるようにベクトルを作る。
+            iCloudSyncMonitor?.onImportFinish = {
+              Task {
+                await snippetEmbeddingController.refreshEmbeddings()
+              }
+            }
             iCloudSyncMonitor?.start()
             await snippetEmbeddingController.loadEmbeddingModel()
           }

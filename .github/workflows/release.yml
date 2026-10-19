@@ -92,6 +92,12 @@ jobs:
           security set-key-partition-list -S apple-tool:,apple: -k "${keychain_password}" "${keychain_path}"
           security list-keychain -d user -s "${keychain_path}"
 
+      # scripts/macos/install_developer_id_profile.rb は既定の ruby で spaceship (fastlane の gem) を読む。
+      # ランナーのイメージは fastlane を既定の Ruby の gem として入れているが (actions/runner-images の toolset の rubygems)、
+      # イメージが変わっても DMG の署名の前に止まらないよう、読めない時だけ入れる。
+      - name: Make spaceship available to the default Ruby
+        run: ruby -e 'require "spaceship"' || gem install fastlane --no-document
+
       # xcrun stapler validate と spctl --assess の結果はこの step のログに出る (scripts/macos/build_notarized_dmg.sh)。
       - name: Build, notarize, and staple the DMG
         env:
