@@ -6,13 +6,14 @@
 
 - 保存は SwiftData。バックエンドは持たない
 - macOS アプリと iOS アプリで同じモデルを使い、最初の版から iCloud (CloudKit) のプライベートデータベースで同期する
-- macOS 版は Developer ID で配布する。Developer ID で署名したアプリも Developer ID 用の provisioning profile があれば CloudKit を使える ( https://developer.apple.com/developer-id/ )。CI の ad-hoc 署名では iCloud の entitlement を満たす provisioning profile が無いため、CI でのビルドの署名の扱いは同期を実装する issue で決める
+- macOS 版は Developer ID で配布する。Developer ID で署名したアプリも Developer ID 用の provisioning profile があれば CloudKit を使える ( https://developer.apple.com/developer-id/ )。リリースは `scripts/macos/install_developer_id_profile.rb` が用意する profile で署名する (`AGENTS.md`「Mac 版のリリース」)
+- CI・simtunnel のビルドは iCloud の entitlement を外して署名し、同期せずに端末内だけで動く (`documents/DIRECTION.md`「決めたこと」)。ad-hoc 署名では iCloud の entitlement を満たす provisioning profile が無いため
 
 ## ストアの分け方
 
 | ストア | 置くモデル | 同期 | 理由 |
 | --- | --- | --- | --- |
-| 同期するストア | `Snippet`・`Folder`・`Tag`・`SnippetGroup`・`SnippetGroupItem` | する (`ModelConfiguration` の `cloudKitDatabase: .private(<コンテナ ID>)`) | ユーザーのデータで、どの端末でも同じであるべきもの |
+| 同期するストア | `Snippet`・`Folder`・`Tag`・`SnippetGroup`・`SnippetGroupItem` | する (`ModelConfiguration` の `cloudKitDatabase: .automatic`。entitlement の iCloud コンテナ `iCloud.com.bannzai.tanzaku` のプライベートデータベースを使う。iCloud の entitlement を持たない拡張・CI のビルドでは同期しない) | ユーザーのデータで、どの端末でも同じであるべきもの |
 | 端末内のストア | `SnippetEmbedding`・`MCPClient` | しない (`cloudKitDatabase: .none`) | 意味検索のベクトルは端末の OS・埋め込みモデルの版で変わり、同期すると別の版のベクトルが混ざる。MCP の接続先はその Mac の localhost サーバーに属し、iOS には無い |
 
 iOS では、本体アプリ・共有シート・App Intents・カスタムキーボードが同じストアを使うため、ストアのファイルを App Group (`group.com.bannzai.tanzaku`) の共有コンテナに置く。後から場所を移すと既存ユーザーのデータの移行が要るため、最初の版から共有コンテナに置く。カスタムキーボードはフルアクセスが無い時に共有コンテナへ書き込めず、読むことはできる (Simulator での確かめと実機の扱いは `documents/DIRECTION.md`「決めたこと」)。キーボードからはストアへ書き込まない。
@@ -27,6 +28,24 @@ iOS では、本体アプリ・共有シート・App Intents・カスタムキ�
 - `@Attribute(.unique)` を使わない。一意であるべき値 (キーワード) はアプリのコードで保証する
 - リレーションはすべて Optional。削除ルールに `.deny` を使わない
 - 本番の CloudKit スキーマは追加しかできない。属性・モデルの削除や改名はせず、使わなくなった属性は残して読まない
+
+## CloudKit のスキーマ
+
+CloudKit のコンテナには開発 (Development) と本番 (Production) の 2 つの環境があり、アプリの `com.apple.developer.icloud-container-environment` の entitlement で決まる ( https://developer.apple.com/documentation/cloudkit/ckcontainer の「Testing Your Code Using the Development Container」。「Simulator works only with the development environment.」)。2026-10-19 に Simulator で Debug ビルドを動かした時の CloudKit のログは `containerIdentifier=iCloud.com.bannzai.tanzaku, environment=Sandbox` だった。Mac 版のリリースは export で `iCloudContainerEnvironment` を `Production` にし (`scripts/macos/build_notarized_dmg.sh`)、2026-10-19 に手元で export したアプリの署名の entitlement は `com.apple.developer.icloud-container-environment = Production` だった。
+
+### 開発用のスキーマを初期化する
+
+モデルを足した・変えた時は、本番へ反映する前に開発の環境のスキーマを作り直す。Apple の手順 ( https://developer.apple.com/documentation/swiftdata/syncing-model-data-across-a-persons-devices の「Initialize the CloudKit development schema」) は、SwiftData のストアと同じファイルを `NSPersistentCloudKitContainer` で開き `initializeCloudKitSchema()` を呼ぶ。この手順はコミットしない一時的な変更として行う (起動のたびに走らせない)。
+
+1. iCloud にサインインした Simulator を `sim-boot` で起動する (simslim の `icloud` カテゴリを残す: `simslim on <udid> --except store,siri,icloud`)
+2. `TanzakuiOS/TanzakuiOSApp.swift` の `init()` の先頭に、Apple の手順の `#if DEBUG` のブロックを一時的に入れる。`ModelConfiguration` は `makeTanzakuModelContainer` と同じ同期するストアの URL (App Group の共有コンテナの `Tanzaku/Synced.store`)、`NSPersistentCloudKitContainerOptions` のコンテナは `iCloud.com.bannzai.tanzaku`、`NSManagedObjectModel.makeManagedObjectModel(for:)` に渡す型は `SchemaV3.syncedModels` (同期するストアのモデルだけ。端末内のストアのモデルを CloudKit に作らない)
+3. Debug 構成をチームの署名でビルドして起動する (`xcodebuild -scheme TanzakuiOS -configuration Debug -destination id=<udid> -allowProvisioningUpdates build` の後に `xcrun simctl install`・`xcrun simctl launch`)
+4. CloudKit Console ( https://icloud.developer.apple.com ) の開発の環境で、`CD_Snippet`・`CD_Folder`・`CD_Tag`・`CD_SnippetGroup`・`CD_SnippetGroupItem` の record type ができたことを確かめる (Core Data は record type の名前に `CD_` を付ける: https://developer.apple.com/documentation/coredata/reading-cloudkit-records-for-core-data )
+5. 2 の変更を戻す
+
+### 本番へ反映する
+
+CloudKit Console の「Deploy Schema Changes」で開発の環境のスキーマを本番へ反映する ( https://developer.apple.com/documentation/cloudkit/deploying-an-icloud-container-s-schema )。本番の環境では record type・field を足せない (「The production server generates errors when your app tries to add record types or add new fields to existing record types.」 https://developer.apple.com/documentation/cloudkit/ckcontainer )。そのため、反映は公開前チェックリスト (#4) の項目にし、Mac 版の tag を打つ前に行う。コマンドラインの `xcrun cktool` は開発の環境 (sandbox) へのスキーマの取り込みまでで、本番への反映は Console で行う (「The CloudKit command line tools download, verify, and install a schema to your container's sandbox environment, while the CloudKit dashboard promotes a schema to the production environment.」 https://developer.apple.com/documentation/cloudkit/integrating-a-text-based-schema-into-your-workflow )。
 
 ## モデル
 
