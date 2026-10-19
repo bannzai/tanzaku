@@ -27,7 +27,7 @@ let iosModelContainerResult = Result { try makeIOSModelContainer() }
 
 /// iOS アプリの `ModelContainer` を作る。ストアのファイルは App Group の共有コンテナの `Tanzaku/` に置く。フォルダが無ければ作り、あればそのまま使うため、何度呼んでも同じストアを開く。
 ///
-/// iCloud (CloudKit) との同期は同期の issue (#19) で有効にするまで切っておく。iCloud コンテナが未作成で (#5)、CI・simtunnel の署名しないビルドでは iCloud の entitlement を満たせないため。
+/// 同期するストアは entitlement の iCloud コンテナと同期する (`.automatic`)。iCloud の entitlement を持つのは本体アプリだけで、共有シート・キーボードの拡張と、CI・simtunnel のビルド (iCloud の entitlement を外したファイルで署名する) は同期せずに同じストアを読み書きする。拡張で同期しないのは、本体アプリが次に開いた時に拡張の変更を送るため (`documents/DIRECTION.md`「決めたこと」)。
 func makeIOSModelContainer() throws -> ModelContainer {
   guard let appGroupContainerURL = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: tanzakuAppGroupIdentifier) else {
     throw IOSModelContainerError.appGroupContainerUnavailable
@@ -39,7 +39,7 @@ func makeIOSModelContainer() throws -> ModelContainer {
       syncedStoreURL: storeDirectoryURL.appending(path: "Synced.store"),
       localStoreURL: storeDirectoryURL.appending(path: "Local.store")
     ),
-    syncedStoreCloudKitDatabase: .none
+    syncedStoreCloudKitDatabase: .automatic
   )
 }
 

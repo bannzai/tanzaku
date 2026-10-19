@@ -177,6 +177,9 @@
 		819D3AB10EDF53500854ED1E /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		8A6FB295041B82E946869DF6 /* TanzakuApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TanzakuApp.swift; sourceTree = "<group>"; };
 		AB8FE1D8A6D581E6DF71B10D /* Tanzaku.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Tanzaku.entitlements; sourceTree = "<group>"; };
+		7F5000000000000000000101 /* TanzakuWithoutICloud.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = TanzakuWithoutICloud.entitlements; sourceTree = "<group>"; };
+		7F5000000000000000000102 /* TanzakuiOSWithoutICloud.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = TanzakuiOSWithoutICloud.entitlements; sourceTree = "<group>"; };
+		7F5000000000000000000103 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		E804D807AB678D0394017B55 /* Tanzaku.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Tanzaku.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		F42397ABB5D473ABA5C9F741 /* TanzakuTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TanzakuTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		7B2000000000000000000002 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
@@ -347,6 +350,8 @@
 				7D1000000000000000001011 /* Localizable.xcstrings */,
 				7E3000000000000000000002 /* Assets.xcassets */,
 				7D1000000000000000001012 /* TanzakuiOS.entitlements */,
+				7F5000000000000000000102 /* TanzakuiOSWithoutICloud.entitlements */,
+				7F5000000000000000000103 /* Info.plist */,
 			);
 			path = TanzakuiOS;
 			sourceTree = "<group>";
@@ -433,6 +438,7 @@
 				7F2100000000000000000102 /* Info.plist */,
 				490F39DA27F8967A83114754 /* Localizable.xcstrings */,
 				AB8FE1D8A6D581E6DF71B10D /* Tanzaku.entitlements */,
+				7F5000000000000000000101 /* TanzakuWithoutICloud.entitlements */,
 				8A6FB295041B82E946869DF6 /* TanzakuApp.swift */,
 			);
 			path = Tanzaku;
@@ -915,7 +921,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = Tanzaku/Tanzaku.entitlements;
+				CODE_SIGN_ENTITLEMENTS = "Tanzaku/Tanzaku$(TANZAKU_ENTITLEMENTS_FILE_SUFFIX).entitlements";
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = "$(MARKETING_VERSION)";
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -1011,7 +1017,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGNING_ALLOWED = NO;
-				CODE_SIGN_ENTITLEMENTS = Tanzaku/Tanzaku.entitlements;
+				CODE_SIGN_ENTITLEMENTS = "Tanzaku/Tanzaku$(TANZAKU_ENTITLEMENTS_FILE_SUFFIX).entitlements";
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = "$(MARKETING_VERSION)";
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -1027,6 +1033,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.bannzai.tanzaku;
 				PRODUCT_NAME = Tanzaku;
 				SDKROOT = macosx;
+				TANZAKU_ENTITLEMENTS_FILE_SUFFIX = WithoutICloud;
 			};
 			name = DebugUnsigned;
 		};
@@ -1035,7 +1042,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = Tanzaku/Tanzaku.entitlements;
+				CODE_SIGN_ENTITLEMENTS = "Tanzaku/Tanzaku$(TANZAKU_ENTITLEMENTS_FILE_SUFFIX).entitlements";
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = "$(MARKETING_VERSION)";
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -1050,6 +1057,7 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.bannzai.tanzaku;
 				PRODUCT_NAME = Tanzaku;
+				PROVISIONING_PROFILE_SPECIFIER = "$(TANZAKU_MAC_PROVISIONING_PROFILE_SPECIFIER)";
 				SDKROOT = macosx;
 			};
 			name = Release;
@@ -1174,8 +1182,9 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				CODE_SIGN_ENTITLEMENTS = TanzakuiOS/TanzakuiOS.entitlements;
+				CODE_SIGN_ENTITLEMENTS = "TanzakuiOS/TanzakuiOS$(TANZAKU_ENTITLEMENTS_FILE_SUFFIX).entitlements";
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = TanzakuiOS/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Tanzaku;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -1198,9 +1207,10 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				CODE_SIGN_ENTITLEMENTS = TanzakuiOS/TanzakuiOS.entitlements;
+				CODE_SIGN_ENTITLEMENTS = "TanzakuiOS/TanzakuiOS$(TANZAKU_ENTITLEMENTS_FILE_SUFFIX).entitlements";
 				CODE_SIGNING_ALLOWED = NO;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = TanzakuiOS/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Tanzaku;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -1215,6 +1225,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.bannzai.tanzaku;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
+				TANZAKU_ENTITLEMENTS_FILE_SUFFIX = WithoutICloud;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = DebugUnsigned;
@@ -1223,8 +1234,9 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				CODE_SIGN_ENTITLEMENTS = TanzakuiOS/TanzakuiOS.entitlements;
+				CODE_SIGN_ENTITLEMENTS = "TanzakuiOS/TanzakuiOS$(TANZAKU_ENTITLEMENTS_FILE_SUFFIX).entitlements";
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = TanzakuiOS/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Tanzaku;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
