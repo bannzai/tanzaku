@@ -52,6 +52,7 @@ private struct SettingsRoot: View {
         .modelContainer(modelContainer)
         .environment(mcpServerController)
         .environment(appDelegate.launcherShortcutController)
+        .environment(appDelegate.iCloudSyncMonitor)
       case (.failure(let error), _):
         // ストアを開けなかった理由をユーザーが知れるよう、管理ウィンドウと同じくアプリを落とさずに出す。
         Text(verbatim: error.localizedDescription)

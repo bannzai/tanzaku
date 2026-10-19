@@ -9,13 +9,16 @@ struct TanzakuiOSApp: App {
   private let modelContainerResult: Result<ModelContainer, any Error>
   /// 意味検索の埋め込みモデルとベクトル。ストアを開けなかった時は `nil`。
   private let snippetEmbeddingController: SnippetEmbeddingController?
+  /// iCloud との同期の状態。サイドバーが読む。ストアを開けなかった時は `nil`。同期するのは本体アプリだけのため、拡張と共有する `IOSModelContainer.swift` ではなくここで作る。
+  private let iCloudSyncMonitor: ICloudSyncMonitor?
   /// アプリが前面に戻ったことを知る。共有シートの拡張 (別のプロセス) が保存したスニペットのベクトルを作るため。
   @Environment(\.scenePhase) private var scenePhase
 
-  /// ストアを開き、同じストアでベクトルを作る `SnippetEmbeddingController` を作る。どちらもアプリで 1 つだけ持つため、`App` の init で作る。
+  /// ストアを開き、同じストアでベクトルを作る `SnippetEmbeddingController` と同期の状態の `ICloudSyncMonitor` を作る。どれもアプリで 1 つだけ持つため、`App` の init で作る。
   init() {
     modelContainerResult = iosModelContainerResult
     snippetEmbeddingController = (try? modelContainerResult.get()).map { SnippetEmbeddingController(modelContainer: $0) }
+    iCloudSyncMonitor = (try? modelContainerResult.get()).map { ICloudSyncMonitor(modelContainer: $0) }
   }
 
   var body: some Scene {
@@ -24,8 +27,16 @@ struct TanzakuiOSApp: App {
       case (.success(let modelContainer), .some(let snippetEmbeddingController)):
         SnippetLibraryView()
           .environment(snippetEmbeddingController)
+          .environment(iCloudSyncMonitor)
           .modelContainer(modelContainer)
           .task {
+            // 前面にある間に他の端末から届いたスニペットも、意味検索で見つかるようにベクトルを作る。
+            iCloudSyncMonitor?.onImportFinish = {
+              Task {
+                await snippetEmbeddingController.refreshEmbeddings()
+              }
+            }
+            iCloudSyncMonitor?.start()
             await snippetEmbeddingController.loadEmbeddingModel()
           }
           .onChange(of: scenePhase) { _, newScenePhase in

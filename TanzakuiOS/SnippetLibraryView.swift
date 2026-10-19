@@ -127,6 +127,8 @@ struct SnippetSidebarView: View {
   @State private var snippetGroupEditor: SnippetGroupEditorTarget?
   /// 削除の保存の失敗。
   @State private var errorMessage: String?
+  /// iCloud との同期の状態。iOS には設定の画面が無いため、サイドバーの最後に出す (`documents/DIRECTION.md`「決めたこと」)。
+  @Environment(ICloudSyncMonitor.self) private var iCloudSyncMonitor: ICloudSyncMonitor?
 
   var body: some View {
     Group {
@@ -208,6 +210,18 @@ struct SnippetSidebarView: View {
           snippetGroupEditor = SnippetGroupEditorTarget(snippetGroup: nil)
         }
         .labelStyle(.iconOnly)
+      }
+    }
+    if let iCloudSyncMonitor {
+      Section("iCloud Sync") {
+        Label {
+          Text(verbatim: iCloudSyncStatusDescription(status: iCloudSyncMonitor.status))
+            .font(.footnote)
+        } icon: {
+          Image(systemName: iCloudSyncStatusSystemImage(status: iCloudSyncMonitor.status))
+        }
+        .foregroundStyle(.secondary)
+        .accessibilityIdentifier("icloud-sync-status")
       }
     }
   }

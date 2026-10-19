@@ -30,7 +30,7 @@
 | `make dmg` | Developer ID で署名・公証・staple した Mac 版の DMG を `tmp/distribution/Tanzaku-<版>.dmg` に作る (「Mac 版のリリース」) |
 | `make clean` | `tmp/DerivedData` を消す |
 
-CI はランナーに署名 ID が無いため `SIGNING_FLAGS` を ad-hoc 署名で上書きする (`.github/workflows/ci.yml`)。
+CI はランナーに署名 ID が無いため `SIGNING_FLAGS` を ad-hoc 署名で上書きし、iCloud の entitlement を外したファイルで署名する (`TANZAKU_ENTITLEMENTS_FILE_SUFFIX=WithoutICloud`。`.github/workflows/ci.yml`)。simtunnel の `DebugUnsigned` 構成も同じファイルを使う。そのため CI・simtunnel のアプリは iCloud と同期しない。同期 (CloudKit) を確かめるのは、チームの署名でビルドしたアプリだけ (`documents/data-model.md`「CloudKit のスキーマ」)。
 
 ### 画面の確認
 
@@ -52,11 +52,13 @@ CI はランナーに署名 ID が無いため `SIGNING_FLAGS` を ad-hoc 署名
 
 ## Mac 版のリリース
 
-Mac 版は Developer ID で署名・公証した DMG を GitHub Releases に置き、Sparkle で更新を届ける。`.github/workflows/release.yml` が tag (`v<版>`) の push で、`make dmg` (DMG の署名・公証・staple。`xcrun stapler validate` と `spctl --assess` の結果は step「Build, notarize, and staple the DMG」のログに出る)、tag の GitHub Releases への DMG の配置、main の `docs/appcast.xml` への版の追加 (`scripts/macos/update_appcast.sh`) と push を行う。アプリは `Tanzaku/Info.plist` の `SUFeedURL` の appcast を読む。
+Mac 版は Developer ID で署名・公証した DMG を GitHub Releases に置き、Sparkle で更新を届ける。`.github/workflows/release.yml` が tag (`v<版>`) の push で、`make dmg` (Developer ID 用の provisioning profile の用意、DMG の署名・公証・staple。`xcrun stapler validate` と `spctl --assess` の結果は step「Build, notarize, and staple the DMG」のログに出る)、tag の GitHub Releases への DMG の配置、main の `docs/appcast.xml` への版の追加 (`scripts/macos/update_appcast.sh`) と push を行う。アプリは `Tanzaku/Info.plist` の `SUFeedURL` の appcast を読む。
 
 - 版を出す: `project.pbxproj` の `MARKETING_VERSION` を上げる PR をマージし、`git fetch origin main` → `git tag v<版> origin/main` → `git push origin v<版>`。Mac の `CFBundleVersion` は `MARKETING_VERSION` と同じ値で、Sparkle はこの値で版を比べる。tag と `MARKETING_VERSION` が違うと workflow は止まる
 - 確かめる: `gh run watch` で workflow を待ち、`gh release view v<版>` で DMG、`curl -fsSL https://bannzai.github.io/tanzaku/appcast.xml` で appcast の版を見る
-- Secrets: `DEVELOPER_ID_APPLICATION_P12_BASE64` / `DEVELOPER_ID_APPLICATION_P12_PASSWORD` (チーム `TQPN82UBBY` の Developer ID Application の証明書と秘密鍵の .p12)、`ASC_API_KEY_ID` / `ASC_API_KEY_ISSUER_ID` / `ASC_API_KEY_P8_BASE64` (notarytool の認証。`fastlane/Fastfile` と同じキー)、`SPARKLE_PRIVATE_KEY` (更新の署名の EdDSA の秘密鍵。公開鍵は `Tanzaku/Info.plist` の `SUPublicEDKey`)。登録は `bash scripts/macos/register_release_secrets.sh <.p12 のパス>` (.p12 はキーチェーンアクセスで証明書を書き出したもの)
+- Secrets: `DEVELOPER_ID_APPLICATION_P12_BASE64` / `DEVELOPER_ID_APPLICATION_P12_PASSWORD` (チーム `TQPN82UBBY` の Developer ID Application の証明書と秘密鍵の .p12)、`ASC_API_KEY_ID` / `ASC_API_KEY_ISSUER_ID` / `ASC_API_KEY_P8_BASE64` (notarytool と provisioning profile を用意する App Store Connect API の認証。`fastlane/Fastfile` と同じキー)、`SPARKLE_PRIVATE_KEY` (更新の署名の EdDSA の秘密鍵。公開鍵は `Tanzaku/Info.plist` の `SUPublicEDKey`)。登録は `bash scripts/macos/register_release_secrets.sh <.p12 のパス>` (.p12 はキーチェーンアクセスで証明書を書き出したもの)
+- provisioning profile: アプリは iCloud (CloudKit) と push の entitlement を持つため、`scripts/macos/install_developer_id_profile.rb` が App Store Connect API で Developer ID 用の profile「Tanzaku Developer ID」を用意して署名に使う。App ID `com.bannzai.tanzaku` の capability を変えて profile が無効になった時はスクリプトが止まるため、`ASC_API_KEY_*` を環境変数に入れて `ruby scripts/macos/install_developer_id_profile.rb --certificate-sha1 <証明書の SHA-1> --recreate` で作り直す (SHA-1 は `security find-identity -v -p codesigning` の Developer ID Application の行)
+- 版を出す前に、CloudKit の開発の環境のスキーマを本番へ反映する (`documents/data-model.md`「CloudKit のスキーマ」)。Developer ID の版は本番の環境を使う
 - Sparkle の秘密鍵は bannzai の Mac のログインキーチェーンの Sparkle の account `tanzaku` にある。失うと配布済みのアプリへ更新を届けられなくなる (アプリは `SUPublicEDKey` と対の鍵で署名した更新しか受け入れない) ため消さない
 - ローカルで DMG を作る: `ASC_API_KEY_*` を環境変数に入れ、キーチェーンにチームの Developer ID Application の証明書がある Mac で `make dmg`。ローカルでのビルドの条件は「ローカルで実行してよい場合」に従う
 

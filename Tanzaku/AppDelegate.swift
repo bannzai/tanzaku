@@ -37,6 +37,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
       }
     )
   }
+  /// iCloud との同期の状態。設定の「一般」が読む。ストアを開けなかった時は `nil`。
+  ///
+  /// 設定のウィンドウの scene が `applicationDidFinishLaunching` より先に読んでも同じものを渡せるよう、最初に読まれた時に作る。設定を開く前に起きた同期の失敗 (容量不足) も出すため、購読は起動時に始める。
+  private(set) lazy var iCloudSyncMonitor: ICloudSyncMonitor? = (try? modelContainerResult.get()).map { modelContainer in
+    ICloudSyncMonitor(modelContainer: modelContainer)
+  }
   /// ランチャーのショートカット。設定の「一般」と初回起動が変える。
   let launcherShortcutController = LauncherShortcutController(userDefaults: .standard)
   /// Sparkle の更新の確認。アプリのメニューの「アップデートを確認…」が使う。
@@ -74,6 +80,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     self.launcherPanelController = launcherPanelController
     // 設定のウィンドウを開かなくても AI エージェントが接続できるよう、起動時にサーバーを起動する (`documents/DIRECTION.md`「決めたこと」)。
     _ = mcpServerController
+    iCloudSyncMonitor?.onImportFinish = { [weak launcherPanelController] in
+      launcherPanelController?.refreshSnippetEmbeddingsAndSearch()
+    }
+    iCloudSyncMonitor?.start()
     launcherShortcutController.start {
       launcherPanelController.toggle()
     }
