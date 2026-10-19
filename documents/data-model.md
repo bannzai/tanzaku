@@ -31,7 +31,7 @@ iOS では、本体アプリ・共有シート・App Intents・カスタムキ�
 
 ## CloudKit のスキーマ
 
-CloudKit のコンテナには開発 (Development) と本番 (Production) の 2 つの環境があり、アプリの `com.apple.developer.icloud-container-environment` の entitlement で決まる ( https://developer.apple.com/documentation/cloudkit/ckcontainer の「Testing Your Code Using the Development Container」。「Simulator works only with the development environment.」)。2026-10-19 に Simulator で Debug ビルドを動かした時の CloudKit のログは `containerIdentifier=iCloud.com.bannzai.tanzaku, environment=Sandbox` だった。Mac 版のリリースは export で `iCloudContainerEnvironment` を `Production` にし (`scripts/macos/build_notarized_dmg.sh`)、2026-10-19 に手元で export したアプリの署名の entitlement は `com.apple.developer.icloud-container-environment = Production` だった。
+CloudKit のコンテナには開発 (Development) と本番 (Production) の 2 つの環境があり、アプリの `com.apple.developer.icloud-container-environment` の entitlement で決まる ( https://developer.apple.com/documentation/cloudkit/ckcontainer の「Testing Your Code Using the Development Container」。「Simulator works only with the development environment.」)。2026-10-19 に Simulator で Debug ビルドを動かした時の CloudKit のログは `containerIdentifier=iCloud.com.bannzai.tanzaku, environment=Sandbox` だった。`make macos` の Release ビルドは開発用の profile (Mac Team Provisioning Profile) で署名され、`com.apple.developer.icloud-container-environment` の entitlement を持たなかった (2026-10-19 に `codesign -d --entitlements -` で確認。起動はしていない)。開発用の profile のアプリは開発の環境を使う (同じ CKContainer の文書の「discover whether you're using a Development or Production version of your provisioning profile」)。Mac 版のリリースは export で `iCloudContainerEnvironment` を `Production` にし (`scripts/macos/build_notarized_dmg.sh`)、2026-10-19 に手元で export したアプリの署名の entitlement は `com.apple.developer.icloud-container-environment = Production` だった。
 
 ### 開発用のスキーマを初期化する
 
