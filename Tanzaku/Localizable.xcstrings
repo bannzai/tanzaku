@@ -1319,6 +1319,76 @@
         }
       }
     },
+    "Saved in the Keychain on this Mac" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "この Mac のキーチェーンに保存済み"
+          }
+        }
+      }
+    },
+    "Semantic Search with Jev" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jev による意味検索"
+          }
+        }
+      }
+    },
+    "TypeSafe API key" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "TypeSafe の API キー"
+          }
+        }
+      }
+    },
+    "API key" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "API キー"
+          }
+        }
+      }
+    },
+    "Ranks semantic search results with Jev" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jev で意味検索の結果を並べ替える"
+          }
+        }
+      }
+    },
+    "Remove API Key" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "API キーを削除"
+          }
+        }
+      }
+    },
+    "When you save a key, the launcher sends your search text and the beginning of up to %lld snippets closest in meaning to the TypeSafe API (Jev) to rank the semantic search results. Text that looks like a token or password is masked before sending. Without a key, search stays on this Mac." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "キーを保存すると、ランチャーは意味検索の結果を並べ替えるために、検索語と、意味が近いスニペット最大 %lld 件の先頭を TypeSafe の API (Jev) へ送ります。トークンやパスワードらしい文字列は伏せてから送ります。キーが無い時は、検索はこの Mac の中だけで行います。"
+          }
+        }
+      }
+    },
     "Search by keyword or meaning" : {
       "localizations" : {
         "ja" : {

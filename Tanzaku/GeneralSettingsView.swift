@@ -5,7 +5,7 @@ import ServiceManagement
 import SwiftUI
 import TanzakuKit
 
-/// 設定の「一般」(`documents/design/Settings.dc.html` の tab=general)。ランチャーのショートカット・前面のアプリへの直接貼り付け・タイトルとタグの自動の作成・ログイン時の起動を扱う。
+/// 設定の「一般」(`documents/design/Settings.dc.html` の tab=general)。ランチャーのショートカット・前面のアプリへの直接貼り付け・タイトルとタグの自動の作成・Jev の API キー・ログイン時の起動を扱う。
 struct GeneralSettingsView: View {
   @Environment(LauncherShortcutController.self) private var launcherShortcutController
   /// ランチャーの ⌘Return で前面のアプリに貼り付けるか。ランチャーは押した時にこの値を読む (`LauncherPanelController`)。
@@ -88,6 +88,8 @@ struct GeneralSettingsView: View {
         .foregroundStyle(.secondary)
         .accessibilityIdentifier("snippet-metadata-generation-note")
       }
+
+      JevSettingsSection()
 
       Section {
         Toggle(

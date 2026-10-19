@@ -47,6 +47,8 @@
 		7C3000000000000000000006 /* MCPServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C4000000000000000000006 /* MCPServer.swift */; };
 		7C3000000000000000000007 /* MCPServerController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C4000000000000000000007 /* MCPServerController.swift */; };
 		7C3000000000000000000008 /* MCPTokenStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C4000000000000000000008 /* MCPTokenStore.swift */; };
+		7C300000000000000000000E /* JevAPIKeyStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C400000000000000000000E /* JevAPIKeyStore.swift */; };
+		7C300000000000000000000F /* JevSettingsSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C400000000000000000000F /* JevSettingsSection.swift */; };
 		7C3000000000000000000009 /* MCPTools.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C4000000000000000000009 /* MCPTools.swift */; };
 		7C300000000000000000000A /* SnippetDeletionAuthentication.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C400000000000000000000A /* SnippetDeletionAuthentication.swift */; };
 		7C300000000000000000000B /* MCPHTTPMessageTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C400000000000000000000B /* MCPHTTPMessageTests.swift */; };
@@ -210,6 +212,8 @@
 		7C4000000000000000000006 /* MCPServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MCPServer.swift; sourceTree = "<group>"; };
 		7C4000000000000000000007 /* MCPServerController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MCPServerController.swift; sourceTree = "<group>"; };
 		7C4000000000000000000008 /* MCPTokenStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MCPTokenStore.swift; sourceTree = "<group>"; };
+		7C400000000000000000000E /* JevAPIKeyStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JevAPIKeyStore.swift; sourceTree = "<group>"; };
+		7C400000000000000000000F /* JevSettingsSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JevSettingsSection.swift; sourceTree = "<group>"; };
 		7C4000000000000000000009 /* MCPTools.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MCPTools.swift; sourceTree = "<group>"; };
 		7C400000000000000000000A /* SnippetDeletionAuthentication.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnippetDeletionAuthentication.swift; sourceTree = "<group>"; };
 		7C400000000000000000000B /* MCPHTTPMessageTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MCPHTTPMessageTests.swift; sourceTree = "<group>"; };
@@ -382,6 +386,8 @@
 				7C4000000000000000000006 /* MCPServer.swift */,
 				7C4000000000000000000007 /* MCPServerController.swift */,
 				7C4000000000000000000008 /* MCPTokenStore.swift */,
+				7C400000000000000000000E /* JevAPIKeyStore.swift */,
+				7C400000000000000000000F /* JevSettingsSection.swift */,
 				7C4000000000000000000009 /* MCPTools.swift */,
 				7C400000000000000000000A /* SnippetDeletionAuthentication.swift */,
 				7A2000000000000000000101 /* ManagerSidebar.swift */,
@@ -714,6 +720,8 @@
 				7C3000000000000000000006 /* MCPServer.swift in Sources */,
 				7C3000000000000000000007 /* MCPServerController.swift in Sources */,
 				7C3000000000000000000008 /* MCPTokenStore.swift in Sources */,
+				7C300000000000000000000E /* JevAPIKeyStore.swift in Sources */,
+				7C300000000000000000000F /* JevSettingsSection.swift in Sources */,
 				7C3000000000000000000009 /* MCPTools.swift in Sources */,
 				7C300000000000000000000A /* SnippetDeletionAuthentication.swift in Sources */,
 				7B2000000000000000000029 /* SnippetEmbeddingIndexer.swift in Sources */,

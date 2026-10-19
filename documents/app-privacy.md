@@ -12,11 +12,12 @@
 ## 回答に入れないもの
 
 - 意味検索のベクトル・設定: 端末内にだけ置き、同期もしない
+- Jev による意味検索の並べ替え (検索語と、スニペットのキーワード・タイトル・本文・添付のファイル名をつないだテキストの先頭を TypeSafe の API へ送る): Mac 版だけの機能 (#64) で、iOS 版は送らない。この回答は iOS 版のものなので入れない
 - カスタムキーボードで入力した内容: 保存も送信もしない (`documents/DIRECTION.md`「決めたこと」)
 - 問い合わせ: メールで受け付け、アプリに送信フォームを持たない
 - Analytics・Crashlytics・広告 SDK: 入れていない (`documents/DIRECTION.md`「決めたこと」)
 
 ## 見直す時
 
-- iOS 版に Jev による意味検索 (ユーザーが自分の API キーを入れた時だけ、検索語とスニペットの本文を TypeSafe の API へ送る) を入れる時は、`OTHER_USER_CONTENT` と `SEARCH_HISTORY` を APP_FUNCTIONALITY・DATA_NOT_LINKED_TO_YOU で足すかを判断し、この文書に根拠を書く。Jev を入れるかは関門 1 で未決定のため、プライバシーポリシーには記載していない (入れると決まった時に送信の説明を足す)
+- iOS 版に Jev による意味検索 (ユーザーが自分の API キーを入れた時だけ、検索語とスニペットの本文を TypeSafe の API へ送る) を入れる時は、`OTHER_USER_CONTENT` と `SEARCH_HISTORY` を APP_FUNCTIONALITY・DATA_NOT_LINKED_TO_YOU で足すかを判断し、この文書に根拠を書く。Mac 版には #64 で入れ、送信の説明はプライバシーポリシーの「Jev による意味検索の並べ替え」に書いた
 - 分析・クラッシュ収集の SDK を入れる時、購入の管理にサーバーや外部サービスを使う時、Mac で買ったライセンスを iOS で有効にするためにライセンスキーを iOS から送る時

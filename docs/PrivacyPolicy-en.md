@@ -11,7 +11,12 @@ The snippets you save in the Service (titles, bodies, keywords, tags, folders an
 If you use iCloud, your snippets, folders, tags and snippet groups are stored in your own area of iCloud provided by Apple Inc. (the CloudKit private database) so that they sync between your Mac and iOS devices. Only you can access that area, and we cannot view it. Information stored in iCloud is handled under Apple Inc.'s privacy policy ( https://www.apple.com/legal/privacy/ ).
 <!-- source: https://developer.apple.com/documentation/cloudkit/ckcontainer/privateclouddatabase "Only the user can access their private database, by default. They own all of the database's content and can view and modify that content. Data in the private database isn't visible in the developer portal." -->
 
-Searches, including semantic search, run on your device, and the contents of your snippets are not sent outside it. The data used for semantic search is created on each device and is not synced.
+The Service's searches, including semantic search, run on your device, and the contents of your snippets are not sent outside it for searching (except when you turn on "Ranking semantic search with Jev" below). How snippets are handled when you hand them to an AI agent you connect is described in "AI agent integration (MCP, Mac only)". The data used for semantic search is created on each device and is not synced.
+
+### Ranking semantic search with Jev (Mac only, only when you enter an API key)
+
+Only when you save an API key of TypeSafe AI, Inc. (which hosts its service in the United States) in the Mac version's settings, a semantic search in the launcher that has candidate snippets sends your search text and the first 200 characters of the keyword, title, body and attachment file name joined together, for each of up to 15 snippets picked in order of closeness in meaning from those that don't match the search text as a string (15 whenever there are 15 or more of them, however weakly they relate to the search text), to the TypeSafe API (Jev), which ranks the results. Text that looks like a token or password is masked before sending, but not every secret can be masked. Nothing is sent when no API key is saved or after you remove the saved key. The API key is stored in the Mac's Keychain and is not synced with iCloud. The API key is sent to the TypeSafe API with each request to authenticate it (in the `Authorization` header). The content sent is handled under TypeSafe AI, Inc.'s privacy policy ( https://typesafe.ai/privacy ). We do not receive the content sent.
+<!-- source: TanzakuKit/Sources/TanzakuKit/JevSnippetRerank.swift: jevRerankCandidateCount = 15, jevRerankCandidateMaxLength = 200, snippetTextMaskingSecrets(text:) is applied before sending, and no request is made when jevAPIKey is nil / Tanzaku/JevAPIKeyStore.swift: a generic password item without kSecAttrSynchronizable / https://developer.apple.com/documentation/security/ksecattrsynchronizable "If the key is not supplied, or has a value of kCFBooleanFalse, then no synchronizable items are added or returned." / https://typesafe.ai/privacy "TypeSafe AI, Inc.", "hosted in the United States" -->
 
 - You are responsible for backing up your snippets. We cannot recover snippets lost by replacing or resetting a device, deleting the Service, or deleting the data from iCloud.
 
@@ -59,6 +64,7 @@ The Service requires no account, and we do not collect or store your snippets or
 
 - Snippets and related data stay on your device until you delete them in the Service or delete the Service, and, if synced with iCloud, stay in your iCloud until you delete them
 - The Mac version's license key stays in the Mac's Keychain until you deactivate the license in the Service
+- The TypeSafe API key saved in the Mac version stays in the Mac's Keychain until you remove it in the settings
 - Purchaser information we receive from Lemon Squeezy is kept as long as necessary to provide the license, respond to inquiries and meet legal obligations. Information obtained by Lemon Squeezy is retained for the period set out in Lemon Squeezy's privacy policy
 - Contact details and inquiries are kept as long as we judge necessary as a record of our response, and are then deleted
 
@@ -91,3 +97,5 @@ For opinions, questions, complaints or other inquiries about the handling of use
 We may change this Policy as needed. Where a change requires your consent under law, the changed Policy applies only to users who have agreed to it in the manner we specify. When we change this Policy, we will announce the effective date and content of the changed Policy in the app or by other appropriate means, or notify you.
 
 Established: September 28, 2026
+
+Revised: October 19, 2026 (added ranking semantic search with Jev)
