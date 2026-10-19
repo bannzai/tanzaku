@@ -1,4 +1,5 @@
 import CloudKit
+import CoreData
 import Foundation
 import Testing
 
@@ -54,6 +55,14 @@ struct ICloudSyncStatusTests {
   func cloudKitErrorReturnsCode() {
     #expect(cloudKitSyncErrorCode(error: CKError(.quotaExceeded)) == .quotaExceeded)
     #expect(cloudKitSyncErrorCode(error: CKError(.networkFailure)) == .networkFailure)
+  }
+
+  @Test("終わった送信だけで失敗の理由を決め直し、受信・準備と終わっていないイベントでは決め直さない")
+  func onlyFinishedExportDecidesSyncError() {
+    #expect(isSyncErrorDecidingEvent(eventType: .export, isFinished: true))
+    #expect(!isSyncErrorDecidingEvent(eventType: .export, isFinished: false))
+    #expect(!isSyncErrorDecidingEvent(eventType: .import, isFinished: true))
+    #expect(!isSyncErrorDecidingEvent(eventType: .setup, isFinished: true))
   }
 
   @Test("レコードごとの失敗に容量不足があれば容量不足を返し、無ければ partialFailure のまま返す")

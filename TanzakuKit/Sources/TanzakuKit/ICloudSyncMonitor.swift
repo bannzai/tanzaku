@@ -54,7 +54,7 @@ public final class ICloudSyncMonitor {
     refreshAccountStatus(cloudKitContainerIdentifier: cloudKitContainerIdentifier)
   }
 
-  /// 終わった同期のイベントごとに、失敗の理由 (成功は `nil`) を流す。
+  /// 終わった送信 (export) のイベントごとに、失敗の理由 (成功は `nil`) を流す。
   ///
   /// イベントは Core Data の内部のキューから通知されるため、main actor の外で動く nonisolated な関数で組み立てる。
   private nonisolated static func finishedSyncErrorCodes() -> AnyPublisher<CKError.Code?, Never> {
@@ -63,7 +63,7 @@ public final class ICloudSyncMonitor {
         notification.userInfo?[NSPersistentCloudKitContainer.eventNotificationUserInfoKey] as? NSPersistentCloudKitContainer.Event
       }
       .filter { event in
-        event.endDate != nil
+        isSyncErrorDecidingEvent(eventType: event.type, isFinished: event.endDate != nil)
       }
       .map { event in
         cloudKitSyncErrorCode(error: event.error)

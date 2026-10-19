@@ -1,4 +1,5 @@
 import CloudKit
+import CoreData
 import Foundation
 
 /// 同期するストアと iCloud との同期の状態。Mac の設定 (一般) と iOS のサイドバーに出す。
@@ -61,6 +62,13 @@ public func cloudKitSyncErrorCode(error: (any Error)?) -> CKError.Code? {
     return .quotaExceeded
   }
   return cloudKitError.code
+}
+
+/// 同期の失敗の理由を決め直すイベントか。終わった送信 (export) だけを使う。
+///
+/// 容量不足は送信でしか起きず、受信 (import) は容量不足のままでも成功するため、受信の成功で容量不足の表示を消さない。
+public func isSyncErrorDecidingEvent(eventType: NSPersistentCloudKitContainer.EventType, isFinished: Bool) -> Bool {
+  isFinished && eventType == .export
 }
 
 /// 同期の状態の説明の文言。どの状態でもスニペットを端末に保存して使えることを伝える。
