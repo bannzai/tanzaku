@@ -19,6 +19,7 @@ require 'openssl'
 require 'optparse'
 require 'plist'
 require 'spaceship'
+require 'time'
 
 BUNDLE_IDENTIFIER = 'com.bannzai.tanzaku'
 # App Store Connect で profile を探すための名前。チーム・個人の名前を含めない。
@@ -52,10 +53,14 @@ Spaceship::ConnectAPI.token = Spaceship::ConnectAPI::Token.create(
 )
 
 # 署名に使う証明書を SHA-1 で選ぶ。更新した証明書と前の証明書が両方有効な間も、キーチェーンにある方を使うため。
-certificate = Spaceship::ConnectAPI::Certificate.all(
-  filter: { certificateType: Spaceship::ConnectAPI::Certificate::CertificateType::DEVELOPER_ID_APPLICATION }
-).find do |candidate|
-  Digest::SHA1.hexdigest(Base64.decode64(candidate.certificate_content)).upcase == certificate_sha1
+# G2 の Developer ID Application は App Store Connect API の certificateType の絞り込みに使えないため (fastlane の
+# spaceship/lib/spaceship/connect_api/models/certificate.rb)、絞り込まずに取り、型はここで見る。
+certificate = Spaceship::ConnectAPI::Certificate.all.find do |candidate|
+  [
+    Spaceship::ConnectAPI::Certificate::CertificateType::DEVELOPER_ID_APPLICATION,
+    Spaceship::ConnectAPI::Certificate::CertificateType::DEVELOPER_ID_APPLICATION_G2
+  ].include?(candidate.certificate_type) &&
+    Digest::SHA1.hexdigest(Base64.decode64(candidate.certificate_content)).upcase == certificate_sha1
 end
 if certificate.nil?
   warn "Error: SHA-1 が #{certificate_sha1} の Developer ID Application の証明書が App Store Connect に無い"
@@ -79,6 +84,8 @@ end
 def profile_problems(profile, certificate)
   problems = []
   problems << "状態が #{profile.profile_state}" unless profile.profile_state == Spaceship::ConnectAPI::Profile::ProfileState::ACTIVE
+  # 期限が切れても API の状態が ACTIVE のまま返ることがあるため、期限も見る (fastlane の Profile#valid? と同じ判定)。
+  problems << "期限切れ (#{profile.expiration_date})" unless Time.parse(profile.expiration_date) > Time.now
   problems << '署名に使う証明書を含まない' unless profile.certificates.any? { |included| included.id == certificate.id }
   entitlements = profile_plist(profile).fetch('Entitlements', {})
   unless Array(entitlements['com.apple.developer.icloud-container-identifiers']).include?(ICLOUD_CONTAINER_IDENTIFIER)
