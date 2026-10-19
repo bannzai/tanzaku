@@ -5,9 +5,11 @@ import ServiceManagement
 import SwiftUI
 import TanzakuKit
 
-/// 設定の「一般」(`documents/design/Settings.dc.html` の tab=general)。ランチャーのショートカット・前面のアプリへの直接貼り付け・タイトルとタグの自動の作成・Jev の API キー・ログイン時の起動を扱う。
+/// 設定の「一般」(`documents/design/Settings.dc.html` の tab=general)。ランチャーのショートカット・前面のアプリへの直接貼り付け・タイトルとタグの自動の作成・Jev の API キー・ログイン時の起動・iCloud との同期の状態を扱う。
 struct GeneralSettingsView: View {
   @Environment(LauncherShortcutController.self) private var launcherShortcutController
+  /// iCloud との同期の状態。ストアを開けた時は必ずある (`AppDelegate.iCloudSyncMonitor`)。
+  @Environment(ICloudSyncMonitor.self) private var iCloudSyncMonitor: ICloudSyncMonitor?
   /// ランチャーの ⌘Return で前面のアプリに貼り付けるか。ランチャーは押した時にこの値を読む (`LauncherPanelController`)。
   /// 既定はオフ。⌘V の送信は審査・誤操作の懸念があるため、ユーザーが許可した時だけにする (`documents/DIRECTION.md`「決めたこと」の直接貼り付けの行)。
   @AppStorage(directPasteEnabledUserDefaultsKey) private var isDirectPasteEnabled = false
@@ -114,6 +116,17 @@ struct GeneralSettingsView: View {
         if let launchAtLoginErrorMessage {
           Text(verbatim: launchAtLoginErrorMessage)
             .foregroundStyle(.red)
+        }
+      }
+
+      if let iCloudSyncMonitor {
+        Section("iCloud Sync") {
+          Label {
+            Text(verbatim: iCloudSyncStatusDescription(status: iCloudSyncMonitor.status))
+          } icon: {
+            Image(systemName: iCloudSyncStatusSystemImage(status: iCloudSyncMonitor.status))
+          }
+          .accessibilityIdentifier("icloud-sync-status")
         }
       }
     }

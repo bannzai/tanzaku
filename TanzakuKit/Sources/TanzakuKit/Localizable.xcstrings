@@ -80,6 +80,66 @@
           }
         }
       }
+    },
+    "This build doesn’t sync with iCloud. Snippets are kept on this device." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "このビルドは iCloud と同期しません。スニペットはこの端末に保存します。"
+          }
+        }
+      }
+    },
+    "Checking iCloud…" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "iCloud を確認しています…"
+          }
+        }
+      }
+    },
+    "Snippets sync with your other devices through iCloud." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "スニペットは iCloud でほかの端末と同期します。"
+          }
+        }
+      }
+    },
+    "You aren’t signed in to iCloud. Snippets are kept on this device until you sign in." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "iCloud にサインインしていません。サインインするまでスニペットはこの端末に保存します。"
+          }
+        }
+      }
+    },
+    "Your iCloud storage is full, so changes aren’t synced. Snippets are kept on this device." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "iCloud の容量が足りないため、変更を同期できません。スニペットはこの端末に保存します。"
+          }
+        }
+      }
+    },
+    "iCloud isn’t available right now. Snippets are kept on this device." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "iCloud を今は使えません。スニペットはこの端末に保存します。"
+          }
+        }
+      }
     }
   },
   "version" : "1.0"

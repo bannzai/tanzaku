@@ -1878,6 +1878,16 @@
           }
         }
       }
+    },
+    "iCloud Sync" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "iCloud 同期"
+          }
+        }
+      }
     }
   },
   "version" : "1.0"
