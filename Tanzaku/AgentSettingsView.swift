@@ -111,8 +111,8 @@ struct AgentSettingsView: View {
             .foregroundStyle(.secondary)
         }
         ForEach(awaitingApprovalSnippets) { snippet in
-          AwaitingApprovalSnippetRow(snippet: snippet) {
-            approve(snippet: snippet)
+          AwaitingApprovalSnippetRow(snippet: snippet) { displayedContentHash in
+            approve(snippet: snippet, displayedContentHash: displayedContentHash)
           }
         }
         if let approvalErrorMessage {
@@ -143,7 +143,13 @@ struct AgentSettingsView: View {
   }
 
   /// スニペットを承認してキーワード展開に使えるようにする。保存に失敗したら承認を取り消して理由を出す。
-  private func approve(snippet: Snippet) {
+  ///
+  /// `displayedContentHash` は行に出していた内容のハッシュ。行を出してから押すまでに MCP の更新や同期で内容が変わっていたら、見ていない内容を承認しないよう承認せずに理由を出す。
+  private func approve(snippet: Snippet, displayedContentHash: String) {
+    guard snippetKeywordExpansionContentHash(snippet: snippet) == displayedContentHash else {
+      approvalErrorMessage = String(localized: "The snippet changed before you approved it. Review it again.")
+      return
+    }
     do {
       try approveSnippetKeywordExpansion(snippet: snippet, modelContext: modelContext)
       approvalErrorMessage = nil
@@ -157,10 +163,11 @@ struct AgentSettingsView: View {
 /// 承認待ちのスニペットの 1 行。承認する前に展開される文面をすべて見られるよう、本文を省略せずに出す。
 private struct AwaitingApprovalSnippetRow: View {
   let snippet: Snippet
-  /// 「承認」を押した時の処理。
-  let onApprove: () -> Void
+  /// 「承認」を押した時の処理。行に出している内容のハッシュ (`snippetKeywordExpansionContentHash(snippet:)`) を受け取る。
+  let onApprove: (String) -> Void
 
   var body: some View {
+    let displayedContentHash = snippetKeywordExpansionContentHash(snippet: snippet)
     VStack(alignment: .leading, spacing: 6) {
       HStack(alignment: .firstTextBaseline, spacing: 10) {
         Text(verbatim: snippet.keyword ?? "")
@@ -169,11 +176,20 @@ private struct AwaitingApprovalSnippetRow: View {
           .lineLimit(1)
           .truncationMode(.tail)
         Spacer()
-        Button("Approve", action: onApprove)
+        Button("Approve") {
+          onApprove(displayedContentHash)
+        }
       }
-      Text("Updated \(snippet.updatedAt, format: .dateTime.month().day()) (changed by \(snippet.updatedByClientName ?? "") via MCP)")
-        .font(.caption)
-        .foregroundStyle(.secondary)
+      // 同期で別の端末の書き込みと組み合わさったスニペットは、更新した主体が user のまま承認待ちになり、クライアント名を持たない。
+      if snippet.updatedByKind == snippetAuthorKindMCP, let updatedByClientName = snippet.updatedByClientName {
+        Text("Updated \(snippet.updatedAt, format: .dateTime.month().day()) (changed by \(updatedByClientName) via MCP)")
+          .font(.caption)
+          .foregroundStyle(.secondary)
+      } else {
+        Text("Updated \(snippet.updatedAt, format: .dateTime.month().day())")
+          .font(.caption)
+          .foregroundStyle(.secondary)
+      }
       if let attachmentContentType = snippet.attachmentContentType {
         Label(snippetAttachmentFileName(originalFileName: snippet.attachmentFileName, contentType: attachmentContentType), systemImage: "photo")
           .font(.system(size: 12))

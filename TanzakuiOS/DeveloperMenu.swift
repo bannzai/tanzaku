@@ -129,6 +129,8 @@
           snippet.createdByClientName = "Claude Code"
           snippet.updatedByKind = "mcp"
           snippet.updatedByClientName = "Claude Code"
+          // MCP のツールと同じく承認待ちにする。同期した Mac で承認待ちのスニペットとして見えるようにするため。
+          snippet.mcpApprovedContentHash = snippetMCPUnapprovedContentHash
         }
         insertedSnippets.append(snippet)
       }

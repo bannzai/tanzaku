@@ -18,7 +18,8 @@ public func snippetKeywordExpansionContentHash(snippet: Snippet) -> String {
 /// MCP のクライアントが承認待ちにした時の `Snippet.mcpApprovedContentHash` の値。どの内容のハッシュとも一致しない。
 ///
 /// `nil` ではなくこの値にするのは、`nil` を「承認を記録する前の版で保存した」の意味に残し、同期で更新した主体が `user` と組み合わさっても承認待ちのままにするため。
-public let snippetMCPUnapprovedContentHash = ""
+/// 空文字にしないのは、CloudKit の同期の往復で空文字が `nil` と区別されて届くかを確かめられていないため。SHA-256 の 16 進の文字列にはならない値にする。
+public let snippetMCPUnapprovedContentHash = "mcp-unapproved"
 
 /// MCP のクライアントが作成・更新した内容をユーザーがまだ承認しておらず、キーワード展開に使わないスニペットか。
 ///

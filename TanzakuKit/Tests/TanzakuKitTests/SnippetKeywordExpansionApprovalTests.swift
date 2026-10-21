@@ -12,7 +12,7 @@ struct SnippetKeywordExpansionApprovalTests {
     let userSnippet = Snippet(body: "echo dummy-user")
     let mcpSnippet = Snippet(body: "echo dummy-mcp")
     mcpSnippet.updatedByKind = snippetAuthorKindMCP
-    // ユーザーが編集画面で保存した後のスニペットは、承認の属性が false のままでも更新した主体が user になる。
+    // 承認を記録する前の版で、MCP が作成した後にユーザーが編集画面で保存したスニペット。承認の記録は無く、更新した主体は user。
     let userSnippetCreatedByMCP = Snippet(body: "echo dummy-edited")
     userSnippetCreatedByMCP.createdByKind = snippetAuthorKindMCP
     modelContext.insert(userSnippet)

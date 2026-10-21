@@ -69,17 +69,19 @@ public func validateSnippetContent(body: String, attachmentData: Data?, attachme
 /// キーワードの最小の文字数。キーワード展開は打った文字の末尾がキーワードと一致した時点で置き換えるため、1 文字のキーワードは普段の入力でその文字を打つたびに置き換わる。
 public let snippetKeywordMinimumLength = 2
 
-/// キーワードの書式の検査。空白と改行だけのキーワードと、`snippetKeywordMinimumLength` より短いキーワードを保存させない。
+/// キーワードの書式の検査。空白と改行だけのキーワードと、前後の空白と改行を除いて `snippetKeywordMinimumLength` より短いキーワードを保存させない。
 ///
-/// 空白だけのキーワードは文章の途中の空白で置き換わり、短いキーワードは普段の入力で置き換わるため。`nil` と空文字はキーワードなしとして検査しない。
+/// 空白だけのキーワードは文章の途中の空白で置き換わり、短いキーワードは普段の入力で置き換わるため。` a` のように 1 文字に空白を足したキーワードも文章の途中で置き換わるため、前後の空白と改行は数えない。
+/// `nil` と空文字はキーワードなしとして検査しない。
 public func validateKeywordFormat(keyword: String?) throws {
   guard let keyword, !keyword.isEmpty else {
     return
   }
-  if keyword.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+  let trimmedKeyword = keyword.trimmingCharacters(in: .whitespacesAndNewlines)
+  if trimmedKeyword.isEmpty {
     throw SnippetValidationError.blankKeyword
   }
-  if keyword.count < snippetKeywordMinimumLength {
+  if trimmedKeyword.count < snippetKeywordMinimumLength {
     throw SnippetValidationError.keywordTooShort(minimumLength: snippetKeywordMinimumLength)
   }
 }

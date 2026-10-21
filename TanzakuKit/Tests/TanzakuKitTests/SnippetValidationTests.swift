@@ -52,14 +52,14 @@ struct SnippetValidationTests {
     }
   }
 
-  @Test("1 文字のキーワードは keywordTooShort にする", arguments: [";", "a", "あ"])
+  @Test("1 文字のキーワードと、1 文字に前後の空白を足したキーワードは keywordTooShort にする", arguments: [";", "a", "あ", " a", " ;", "a\n"])
   func oneCharacterKeywordIsRejected(keyword: String) {
     #expect(throws: SnippetValidationError.keywordTooShort(minimumLength: 2)) {
       try validateKeywordFormat(keyword: keyword)
     }
   }
 
-  @Test("2 文字以上のキーワード・キーワードなしは書式の検査を通す", arguments: [";a", "ab", " ;", ";tkw", "", nil] as [String?])
+  @Test("2 文字以上のキーワード・キーワードなしは書式の検査を通す", arguments: [";a", "ab", " ;a", ";tkw", "", nil] as [String?])
   func keywordWithEnoughCharactersIsAccepted(keyword: String?) throws {
     try validateKeywordFormat(keyword: keyword)
   }
