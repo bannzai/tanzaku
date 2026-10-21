@@ -279,6 +279,26 @@
         }
       }
     },
+    "Approve" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "承認"
+          }
+        }
+      }
+    },
+    "Awaiting approval" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "承認待ちのスニペット"
+          }
+        }
+      }
+    },
     "Back" : {
       "localizations" : {
         "ja" : {
@@ -445,6 +465,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "コピー"
+          }
+        }
+      }
+    },
+    "Could not approve: %@" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "承認できませんでした: %@"
           }
         }
       }
@@ -799,6 +829,16 @@
         }
       }
     },
+    "Keywords of snippets that AI agents added or changed do not expand until you approve them. Saving a snippet in the editor also approves it." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "AI エージェントが追加・変更したスニペットのキーワードは、承認するまで展開されません。編集画面でスニペットを保存しても承認されます。"
+          }
+        }
+      }
+    },
     "Language" : {
       "localizations" : {
         "ja" : {
@@ -965,6 +1005,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "最近使ったスニペットはありません"
+          }
+        }
+      }
+    },
+    "No snippets are awaiting approval." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "承認待ちのスニペットはありません"
           }
         }
       }

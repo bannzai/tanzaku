@@ -330,7 +330,28 @@ struct MCPServerTests {
     #expect(snippet.createdByClientName == "Claude Code")
     #expect(snippet.updatedByKind == "mcp")
     #expect(snippet.updatedByClientName == "Claude Code")
+    #expect(snippetIsAwaitingKeywordExpansionApproval(snippet: snippet))
     #expect(((result["structuredContent"] as? [String: Any])?["snippet"] as? [String: Any])?["id"] as? String == snippet.id.uuidString)
+  }
+
+  @Test("更新のツールは、承認済みのスニペットも承認待ちに戻し、承認するまでキーワード展開に使わない")
+  func updateSnippetResetsApproval() async throws {
+    let environment = try makeEnvironment()
+    let snippet = try insertSnippet(environment: environment, body: "echo dummy", keyword: "dm")
+    snippet.updatedByKind = "mcp"
+    try approveSnippetKeywordExpansion(snippet: snippet, modelContext: environment.modelContext)
+    #expect(snippetMatchingTypedText(typedText: "dm", snippets: [snippet], snippetGroups: [])?.id == snippet.id)
+
+    let result = try toolResult(
+      response: await handleMCPHTTPRequest(
+        request: try makeToolCallRequest(name: "update_snippet", arguments: ["id": snippet.id.uuidString, "body": "echo dummy updated"]),
+        environment: environment
+      )
+    )
+
+    #expect(result["isError"] as? Bool == false)
+    #expect(snippetIsAwaitingKeywordExpansionApproval(snippet: snippet))
+    #expect(snippetMatchingTypedText(typedText: "dm", snippets: [snippet], snippetGroups: []) == nil)
   }
 
   @Test("追加のツールは、作った MCP のクライアント名のタグを付ける")
@@ -349,7 +370,7 @@ struct MCPServerTests {
   @Test("追加のツールは、クライアント名と同じ名前のタグが既にあればそれを使い、タグを増やさない")
   func createSnippetReusesExistingClientNameTag() async throws {
     let environment = try makeEnvironment()
-    let existingTag = SchemaV3.Tag(name: "Claude Code")
+    let existingTag = SchemaV4.Tag(name: "Claude Code")
     environment.modelContext.insert(existingTag)
     try environment.modelContext.save()
 
@@ -359,7 +380,7 @@ struct MCPServerTests {
 
     let snippet = try #require(try fetchSnippets(environment: environment).first)
     #expect(snippet.tags?.map(\.id) == [existingTag.id])
-    #expect(try environment.modelContext.fetchCount(FetchDescriptor<SchemaV3.Tag>()) == 1)
+    #expect(try environment.modelContext.fetchCount(FetchDescriptor<SchemaV4.Tag>()) == 1)
   }
 
   @Test("追加・更新・削除を保存した後に意味検索のベクトルの作り直しを頼み、検索と取得では頼まない")
@@ -406,6 +427,29 @@ struct MCPServerTests {
     #expect(emptyBodyResult["isError"] as? Bool == true)
     #expect(duplicateKeywordResult["isError"] as? Bool == true)
     #expect(try fetchSnippets(environment: environment).count == 1)
+  }
+
+  @Test("追加・更新のツールは、1 文字と空白だけのキーワードをツールのエラーで返し、保存しない", arguments: ["d", "  "])
+  func rejectsInvalidKeywordFormat(keyword: String) async throws {
+    let environment = try makeEnvironment()
+    let snippet = try insertSnippet(environment: environment, body: "echo existing", keyword: "dm")
+
+    let createResult = try toolResult(
+      response: await handleMCPHTTPRequest(
+        request: try makeToolCallRequest(name: "create_snippet", arguments: ["body": "echo dummy", "keyword": keyword]),
+        environment: environment
+      )
+    )
+    let updateResult = try toolResult(
+      response: await handleMCPHTTPRequest(
+        request: try makeToolCallRequest(name: "update_snippet", arguments: ["id": snippet.id.uuidString, "keyword": keyword]),
+        environment: environment
+      )
+    )
+
+    #expect(createResult["isError"] as? Bool == true)
+    #expect(updateResult["isError"] as? Bool == true)
+    #expect(try fetchSnippets(environment: environment).map(\.keyword) == ["dm"])
   }
 
   @Test("検索のツールは、文字列で一致したスニペットを本文と一緒に返す")
