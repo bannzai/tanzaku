@@ -193,18 +193,3 @@ public enum SchemaV3: VersionedSchema {
     }
   }
 }
-
-/// 現在の版のスニペット。
-public typealias Snippet = SchemaV3.Snippet
-/// 現在の版のフォルダ。
-public typealias Folder = SchemaV3.Folder
-/// 現在の版のタグ。
-public typealias Tag = SchemaV3.Tag
-/// 現在の版のスニペットグループ。
-public typealias SnippetGroup = SchemaV3.SnippetGroup
-/// 現在の版のスニペットグループの項目。
-public typealias SnippetGroupItem = SchemaV3.SnippetGroupItem
-/// 現在の版の意味検索のベクトル。
-public typealias SnippetEmbedding = SchemaV3.SnippetEmbedding
-/// 現在の版の MCP クライアント。
-public typealias MCPClient = SchemaV3.MCPClient

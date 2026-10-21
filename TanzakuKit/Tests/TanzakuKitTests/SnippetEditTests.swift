@@ -19,7 +19,7 @@ struct SnippetEditTests {
     }
     #expect(snippet.modelContext == nil)
     #expect(try modelContext.fetchCount(FetchDescriptor<Snippet>()) == 0)
-    #expect(try modelContext.fetchCount(FetchDescriptor<SchemaV3.Tag>()) == 0)
+    #expect(try modelContext.fetchCount(FetchDescriptor<SchemaV4.Tag>()) == 0)
   }
 
   @Test("別のスニペットかスニペットグループと同じキーワードはエラーにし、既存のスニペットを書き換えない")
@@ -174,7 +174,7 @@ struct SnippetEditTests {
   @Test("タグは同じ名前の既存のタグを使い、無い名前だけ作る。空の名前と重複した名前は除く")
   func tagNamesAreResolved() throws {
     let modelContext = ModelContext(try makeTanzakuModelContainer(storeLocation: .inMemory, syncedStoreCloudKitDatabase: .none))
-    let existingTag = SchemaV3.Tag(name: "shell")
+    let existingTag = SchemaV4.Tag(name: "shell")
     modelContext.insert(existingTag)
     let snippet = Snippet(body: "")
 
@@ -185,6 +185,6 @@ struct SnippetEditTests {
 
     #expect(snippet.tags?.map(\.name).sorted() == ["Shell", "ci", "shell"])
     #expect(snippet.tags?.contains { $0.id == existingTag.id } == true)
-    #expect(try modelContext.fetchCount(FetchDescriptor<SchemaV3.Tag>()) == 3)
+    #expect(try modelContext.fetchCount(FetchDescriptor<SchemaV4.Tag>()) == 3)
   }
 }
