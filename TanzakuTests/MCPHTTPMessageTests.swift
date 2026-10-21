@@ -38,6 +38,43 @@ struct MCPHTTPMessageTests {
     )
   }
 
+  @Test("ログの行には、リクエストの改行・タブのバイトもエンドポイント以外のパスも書かない")
+  func logTextOmitsUntrustedPathAndControlCharacters() {
+    guard
+      case .complete(let request) = parseMCPHTTPRequest(
+        data: Data("PO\tST /mcp\n\tfake-log-line\u{1B}[0m HTTP/1.1\r\nContent-Length: 0\r\n\r\n".utf8)
+      )
+    else {
+      Issue.record("改行・タブを含むリクエスト行を 1 つのリクエストとして読めていない")
+      return
+    }
+    let logText = mcpHTTPRequestLogText(request: request, statusCode: 404)
+
+    #expect(!logText.unicodeScalars.contains { CharacterSet.controlCharacters.contains($0) })
+    #expect(!logText.contains("fake"))
+    #expect(logText == "(other method) (other path) -> 404")
+  }
+
+  @Test("メソッドに Unicode の改行 (U+2028) を入れても、ログの行にはメソッドを書かない")
+  func logTextOmitsMethodWithUnicodeLineSeparator() {
+    guard
+      case .complete(let request) = parseMCPHTTPRequest(
+        data: Data("POST\u{2028}fake-log-line /mcp HTTP/1.1\r\nContent-Length: 0\r\n\r\n".utf8)
+      )
+    else {
+      Issue.record("U+2028 を含むリクエスト行を 1 つのリクエストとして読めていない")
+      return
+    }
+    #expect(mcpHTTPRequestLogText(request: request, statusCode: 401) == "(other method) /mcp -> 401")
+  }
+
+  @Test("エンドポイントへのリクエストは、メソッド・エンドポイント・ステータスコードを書く")
+  func logTextNamesEndpoint() {
+    #expect(
+      mcpHTTPRequestLogText(request: MCPHTTPRequest(method: "POST", path: "/mcp", headers: [:], body: Data()), statusCode: 200) == "POST /mcp -> 200"
+    )
+  }
+
   @Test("レスポンスに Content-Length と Connection: close を付け、本文があれば JSON の Content-Type を付ける")
   func serializesResponse() {
     let response = MCPHTTPResponse(statusCode: 202, headers: [:], body: Data())

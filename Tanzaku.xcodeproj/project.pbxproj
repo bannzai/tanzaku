@@ -54,6 +54,7 @@
 		7C300000000000000000000B /* MCPHTTPMessageTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C400000000000000000000B /* MCPHTTPMessageTests.swift */; };
 		7C300000000000000000000C /* MCPServerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C400000000000000000000C /* MCPServerTests.swift */; };
 		7C300000000000000000000D /* MCPTokenStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C400000000000000000000D /* MCPTokenStoreTests.swift */; };
+		7C3000000000000000000010 /* MCPHTTPListenerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C4000000000000000000010 /* MCPHTTPListenerTests.swift */; };
 		7D1000000000000000000001 /* IOSModelContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D1000000000000000001001 /* IOSModelContainer.swift */; };
 		7D1000000000000000000002 /* SnippetBandColor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D1000000000000000001002 /* SnippetBandColor.swift */; };
 		7D1000000000000000000003 /* SnippetPasteboard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D1000000000000000001003 /* SnippetPasteboard.swift */; };
@@ -222,6 +223,7 @@
 		7C400000000000000000000B /* MCPHTTPMessageTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MCPHTTPMessageTests.swift; sourceTree = "<group>"; };
 		7C400000000000000000000C /* MCPServerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MCPServerTests.swift; sourceTree = "<group>"; };
 		7C400000000000000000000D /* MCPTokenStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MCPTokenStoreTests.swift; sourceTree = "<group>"; };
+		7C4000000000000000000010 /* MCPHTTPListenerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MCPHTTPListenerTests.swift; sourceTree = "<group>"; };
 		7D1000000000000000001001 /* IOSModelContainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IOSModelContainer.swift; sourceTree = "<group>"; };
 		7D1000000000000000001002 /* SnippetBandColor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnippetBandColor.swift; sourceTree = "<group>"; };
 		7D1000000000000000001003 /* SnippetPasteboard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnippetPasteboard.swift; sourceTree = "<group>"; };
@@ -463,6 +465,7 @@
 				7C400000000000000000000B /* MCPHTTPMessageTests.swift */,
 				7C400000000000000000000C /* MCPServerTests.swift */,
 				7C400000000000000000000D /* MCPTokenStoreTests.swift */,
+				7C4000000000000000000010 /* MCPHTTPListenerTests.swift */,
 				7B2000000000000000000032 /* DeveloperCommandsTests.swift */,
 				7B2000000000000000000026 /* LauncherOutputActionTests.swift */,
 				7B2000000000000000000028 /* LauncherResultListTests.swift */,
@@ -689,6 +692,7 @@
 				7C300000000000000000000B /* MCPHTTPMessageTests.swift in Sources */,
 				7C300000000000000000000C /* MCPServerTests.swift in Sources */,
 				7C300000000000000000000D /* MCPTokenStoreTests.swift in Sources */,
+				7C3000000000000000000010 /* MCPHTTPListenerTests.swift in Sources */,
 				7B2000000000000000000031 /* DeveloperCommandsTests.swift in Sources */,
 				7B2000000000000000000025 /* LauncherOutputActionTests.swift in Sources */,
 				7B2000000000000000000027 /* LauncherResultListTests.swift in Sources */,
