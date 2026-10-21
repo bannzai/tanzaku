@@ -79,7 +79,7 @@ struct TanzakuMigrationPlanTests {
     let snippets = try modelContext.fetch(FetchDescriptor<Snippet>()).sorted { ($0.keyword ?? "") < ($1.keyword ?? "") }
     #expect(snippets.map(\.keyword) == [";dummy-mcp", ";dummy-user"])
     #expect(snippets.map(\.attachmentFileName) == [nil, "dummy.png"])
-    #expect(snippets.map(\.isMCPUpdateApproved) == [false, false])
+    #expect(snippets.map(\.mcpApprovedContentHash) == [nil, nil])
     #expect(snippets.map { snippetIsAwaitingKeywordExpansionApproval(snippet: $0) } == [true, false])
   }
 

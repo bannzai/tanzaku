@@ -315,7 +315,7 @@ func createSnippetTool(arguments: [String: Any], client: MCPClient, environment:
   snippet.updatedByKind = snippetAuthorKindMCP
   snippet.createdByClientName = client.name
   snippet.updatedByClientName = client.name
-  snippet.isMCPUpdateApproved = false
+  snippet.mcpApprovedContentHash = nil
   environment.modelContext.insert(snippet)
   // リレーションは両方がストアに入っている必要があるため、スニペットを入れた後に張る。
   snippet.tags = try resolvedTags(tagNames: [client.name], modelContext: environment.modelContext)
@@ -357,7 +357,7 @@ func updateSnippetTool(arguments: [String: Any], client: MCPClient, environment:
   snippet.updatedAt = environment.now()
   snippet.updatedByKind = snippetAuthorKindMCP
   snippet.updatedByClientName = client.name
-  snippet.isMCPUpdateApproved = false
+  snippet.mcpApprovedContentHash = nil
   try saveSnippetChanges(environment: environment)
   return snippet
 }

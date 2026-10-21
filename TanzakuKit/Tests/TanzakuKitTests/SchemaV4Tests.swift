@@ -27,7 +27,7 @@ struct SchemaV4Tests {
     #expect(snippet.attachmentData == nil)
     #expect(snippet.attachmentContentType == nil)
     #expect(snippet.attachmentFileName == nil)
-    #expect(snippet.isMCPUpdateApproved == false)
+    #expect(snippet.mcpApprovedContentHash == nil)
   }
 
   @Test("添付のスニペットを保存すると、別の ModelContext から添付のデータ・種類・ファイル名を読み出せる")

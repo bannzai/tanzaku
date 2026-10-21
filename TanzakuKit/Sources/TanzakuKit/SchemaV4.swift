@@ -3,7 +3,7 @@ import SwiftData
 
 /// MCP のクライアントが作成・更新したスニペットをユーザーが承認したかを足した版のスキーマ。属性の意味・既定値・削除ルールの正は `documents/data-model.md`。
 ///
-/// `SchemaV3` から変えたのは `Snippet.isMCPUpdateApproved` の追加だけで、ほかのモデルは `SchemaV3` と同じ。SwiftData は版ごとに別のモデルの型を求めるため、すべてのモデルを置く。
+/// `SchemaV3` から変えたのは `Snippet.mcpApprovedContentHash` の追加だけで、ほかのモデルは `SchemaV3` と同じ。SwiftData は版ごとに別のモデルの型を求めるため、すべてのモデルを置く。
 /// 本番の CloudKit スキーマは追加しかできないため、この版のモデルも公開した後は書き換えない。モデルを変える時は `SchemaV5` と移行段階を足す (`.claude/rules/data-model.md`)。
 public enum SchemaV4: VersionedSchema {
   /// この版の番号。
@@ -70,10 +70,11 @@ public enum SchemaV4: VersionedSchema {
     public var attachmentContentType: String?
     /// 添付のファイル名。添付がある時だけ値を持つ。クリップボードに入れるファイルの名前と、タイトルも本文も無い時の表示名に使う。
     public var attachmentFileName: String?
-    /// MCP のクライアントによる最後の作成・更新を、ユーザーが内容を見て承認したか。承認するまでキーワード展開に使わない (`snippetIsAwaitingKeywordExpansionApproval(snippet:)`)。
+    /// MCP のクライアントが作成・更新したスニペットを、ユーザーが承認した時のキーワードと本文のハッシュ (`snippetKeywordExpansionContentHash(snippet:)`)。今のキーワードと本文のハッシュと一致するまでキーワード展開に使わない (`snippetIsAwaitingKeywordExpansionApproval(snippet:)`)。
     ///
-    /// 既定の `false` は、この属性を足す前に MCP のクライアントが作成・更新したスニペットも承認待ちにするため。更新した主体が `user` のスニペットでは読まない。
-    public var isMCPUpdateApproved: Bool = false
+    /// 承認したかの真偽値ではなく内容のハッシュにするのは、別の端末で MCP が更新した本文と、この端末で古い本文に対して行った承認が同期で組み合わさっても、見ていない本文を承認済みにしないため。
+    /// 既定の `nil` は、この属性を足す前に MCP のクライアントが作成・更新したスニペットも承認待ちにするため。更新した主体が `user` のスニペットでは読まない。
+    public var mcpApprovedContentHash: String?
 
     /// 必須の属性は本文か添付のどちらかで、添付は保存前の検査を通して書き込む (`applySnippetEdit`) ため、本文だけを受け取る。
     public init(body: String) {

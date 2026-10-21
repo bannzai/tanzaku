@@ -11,7 +11,7 @@ public enum TanzakuMigrationPlan: SchemaMigrationPlan {
   ///
   /// `SchemaV1` から `SchemaV2` へは `Snippet.lastUsedAt` (Optional) を足すだけで、既存のスニペットは `nil` (使ったことが無い) のままでよいため、値を書き換えない lightweight の移行にする。
   /// `SchemaV2` から `SchemaV3` へは `Snippet` の添付の属性 (Optional) を足すだけで、既存のスニペットは本文のスニペット (添付なし) のままでよいため、同じく lightweight の移行にする。
-  /// `SchemaV3` から `SchemaV4` へは `Snippet.isMCPUpdateApproved` (既定 `false`) を足すだけで、既存の MCP のクライアントが作成・更新したスニペットは承認待ちになればよいため、同じく lightweight の移行にする。
+  /// `SchemaV3` から `SchemaV4` へは `Snippet.mcpApprovedContentHash` (既定 `nil`) を足すだけで、既存の MCP のクライアントが作成・更新したスニペットは承認待ちになればよいため、同じく lightweight の移行にする。
   public static var stages: [MigrationStage] {
     [
       .lightweight(fromVersion: SchemaV1.self, toVersion: SchemaV2.self),

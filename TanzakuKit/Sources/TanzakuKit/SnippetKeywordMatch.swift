@@ -12,10 +12,11 @@ public func snippetMatchingTypedText(typedText: String, snippets: [Snippet], sni
     let snippet =
       snippets
       .filter({ snippet in
-        guard let keyword = snippet.keyword, !keyword.isEmpty, !snippetIsAwaitingKeywordExpansionApproval(snippet: snippet) else {
+        guard let keyword = snippet.keyword, !keyword.isEmpty else {
           return false
         }
-        return typedText.hasSuffix(keyword)
+        // 承認待ちの判定は本文のハッシュを計算するため、キー入力のたびに全スニペットで計算しないよう、キーワードが一致したスニペットだけで行う。
+        return typedText.hasSuffix(keyword) && !snippetIsAwaitingKeywordExpansionApproval(snippet: snippet)
       })
       .max(by: { ($0.keyword ?? "").count < ($1.keyword ?? "").count })
   else {
