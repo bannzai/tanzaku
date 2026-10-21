@@ -10,11 +10,22 @@ enum MCPServerState: Equatable {
   case starting
   /// 待ち受けている。
   case running(port: Int)
-  /// ポートを開けなかった (ほかのアプリが同じポートを使っている時など)。
+  /// ほかのプロセスが同じポートを使っていて開けなかった。
+  /// 登録済みのクライアントはそのプロセスへトークンを送っている恐れがあるため、ほかの失敗と分けて警告する。
+  case portInUse(port: Int)
+  /// ポートを開けなかった (ポートの使用中以外の理由)。
   case failed(message: String)
 }
 
-/// MCP のサーバーのログ。リクエストのメソッド・パス・ステータスコードだけを書き、本文とトークンは書かない (`.claude/rules/snippet-content-handling.md`)。
+/// 待ち受けを始められなかった時の状態。ポートの使用中 (`EADDRINUSE`) だけを `portInUse` にする。
+func mcpServerFailedState(error: Error, port: Int) -> MCPServerState {
+  if case .posix(.EADDRINUSE) = error as? NWError {
+    return .portInUse(port: port)
+  }
+  return .failed(message: error.localizedDescription)
+}
+
+/// MCP のサーバーのログ。リクエストのメソッド・エンドポイントと一致したか・ステータスコードだけを書き、本文とトークンは書かない (`.claude/rules/snippet-content-handling.md`)。
 /// 埋め込みモデルの準備などメインアクターの外からも書くため、メインアクターに隔離しない (`Logger` は Sendable)。
 nonisolated let mcpServerLogger = Logger(subsystem: "com.bannzai.tanzaku", category: "MCP")
 
@@ -44,7 +55,7 @@ func startMCPHTTPListener(
         // ポートが使われている時は waiting のまま再試行し続けるため、待ち受けを止めて失敗として表示する。
         mcpServerLogger.error("MCP listener failed: \(error.localizedDescription, privacy: .public)")
         listener?.cancel()
-        stateDidChange(.failed(message: error.localizedDescription))
+        stateDidChange(mcpServerFailedState(error: error, port: port))
       case .cancelled:
         break
       @unknown default:
@@ -83,7 +94,7 @@ private func receiveMCPHTTPRequest(
       case .complete(let request):
         let handlerTask = Task { @MainActor in
           let response = await handler(request)
-          mcpServerLogger.info("\(request.method, privacy: .public) \(request.path, privacy: .public) -> \(response.statusCode)")
+          mcpServerLogger.info("\(mcpHTTPRequestLogText(request: request, statusCode: response.statusCode), privacy: .public)")
           sendMCPHTTPResponse(connection: connection, response: response)
         }
         cancelMCPHTTPHandlerWhenPeerCloses(connection: connection, handlerTask: handlerTask)

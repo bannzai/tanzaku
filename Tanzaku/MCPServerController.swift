@@ -131,13 +131,16 @@ final class MCPServerController {
         },
         stateDidChange: { [weak self] state in
           self?.state = state
-          if case .failed = state {
+          switch state {
+          case .failed, .portInUse:
             self?.listener = nil
+          case .stopped, .starting, .running:
+            break
           }
         }
       )
     } catch {
-      state = .failed(message: error.localizedDescription)
+      state = mcpServerFailedState(error: error, port: mcpServerPort)
     }
   }
 

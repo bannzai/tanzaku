@@ -85,6 +85,13 @@ func parseMCPHTTPRequest(data: Data) -> MCPHTTPRequestParseResult {
   )
 }
 
+/// 1 つのリクエストの処理を記録するログの行。
+///
+/// 認証前のクライアントが送った文字列をそのままログに書くと、改行などで別の行に見せかけられるため、パスは MCP のエンドポイントと一致したかだけを書き、メソッドは制御文字を取り除いて書く。
+func mcpHTTPRequestLogText(request: MCPHTTPRequest, statusCode: Int) -> String {
+  "\(String(String.UnicodeScalarView(request.method.unicodeScalars.filter { !CharacterSet.controlCharacters.contains($0) }))) \(request.path == mcpEndpointPath ? mcpEndpointPath : "(other path)") -> \(statusCode)"
+}
+
 /// レスポンスを HTTP/1.1 のバイト列にする。1 つの接続で 1 つのリクエストだけを扱うため、常に `Connection: close` を付ける。
 func serializedMCPHTTPResponse(response: MCPHTTPResponse) -> Data {
   var headerLines = ["HTTP/1.1 \(response.statusCode) \(mcpHTTPReasonPhrase(statusCode: response.statusCode))"]

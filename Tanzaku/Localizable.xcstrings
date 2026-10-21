@@ -459,6 +459,26 @@
         }
       }
     },
+    "Could not start: Port %@ is in use" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "起動できません: ポート %@ が使われています"
+          }
+        }
+      }
+    },
+    "Another app is using port %@. AI agents you added may be sending their access tokens to that app. Quit that app, turn the MCP server off and on again, then reissue the access token and revoke the connected clients below and add them again." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ほかのアプリがポート %@ を使っています。追加した AI エージェントが、そのアプリへアクセストークンを送っている恐れがあります。そのアプリを終了して MCP サーバーをオフにしてからオンに戻し、アクセストークンを再発行して、下の接続済みのクライアントを取り消して追加し直してください。"
+          }
+        }
+      }
+    },
     "Couldn't Save the Change" : {
       "localizations" : {
         "ja" : {
@@ -1215,6 +1235,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "再発行…"
+          }
+        }
+      }
+    },
+    "Reissue Access Token…" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "アクセストークンを再発行…"
           }
         }
       }

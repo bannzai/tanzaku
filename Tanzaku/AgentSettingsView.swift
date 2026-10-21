@@ -28,6 +28,21 @@ struct AgentSettingsView: View {
             Text(mcpServerStateText(state: controller.state))
           }
         }
+        if case .portInUse(let port) = controller.state {
+          VStack(alignment: .leading, spacing: 8) {
+            Label {
+              Text(
+                "Another app is using port \(String(port)). AI agents you added may be sending their access tokens to that app. Quit that app, turn the MCP server off and on again, then reissue the access token and revoke the connected clients below and add them again."
+              )
+            } icon: {
+              Image(systemName: "exclamationmark.triangle.fill")
+                .foregroundStyle(snippetBandColor(snippetColor: .shu))
+            }
+            Button("Reissue Access Token…") {
+              isReissueConfirmationPresented = true
+            }
+          }
+        }
       }
 
       Section("Connection") {
@@ -129,7 +144,7 @@ func mcpServerStateColor(state: MCPServerState) -> Color {
     snippetBandColor(snippetColor: .matsuba)
   case .starting:
     snippetBandColor(snippetColor: .yamabuki)
-  case .failed:
+  case .failed, .portInUse:
     snippetBandColor(snippetColor: .shu)
   case .stopped:
     Color.secondary
@@ -143,6 +158,8 @@ func mcpServerStateText(state: MCPServerState) -> String {
     String(localized: "Running · Port \(String(port))")
   case .starting:
     String(localized: "Starting")
+  case .portInUse(let port):
+    String(localized: "Could not start: Port \(String(port)) is in use")
   case .failed(let message):
     String(localized: "Could not start: \(message)")
   case .stopped:
