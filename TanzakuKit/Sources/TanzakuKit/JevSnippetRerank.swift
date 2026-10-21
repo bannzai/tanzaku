@@ -99,8 +99,9 @@ func snippetTextMaskingSecrets(text: String) -> String {
     #"(?i)(?<![A-Z0-9_\-])((?>[A-Z0-9_\-]*(?:TOKEN|SECRET|PASSWORD|PASSWD|API[-_ ]?KEY|ACCESS[-_ ]?KEY|PRIVATE[-_ ]?KEY|CREDENTIAL|パスワード|トークン|API ?キー|秘密鍵|シークレット)[A-Z0-9_\-]*)["']?[ \t]*[:=：][ \t]*)"#
   // 名前と値の区切りが本文に無ければ名前のパターンは一致しないため掛けない。区切りの無い長い本文 (`credential` を区切りなしに 10,000 回並べた 10 万文字) では、
   // 名前の走査が CI の実測で 1 パターンあたり 10〜30 ms かかり、全体が Issue #70 の上限 (100 ms) を超えたため。
+  // 正規表現と同じ符号位置で比べる。`Character` で比べると、区切りの直後の結合文字 (`=\u{0301}`) が区切りと 1 文字にまとまり、区切りを見落とすため。
   let secretNameReplacements: [(pattern: String, template: String)] =
-    text.contains(where: { ":=：".contains($0) })
+    text.unicodeScalars.contains(where: { ":=：".unicodeScalars.contains($0) })
     ? [
       // 引用符で囲んだ値は空白・改行・エスケープした引用符 (`\"`) を含んでも閉じる引用符まで伏せる。名前も引用符で囲む JSON・YAML (`"password": "..."`) を含める。
       (secretName + #"(["'])(?:\\[\s\S]|(?!\2)[^\\])*\2"#, "$1$2[REDACTED]$2"),

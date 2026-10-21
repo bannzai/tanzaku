@@ -282,6 +282,18 @@ struct JevSnippetRerankTests {
     #expect(elapsed < .seconds(2), "\(word): \(elapsed)")
   }
 
+  @Test("本文に区切りがあっても、区切りの無い長い名前の語の並びで短い時間で終わる")
+  func snippetTextMaskingSecretsFinishesQuicklyForLongSecretNameWithSeparatorElsewhere() {
+    let clock = ContinuousClock()
+
+    let elapsed = clock.measure {
+      _ = snippetTextMaskingSecrets(text: "dummy=1 " + String(repeating: "TOKEN", count: 10_000))
+    }
+
+    // 区切りがあると名前のパターンを省けないため、名前を後戻りさせると前後の `*` の分け方をすべて試して数十秒かかる。上限は上のテストと同じ根拠。
+    #expect(elapsed < .seconds(2), "\(elapsed)")
+  }
+
   @Test("秘匿情報らしい文字列を伏せ、ふつうの文章・コマンド・ファイルのパスは残す")
   func snippetTextMaskingSecretsMasksOnlySecretLikeText() {
     let cases: [(text: String, maskedText: String)] = [
@@ -294,6 +306,7 @@ struct JevSnippetRerankTests {
       ("PASSWORD=\"\ndummy-secret\n\" next", "PASSWORD=\"[REDACTED]\" next"),
       ("PASSWORD=dummy,secret next", "PASSWORD=[REDACTED] next"),
       ("PASSWORD=[dummy] next", "PASSWORD=[REDACTED] next"),
+      ("PASSWORD=\u{0301}dummy-secret", "PASSWORD=[REDACTED]"),
       ("curl -H \"x-api-key: dummy\" https://example.com", "curl -H \"x-api-key: [REDACTED]\" https://example.com"),
       ("tool --api-key=dummy --verbose", "tool --api-key=[REDACTED] --verbose"),
       ("パスワード：dummy-pass です", "パスワード：[REDACTED] です"),
