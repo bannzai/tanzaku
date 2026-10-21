@@ -70,10 +70,11 @@ public enum SchemaV4: VersionedSchema {
     public var attachmentContentType: String?
     /// 添付のファイル名。添付がある時だけ値を持つ。クリップボードに入れるファイルの名前と、タイトルも本文も無い時の表示名に使う。
     public var attachmentFileName: String?
-    /// MCP のクライアントが作成・更新したスニペットを、ユーザーが承認した時のキーワードと本文のハッシュ (`snippetKeywordExpansionContentHash(snippet:)`)。今のキーワードと本文のハッシュと一致するまでキーワード展開に使わない (`snippetIsAwaitingKeywordExpansionApproval(snippet:)`)。
+    /// ユーザーが内容を見た (承認した・編集画面で保存した) 時のキーワードと本文のハッシュ (`snippetKeywordExpansionContentHash(snippet:)`)。MCP のクライアントが作成・更新すると `snippetMCPUnapprovedContentHash` になる。
+    /// 今のキーワードと本文のハッシュと一致するまでキーワード展開に使わない (`snippetIsAwaitingKeywordExpansionApproval(snippet:)`)。
     ///
-    /// 承認したかの真偽値ではなく内容のハッシュにするのは、別の端末で MCP が更新した本文と、この端末で古い本文に対して行った承認が同期で組み合わさっても、見ていない本文を承認済みにしないため。
-    /// 既定の `nil` は、この属性を足す前に MCP のクライアントが作成・更新したスニペットも承認待ちにするため。更新した主体が `user` のスニペットでは読まない。
+    /// 承認したかの真偽値ではなく内容のハッシュにするのは、別の端末の書き込みと同期で組み合わさっても、見ていない本文を承認済みにしないため。
+    /// 既定の `nil` は、この属性を足す前に保存したスニペットを表す。ユーザーが保存したものはそのまま展開し、MCP のクライアントが作成・更新したものは承認待ちにする。
     public var mcpApprovedContentHash: String?
 
     /// 必須の属性は本文か添付のどちらかで、添付は保存前の検査を通して書き込む (`applySnippetEdit`) ため、本文だけを受け取る。

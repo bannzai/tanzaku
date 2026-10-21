@@ -49,6 +49,8 @@ public func applySnippetEdit(
   snippet.updatedAt = now
   snippet.updatedByKind = "user"
   snippet.updatedByClientName = nil
+  // ユーザーが見て保存した内容を承認済みとして記録する。更新した主体だけで承認を判断すると、別の端末の MCP の本文と同期で組み合わさった時に見ていない本文を展開するため。
+  snippet.mcpApprovedContentHash = snippetKeywordExpansionContentHash(snippet: snippet)
   // 画面の `@Query` が中身の入ったスニペットとして受け取れるよう、属性を入れてからストアに入れる。リレーションは両方がストアに入っている必要があるため、その後に張る。
   if snippet.modelContext == nil {
     snippet.createdAt = now

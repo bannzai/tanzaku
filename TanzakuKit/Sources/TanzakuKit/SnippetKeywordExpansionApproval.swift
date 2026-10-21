@@ -8,19 +8,28 @@ public let snippetAuthorKindMCP = "mcp"
 /// キーワード展開で打つ文字と入る文字 (キーワードと本文) を表すハッシュ。承認した内容と今の内容が同じかを比べるために使う。
 ///
 /// キーワードと本文の間に NUL を挟み、境目を動かしただけの別の組み合わせ (`ab` + `c` と `a` + `bc`) が同じハッシュにならないようにする。
-/// 添付は含めない。MCP のクライアントは添付を変えられず (`update_snippet`)、添付を変えるのは編集画面でユーザーが保存した時だけで、その時は更新した主体が `user` になり承認を読まないため。
+/// 添付は含めない。MCP のクライアントは添付を変えられず (`update_snippet`)、添付を変えるのは編集画面でユーザーが保存した時だけのため。
 public func snippetKeywordExpansionContentHash(snippet: Snippet) -> String {
   SHA256.hash(data: Data(((snippet.keyword ?? "") + "\u{0}" + snippet.body).utf8))
     .map { String(format: "%02x", $0) }
     .joined()
 }
 
+/// MCP のクライアントが承認待ちにした時の `Snippet.mcpApprovedContentHash` の値。どの内容のハッシュとも一致しない。
+///
+/// `nil` ではなくこの値にするのは、`nil` を「承認を記録する前の版で保存した」の意味に残し、同期で更新した主体が `user` と組み合わさっても承認待ちのままにするため。
+public let snippetMCPUnapprovedContentHash = ""
+
 /// MCP のクライアントが作成・更新した内容をユーザーがまだ承認しておらず、キーワード展開に使わないスニペットか。
 ///
 /// MCP のクライアントの書き込みが、ユーザーの見ていない文面のまま他のアプリへの入力にならないようにする (#68)。
-/// ユーザーが編集画面で保存したスニペットは更新した主体が `user` になり、内容を見たものとして承認待ちにしない。
+/// 承認の記録 (承認・編集画面の保存・MCP の書き込みのどれかで入る) があれば、更新した主体によらず今の内容と比べる。別の端末の書き込みと同期で組み合わさっても、見ていない内容を展開しないため。
+/// 記録が無い (`nil`) のは承認を記録する前の版で保存したスニペットで、更新した主体が MCP の時だけ承認待ちにする。
 public func snippetIsAwaitingKeywordExpansionApproval(snippet: Snippet) -> Bool {
-  snippet.updatedByKind == snippetAuthorKindMCP && snippet.mcpApprovedContentHash != snippetKeywordExpansionContentHash(snippet: snippet)
+  guard let mcpApprovedContentHash = snippet.mcpApprovedContentHash else {
+    return snippet.updatedByKind == snippetAuthorKindMCP
+  }
+  return mcpApprovedContentHash != snippetKeywordExpansionContentHash(snippet: snippet)
 }
 
 /// 今のキーワードと本文を承認し、キーワード展開に使えるようにして保存する。

@@ -64,6 +64,38 @@ struct SnippetKeywordExpansionApprovalTests {
     #expect(snippetIsAwaitingKeywordExpansionApproval(snippet: snippet))
   }
 
+  @Test("同期で更新した主体が user と組み合わさっても、MCP の承認待ちの記録か見ていない本文があれば承認待ちにする")
+  func userAuthorKindDoesNotBypassContentHash() throws {
+    let modelContext = ModelContext(try makeTanzakuModelContainer(storeLocation: .inMemory, syncedStoreCloudKitDatabase: .none))
+    let snippet = Snippet(body: "")
+    try applySnippetEdit(
+      snippet: snippet,
+      body: "echo dummy-saved-by-user",
+      attachmentData: nil,
+      attachmentContentType: nil,
+      attachmentFileName: nil,
+      title: "",
+      keyword: ";tkw",
+      language: nil,
+      color: nil,
+      folder: nil,
+      tagNames: [],
+      modelContext: modelContext,
+      now: .now
+    )
+    #expect(snippet.updatedByKind == "user")
+    #expect(!snippetIsAwaitingKeywordExpansionApproval(snippet: snippet))
+
+    // 別の端末の MCP が書いた本文だけが届き、更新した主体と承認の記録はこの端末の保存のまま。
+    snippet.body = "echo dummy-synced-from-another-mac"
+    #expect(snippetIsAwaitingKeywordExpansionApproval(snippet: snippet))
+
+    // 別の端末の MCP が書いた承認待ちの記録だけが届き、本文と更新した主体はこの端末の保存のまま。
+    snippet.body = "echo dummy-saved-by-user"
+    snippet.mcpApprovedContentHash = snippetMCPUnapprovedContentHash
+    #expect(snippetIsAwaitingKeywordExpansionApproval(snippet: snippet))
+  }
+
   @Test("キーワードと本文の境目だけが違う組み合わせは、別のハッシュになる")
   func contentHashSeparatesKeywordAndBody() {
     let snippet = Snippet(body: "c")
