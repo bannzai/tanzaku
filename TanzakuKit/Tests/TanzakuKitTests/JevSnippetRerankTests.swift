@@ -247,6 +247,39 @@ struct JevSnippetRerankTests {
     #expect(Date.now.timeIntervalSince(startedAt) < 2)
   }
 
+  @Test(
+    "同じ語を区切りなしに 10,000 回並べた入力でも短い時間で終わる",
+    arguments: [
+      "TOKEN", "password", "API_KEY", "x-api-key", "Secret", "credential", "password=", "TOKEN:\"", "パスワード", "トークン", "APIキー",
+      "bearer", "authorization", "sk-", "ghp_", "AKIA", "://dummy:", "dummy0123456789",
+    ]
+  )
+  func snippetTextMaskingSecretsFinishesQuicklyForRepeatedWord(word: String) {
+    let clock = ContinuousClock()
+
+    let elapsed = clock.measure {
+      _ = snippetTextMaskingSecrets(text: String(repeating: word, count: 10_000))
+    }
+
+    // Issue #70 の完了条件の上限。走査が文字数の二乗になると数秒以上かかる。
+    #expect(elapsed < .milliseconds(100), "\(word): \(elapsed)")
+  }
+
+  @Test("英字と数字を含む 32 文字以上の語を 10,000 個並べた入力で、すべてを伏せ、短い時間で終わる")
+  func snippetTextMaskingSecretsMasksManyLongTokensQuickly() {
+    let longTokens = Array(repeating: "dummy0123456789dummy0123456789dummy", count: 10_000)
+    let clock = ContinuousClock()
+    var maskedText = ""
+
+    let elapsed = clock.measure {
+      maskedText = snippetTextMaskingSecrets(text: longTokens.joined(separator: " "))
+    }
+
+    #expect(maskedText == Array(repeating: "[REDACTED]", count: 10_000).joined(separator: " "))
+    // 一致のたびに文字列全体を作り直すと 35 万文字 × 1 万回の複写で数秒以上かかるため、それより十分短い上限にした。
+    #expect(elapsed < .seconds(1), "\(elapsed)")
+  }
+
   @Test("秘匿情報らしい文字列を伏せ、ふつうの文章・コマンド・ファイルのパスは残す")
   func snippetTextMaskingSecretsMasksOnlySecretLikeText() {
     let cases: [(text: String, maskedText: String)] = [
