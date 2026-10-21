@@ -2,6 +2,7 @@ import AppIntents
 import Foundation
 import SwiftData
 import TanzakuKit
+import UIKit
 
 /// ショートカット・アクションボタンで選ぶスニペット。App Intents はモデルを直接受け渡せず、`AppEntity` を求めるため置く。
 ///
@@ -42,6 +43,8 @@ nonisolated struct SnippetAppEntity: AppEntity {
 }
 
 /// ショートカットでスニペットを選ぶ時の問い合わせ。文字を入れると `snippetIntentSearchResults` で検索する。
+///
+/// `EntityQuery` には `CopySnippetIntent.authenticationPolicy` に当たる設定が無いため、端末がロック中の時はスニペットを返さず `SnippetIntentDeviceLockedError` を投げる (`requireUnlockedDeviceForSnippetIntent(isProtectedDataAvailable:)`)。Siri が候補としてタイトル・キーワードを読み上げるため。
 nonisolated struct SnippetAppEntityQuery: EntityStringQuery {
   /// ショートカットに保存した識別子のスニペット。消されたものは返さない。
   func entities(for identifiers: [UUID]) async throws -> [SnippetAppEntity] {
@@ -75,6 +78,9 @@ struct CopySnippetIntent: nonisolated AppIntent {
     IntentDescription("Copies the body of the selected snippet to the clipboard.")
   }
 
+  /// 実行に端末のロック解除を求める。既定の `.alwaysAllowed` のままだと、ロック中の端末から Siri 経由で本文をコピーでき、完了の文言でタイトルも読み上げられるため (`.claude/rules/snippet-content-handling.md`)。
+  nonisolated static let authenticationPolicy: IntentAuthenticationPolicy = .requiresAuthentication
+
   /// コピーするスニペット。ショートカットで決めていなければ実行時に選ばせる。
   @Parameter(title: "Snippet")
   var snippet: SnippetAppEntity
@@ -106,6 +112,30 @@ nonisolated struct TanzakuAppShortcuts: AppShortcutsProvider {
   }
 }
 
+/// 端末がロック中のため、ショートカット・Siri にスニペットを返せないことを表すエラー。
+///
+/// App Intents は `CustomLocalizedStringResourceConvertible` の文言を Siri・ショートカットに出す。文言にスニペットの中身を入れない。
+nonisolated struct SnippetIntentDeviceLockedError: Error, CustomStringConvertible, CustomLocalizedStringResourceConvertible {
+  /// Siri・ショートカットに出す文言。
+  var localizedStringResource: LocalizedStringResource {
+    "Unlock your device to use snippets"
+  }
+
+  /// ログ・テストで読む文言。`localizedStringResource` と同じ。
+  var description: String {
+    String(localized: localizedStringResource)
+  }
+}
+
+/// 端末がロック中なら `SnippetIntentDeviceLockedError` を投げる。`SnippetAppEntityQuery` がスニペットを返す前に通す。
+///
+/// `isProtectedDataAvailable` は `UIApplication.isProtectedDataAvailable` を渡す。パスコードを設定した端末のロック中だけ `false` になる。
+func requireUnlockedDeviceForSnippetIntent(isProtectedDataAvailable: Bool) throws {
+  guard isProtectedDataAvailable else {
+    throw SnippetIntentDeviceLockedError()
+  }
+}
+
 /// ストアのスニペットから `SnippetAppEntity` を作る。
 private func snippetAppEntities(snippets: [Snippet]) -> [SnippetAppEntity] {
   snippets.map { SnippetAppEntity(id: $0.id, title: $0.title, keyword: $0.keyword) }
@@ -113,7 +143,8 @@ private func snippetAppEntities(snippets: [Snippet]) -> [SnippetAppEntity] {
 
 /// 識別子のスニペットの `SnippetAppEntity`。
 private func snippetAppEntities(snippetIDs: [UUID]) throws -> [SnippetAppEntity] {
-  snippetAppEntities(
+  try requireUnlockedDeviceForSnippetIntent(isProtectedDataAvailable: UIApplication.shared.isProtectedDataAvailable)
+  return snippetAppEntities(
     snippets: try iosModelContainerResult.get().mainContext.fetch(FetchDescriptor<Snippet>(predicate: #Predicate { snippetIDs.contains($0.id) }))
   )
 }
@@ -122,12 +153,14 @@ private func snippetAppEntities(snippetIDs: [UUID]) throws -> [SnippetAppEntity]
 ///
 /// 意味検索は使わず、文字列の一致だけで探す。埋め込みモデルの用意に数秒かかり、ショートカットの選択肢の入力のたびに待たせるため (`documents/DIRECTION.md`「決めたこと」)。
 private func searchedSnippetAppEntities(query: String) throws -> [SnippetAppEntity] {
-  snippetAppEntities(snippets: try snippetIntentSearchResults(query: query, modelContext: iosModelContainerResult.get().mainContext, embedder: nil))
+  try requireUnlockedDeviceForSnippetIntent(isProtectedDataAvailable: UIApplication.shared.isProtectedDataAvailable)
+  return snippetAppEntities(snippets: try snippetIntentSearchResults(query: query, modelContext: iosModelContainerResult.get().mainContext, embedder: nil))
 }
 
 /// 更新日時の新しい順のすべてのスニペットの `SnippetAppEntity`。
 private func recentSnippetAppEntities() throws -> [SnippetAppEntity] {
-  snippetAppEntities(
+  try requireUnlockedDeviceForSnippetIntent(isProtectedDataAvailable: UIApplication.shared.isProtectedDataAvailable)
+  return snippetAppEntities(
     snippets: try iosModelContainerResult.get().mainContext.fetch(FetchDescriptor<Snippet>(sortBy: [SortDescriptor(\.updatedAt, order: .reverse)]))
   )
 }
