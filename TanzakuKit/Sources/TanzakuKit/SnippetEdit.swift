@@ -26,6 +26,7 @@ public func applySnippetEdit(
 ) throws {
   try validateSnippetContent(body: body, attachmentData: attachmentData, attachmentContentType: attachmentContentType)
   let optionalKeyword = keyword.isEmpty ? nil : keyword
+  try validateKeywordFormat(keyword: optionalKeyword)
   try validateKeywordIsUnique(keyword: optionalKeyword, ownerID: snippet.id, modelContext: modelContext)
   if let attachmentData, let attachmentContentType {
     snippet.body = ""

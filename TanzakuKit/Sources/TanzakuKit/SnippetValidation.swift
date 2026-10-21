@@ -6,6 +6,10 @@ import UniformTypeIdentifiers
 public enum SnippetValidationError: Error, Equatable, CustomStringConvertible {
   /// キーワードが別のスニペットかスニペットグループで使われている。
   case keywordAlreadyUsed(keyword: String)
+  /// キーワードが空白と改行だけ。
+  case blankKeyword
+  /// キーワードが最小の文字数 (`snippetKeywordMinimumLength`) より短い。
+  case keywordTooShort(minimumLength: Int)
   /// 本文が空 (空白と改行だけの本文を含む)。添付のスニペットでは出さない。
   case emptyBody
   /// 添付のデータが上限 (`snippetAttachmentMaximumByteCount`) より大きい。
@@ -20,6 +24,10 @@ public enum SnippetValidationError: Error, Equatable, CustomStringConvertible {
     switch self {
     case .keywordAlreadyUsed(let keyword):
       String(localized: "The keyword \"\(keyword)\" is already used by another snippet or snippet group.", bundle: .module)
+    case .blankKeyword:
+      String(localized: "The keyword cannot be only spaces.", bundle: .module)
+    case .keywordTooShort(let minimumLength):
+      String(localized: "The keyword must be at least \(minimumLength) characters.", bundle: .module)
     case .emptyBody:
       String(localized: "The snippet body is empty.", bundle: .module)
     case .attachmentTooLarge(let maximumByteCount):
@@ -55,6 +63,24 @@ public func validateSnippetContent(body: String, attachmentData: Data?, attachme
   }
   guard let contentType = UTType(attachmentContentType), snippetAttachmentAllowedContentTypes.contains(where: { contentType.conforms(to: $0) }) else {
     throw SnippetValidationError.unsupportedAttachmentType(contentType: attachmentContentType)
+  }
+}
+
+/// キーワードの最小の文字数。キーワード展開は打った文字の末尾がキーワードと一致した時点で置き換えるため、1 文字のキーワードは普段の入力でその文字を打つたびに置き換わる。
+public let snippetKeywordMinimumLength = 2
+
+/// キーワードの書式の検査。空白と改行だけのキーワードと、`snippetKeywordMinimumLength` より短いキーワードを保存させない。
+///
+/// 空白だけのキーワードは文章の途中の空白で置き換わり、短いキーワードは普段の入力で置き換わるため。`nil` と空文字はキーワードなしとして検査しない。
+public func validateKeywordFormat(keyword: String?) throws {
+  guard let keyword, !keyword.isEmpty else {
+    return
+  }
+  if keyword.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+    throw SnippetValidationError.blankKeyword
+  }
+  if keyword.count < snippetKeywordMinimumLength {
+    throw SnippetValidationError.keywordTooShort(minimumLength: snippetKeywordMinimumLength)
   }
 }
 

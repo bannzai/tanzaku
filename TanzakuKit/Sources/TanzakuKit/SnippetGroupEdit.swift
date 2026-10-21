@@ -15,6 +15,7 @@ public func applySnippetGroupEdit(
   now: Date
 ) throws {
   let optionalKeyword = keyword.isEmpty ? nil : keyword
+  try validateKeywordFormat(keyword: optionalKeyword)
   try validateKeywordIsUnique(keyword: optionalKeyword, ownerID: snippetGroup.id, modelContext: modelContext)
   snippetGroup.name = name
   snippetGroup.keyword = optionalKeyword
