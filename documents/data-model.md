@@ -38,7 +38,7 @@ CloudKit のコンテナには開発 (Development) と本番 (Production) の 2 
 モデルを足した・変えた時は、本番へ反映する前に開発の環境のスキーマを作り直す。Apple の手順 ( https://developer.apple.com/documentation/swiftdata/syncing-model-data-across-a-persons-devices の「Initialize the CloudKit development schema」) は、SwiftData のストアと同じファイルを `NSPersistentCloudKitContainer` で開き `initializeCloudKitSchema()` を呼ぶ。この手順はコミットしない一時的な変更として行う (起動のたびに走らせない)。
 
 1. iCloud にサインインした Simulator を `sim-boot` で起動する (simslim の `icloud` カテゴリを残す: `simslim on <udid> --except store,siri,icloud`)
-2. `TanzakuiOS/TanzakuiOSApp.swift` の `init()` の先頭に、Apple の手順の `#if DEBUG` のブロックを一時的に入れる。`ModelConfiguration` は `makeTanzakuModelContainer` と同じ同期するストアの URL (App Group の共有コンテナの `Tanzaku/Synced.store`)、`NSPersistentCloudKitContainerOptions` のコンテナは `iCloud.com.bannzai.tanzaku`、`NSManagedObjectModel.makeManagedObjectModel(for:)` に渡す型は `SchemaV3.syncedModels` (同期するストアのモデルだけ。端末内のストアのモデルを CloudKit に作らない)
+2. `TanzakuiOS/TanzakuiOSApp.swift` の `init()` の先頭に、Apple の手順の `#if DEBUG` のブロックを一時的に入れる。`ModelConfiguration` は `makeTanzakuModelContainer` と同じ同期するストアの URL (App Group の共有コンテナの `Tanzaku/Synced.store`)、`NSPersistentCloudKitContainerOptions` のコンテナは `iCloud.com.bannzai.tanzaku`、`NSManagedObjectModel.makeManagedObjectModel(for:)` に渡す型は `SchemaV4.syncedModels` (同期するストアのモデルだけ。端末内のストアのモデルを CloudKit に作らない)
 3. Debug 構成をチームの署名でビルドして起動する (`xcodebuild -scheme TanzakuiOS -configuration Debug -destination id=<udid> -allowProvisioningUpdates build` の後に `xcrun simctl install`・`xcrun simctl launch`)
 4. CloudKit Console ( https://icloud.developer.apple.com ) の開発の環境で、`CD_Snippet`・`CD_Folder`・`CD_Tag`・`CD_SnippetGroup`・`CD_SnippetGroupItem` の record type ができたことを確かめる (Core Data は record type の名前に `CD_` を付ける: https://developer.apple.com/documentation/coredata/reading-cloudkit-records-for-core-data )
 5. 2 の変更を戻す
@@ -71,6 +71,7 @@ CloudKit Console の「Deploy Schema Changes」で開発の環境のスキーマ
 | `attachmentData` | `Data?` | `nil` | 本文の代わりに出力する画像・動画 (添付) のデータ。`@Attribute(.externalStorage)` で大きなデータをストアの行の外のファイルに置き、行を読むたびに添付を読み込まないようにする。CloudKit との同期では、レコードの上限 1 MB に収まらない値を Core Data が Asset (CKAsset) に変えて送る (「If a field's value grows too large to store within the record size limit of 1MB, Core Data automatically converts the value to an external asset.」 https://developer.apple.com/documentation/coredata/reading-cloudkit-records-for-core-data )。大きさは 50,000,000 バイトまで (「Maximum file size of an Asset field: 50 MB」 https://developer.apple.com/library/archive/documentation/DataManagement/Conceptual/CloudKitWebServicesReference/PropertyMetrics.html 。Apple が Asset の大きさの上限を数値で示している文書はこれだけで、CloudKit Web Services の文書。アプリのコードで検査する)。`SchemaV3` で足した |
 | `attachmentContentType` | `String?` | `nil` | 添付の種類の UTType の識別子 (`public.png` など)。画像 (`public.image` に合うもの) と動画 (`public.movie` に合うもの) だけ。添付の有無はこの属性で判定し、データは読まない (データを読むと添付の全体をメモリに載せるため)。`SchemaV3` で足した |
 | `attachmentFileName` | `String?` | `nil` | 添付のファイル名。添付がある時は必ず値を持つ (写真のライブラリから選んだ時など名前が無い時は、種類から `image.png`・`video.mov` のように作る)。クリップボードに入れるファイルの名前と、タイトルも本文も無い時の表示名に使う。`SchemaV3` で足した |
+| `isMCPUpdateApproved` | `Bool` | `false` | MCP のクライアントによる最後の作成・更新を、ユーザーが設定の「AI エージェント」で内容を見て承認したか。`updatedByKind` が `mcp` でこれが `false` のスニペットは承認待ちで、Mac のキーワード展開に使わない。MCP の `create_snippet` / `update_snippet` は `false` にし、承認で `true` にする。承認しても `updatedAt` と更新の主体は変えない。編集画面で保存すると `updatedByKind` が `user` になり、この属性は読まない。既定の `false` は、この属性を足す前に MCP のクライアントが作成・更新したスニペットも承認待ちにするため。`SchemaV4` で足した |
 
 添付の 3 つの属性は、すべて値を持つ (添付のスニペット) か、すべて `nil` (本文のスニペット) のどちらかにする。iOS のキーボードは添付のスニペットを読み込みの条件 (`attachmentContentType == nil`) で外し、添付をメモリに載せない。
 
@@ -152,4 +153,5 @@ MCP サーバーに接続を許可したクライアント。設定画面の一�
 | --- | --- | --- |
 | `SchemaV1` | 最初の版 | |
 | `SchemaV2` | `Snippet.lastUsedAt` を足した | lightweight (既存のスニペットの `lastUsedAt` は `nil` のまま) |
-| `SchemaV3` (現在) | `Snippet.attachmentData`・`attachmentContentType`・`attachmentFileName` を足した | lightweight (既存のスニペットは本文のスニペットのまま。添付の 3 つの属性は `nil`) |
+| `SchemaV3` | `Snippet.attachmentData`・`attachmentContentType`・`attachmentFileName` を足した | lightweight (既存のスニペットは本文のスニペットのまま。添付の 3 つの属性は `nil`) |
+| `SchemaV4` (現在) | `Snippet.isMCPUpdateApproved` を足した | lightweight (既存のスニペットは `false`。`updatedByKind` が `mcp` のスニペットは承認待ちになる) |
