@@ -93,8 +93,10 @@ func snippetTextMaskingSecrets(text: String) -> String {
   // 秘匿情報を入れる名前と、名前と値の区切り。`x-api-key`・`--api-key=` のようなハイフン区切りと、日本語の名前・全角のコロンを含める。
   // 名前の前は `\b` ではなく英数字が無いことで区切る。ICU の `\b` は日本語の文字と英字の間 (`接続のPASSWORD=`) に境目を認めないため。
   // 区切りの前後は改行をまたがない。値が空の行 (`API_KEY=`) で次の行を値と見なさないため。
+  // 名前は後戻りしない (`(?>...)`)。区切りが続かない長い名前 (`TOKEN` を区切りなしに並べた本文) で、前後の `*` の分け方をすべて試して走査が文字数の二乗になるため。
+  // 名前の後ろの `*` を最後まで取った時しか区切りは続かないため、最初に見つかった名前で決めても一致は変わらない。
   let secretName =
-    #"(?i)(?<![A-Z0-9_\-])([A-Z0-9_\-]*(?:TOKEN|SECRET|PASSWORD|PASSWD|API[-_ ]?KEY|ACCESS[-_ ]?KEY|PRIVATE[-_ ]?KEY|CREDENTIAL|パスワード|トークン|API ?キー|秘密鍵|シークレット)[A-Z0-9_\-]*["']?[ \t]*[:=：][ \t]*)"#
+    #"(?i)(?<![A-Z0-9_\-])((?>[A-Z0-9_\-]*(?:TOKEN|SECRET|PASSWORD|PASSWD|API[-_ ]?KEY|ACCESS[-_ ]?KEY|PRIVATE[-_ ]?KEY|CREDENTIAL|パスワード|トークン|API ?キー|秘密鍵|シークレット)[A-Z0-9_\-]*)["']?[ \t]*[:=：][ \t]*)"#
   let replacements: [(pattern: String, template: String)] = [
     (#"-----BEGIN [A-Z ]*PRIVATE KEY-----[\s\S]*?(-----END [A-Z ]*PRIVATE KEY-----|$)"#, "[REDACTED]"),
     // 引用符で囲んだ値は空白・改行・エスケープした引用符 (`\"`) を含んでも閉じる引用符まで伏せる。名前も引用符で囲む JSON・YAML (`"password": "..."`) を含める。
