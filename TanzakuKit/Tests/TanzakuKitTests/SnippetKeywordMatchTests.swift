@@ -113,6 +113,7 @@ struct SnippetKeywordMatchTests {
   func skipsSnippetAwaitingApprovalUntilApproved() throws {
     let snippet = try insertSnippet(keyword: ";tkw", body: "dummy-command-for-test")
     snippet.updatedByKind = snippetAuthorKindMCP
+    snippet.mcpApprovedContentHash = snippetMCPUnapprovedContentHash
     snippet.updatedByClientName = "dummy-client"
     try modelContext.save()
 
@@ -128,6 +129,7 @@ struct SnippetKeywordMatchTests {
     let shortKeywordSnippet = try insertSnippet(keyword: "env", body: "echo short")
     let longKeywordSnippet = try insertSnippet(keyword: ";dev-env", body: "echo long")
     longKeywordSnippet.updatedByKind = snippetAuthorKindMCP
+    longKeywordSnippet.mcpApprovedContentHash = snippetMCPUnapprovedContentHash
     try modelContext.save()
 
     #expect(
@@ -140,6 +142,7 @@ struct SnippetKeywordMatchTests {
   func matchesSnippetSavedByUserAfterMCPUpdate() throws {
     let snippet = try insertSnippet(keyword: ";tkw", body: "dummy-command-for-test")
     snippet.updatedByKind = snippetAuthorKindMCP
+    snippet.mcpApprovedContentHash = snippetMCPUnapprovedContentHash
     try modelContext.save()
 
     try applySnippetEdit(
