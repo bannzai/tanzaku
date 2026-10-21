@@ -87,9 +87,9 @@ func parseMCPHTTPRequest(data: Data) -> MCPHTTPRequestParseResult {
 
 /// 1 つのリクエストの処理を記録するログの行。
 ///
-/// 認証前のクライアントが送った文字列をそのままログに書くと、改行などで別の行に見せかけられるため、パスは MCP のエンドポイントと一致したかだけを書き、メソッドは制御文字を取り除いて書く。
+/// 認証前のクライアントが送った文字列をそのままログに書くと、改行 (U+2028 などの Unicode の改行を含む) で別の行に見せかけられるため、外から来た値は決まった値と一致した時だけ書く。パスは MCP のエンドポイントと一致したか、メソッドは英大文字だけの 16 文字以下 (`POST`・`GET`・`DELETE` 等) かで判定する。
 func mcpHTTPRequestLogText(request: MCPHTTPRequest, statusCode: Int) -> String {
-  "\(String(String.UnicodeScalarView(request.method.unicodeScalars.filter { !CharacterSet.controlCharacters.contains($0) }))) \(request.path == mcpEndpointPath ? mcpEndpointPath : "(other path)") -> \(statusCode)"
+  "\((1...16).contains(request.method.count) && request.method.unicodeScalars.allSatisfy { ("A"..."Z").contains($0) } ? request.method : "(other method)") \(request.path == mcpEndpointPath ? mcpEndpointPath : "(other path)") -> \(statusCode)"
 }
 
 /// レスポンスを HTTP/1.1 のバイト列にする。1 つの接続で 1 つのリクエストだけを扱うため、常に `Connection: close` を付ける。

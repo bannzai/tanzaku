@@ -32,7 +32,7 @@ struct AgentSettingsView: View {
           VStack(alignment: .leading, spacing: 8) {
             Label {
               Text(
-                "Another app is using port \(String(port)). AI agents you added may be sending their access tokens to that app. Quit that app, turn the MCP server off and on again, then reissue the access token and revoke the connected clients below and add them again."
+                "Another app is using port \(String(port)). AI agents you added may be sending their access tokens to that app. First reissue the access token and revoke the connected clients below. Then quit that app, turn the MCP server off and on again, and add the clients again."
               )
             } icon: {
               Image(systemName: "exclamationmark.triangle.fill")
