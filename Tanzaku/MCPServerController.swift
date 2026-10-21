@@ -140,7 +140,11 @@ final class MCPServerController {
         }
       )
     } catch {
-      state = mcpServerFailedState(error: error, port: mcpServerPort)
+      state = mcpServerFailedState(
+        error: error,
+        port: mcpServerPort,
+        isPortAcceptingConnections: isLoopbackPortAcceptingConnections(port: mcpServerPort)
+      )
     }
   }
 
