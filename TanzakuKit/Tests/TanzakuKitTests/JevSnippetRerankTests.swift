@@ -247,6 +247,53 @@ struct JevSnippetRerankTests {
     #expect(Date.now.timeIntervalSince(startedAt) < 2)
   }
 
+  @Test(
+    "秘匿情報の名前の語を区切りなしに 10,000 回並べた入力でも 100 ms 以内に終わる",
+    // 語ごとの時間を計るため、語どうしを並列に走らせて CPU を取り合わせない。
+    .serialized,
+    arguments: ["TOKEN", "password", "API_KEY", "x-api-key", "Secret", "credential", "パスワード", "トークン"]
+  )
+  func snippetTextMaskingSecretsFinishesQuicklyForRepeatedSecretName(word: String) {
+    let clock = ContinuousClock()
+
+    let elapsed = clock.measure {
+      _ = snippetTextMaskingSecrets(text: String(repeating: word, count: 10_000))
+    }
+
+    // Issue #70 の完了条件の上限。名前の後に区切りが無いと名前の分け方をすべて試していた時は、CI で 36〜57 秒かかった。
+    #expect(elapsed < .milliseconds(100), "\(word): \(elapsed)")
+  }
+
+  @Test(
+    "秘匿情報の名前と区切り・ほかのパターンの起点の語を区切りなしに 10,000 回並べた入力でも短い時間で終わる",
+    .serialized,
+    arguments: [
+      "password=", "TOKEN:\"", "APIキー", "bearer", "authorization", "sk-", "ghp_", "AKIA", "://dummy:", "dummy0123456789",
+    ]
+  )
+  func snippetTextMaskingSecretsFinishesQuicklyForRepeatedPatternWord(word: String) {
+    let clock = ContinuousClock()
+
+    let elapsed = clock.measure {
+      _ = snippetTextMaskingSecrets(text: String(repeating: word, count: 10_000))
+    }
+
+    // 時間は文字数に比例し、CI の実測は最大 0.44 秒 (15 万文字の dummy0123456789) だった。走査が文字数の二乗になると数十秒かかるため、それより十分短い上限にした。
+    #expect(elapsed < .seconds(2), "\(word): \(elapsed)")
+  }
+
+  @Test("本文に区切りがあっても、区切りの無い長い名前の語の並びで短い時間で終わる")
+  func snippetTextMaskingSecretsFinishesQuicklyForLongSecretNameWithSeparatorElsewhere() {
+    let clock = ContinuousClock()
+
+    let elapsed = clock.measure {
+      _ = snippetTextMaskingSecrets(text: "dummy=1 " + String(repeating: "TOKEN", count: 10_000))
+    }
+
+    // 区切りがあると名前のパターンを省けないため、名前を後戻りさせると前後の `*` の分け方をすべて試して数十秒かかる。上限は上のテストと同じ根拠。
+    #expect(elapsed < .seconds(2), "\(elapsed)")
+  }
+
   @Test("秘匿情報らしい文字列を伏せ、ふつうの文章・コマンド・ファイルのパスは残す")
   func snippetTextMaskingSecretsMasksOnlySecretLikeText() {
     let cases: [(text: String, maskedText: String)] = [
@@ -259,6 +306,7 @@ struct JevSnippetRerankTests {
       ("PASSWORD=\"\ndummy-secret\n\" next", "PASSWORD=\"[REDACTED]\" next"),
       ("PASSWORD=dummy,secret next", "PASSWORD=[REDACTED] next"),
       ("PASSWORD=[dummy] next", "PASSWORD=[REDACTED] next"),
+      ("PASSWORD=\u{0301}dummy-secret", "PASSWORD=[REDACTED]"),
       ("curl -H \"x-api-key: dummy\" https://example.com", "curl -H \"x-api-key: [REDACTED]\" https://example.com"),
       ("tool --api-key=dummy --verbose", "tool --api-key=[REDACTED] --verbose"),
       ("パスワード：dummy-pass です", "パスワード：[REDACTED] です"),
