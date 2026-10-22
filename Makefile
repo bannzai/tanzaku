@@ -7,6 +7,8 @@ DERIVED_DATA := tmp/DerivedData
 SIGNING_FLAGS ?= -allowProvisioningUpdates
 
 IOS_SCHEME := TanzakuiOS
+# iOS アプリのユニットテストはアプリをホストに起動するため、具体的なシミュレータが要る。CI の macos-26 ランナーと simtunnel の既定 (AGENTS.md「画面の確認」) に揃えて iPhone 17 にする。
+IOS_TEST_DESTINATION ?= platform=iOS Simulator,name=iPhone 17
 PACKAGE_DIR := TanzakuKit
 
 .PHONY: build-macos build-ios test dmg clean
@@ -21,6 +23,7 @@ build-ios:
 test:
 	bash scripts/ios/test_resolve_device.sh
 	xcodebuild -project $(XCODEPROJ) -scheme $(SCHEME) -configuration $(CONFIGURATION) -derivedDataPath $(DERIVED_DATA) -destination 'platform=macOS' $(SIGNING_FLAGS) test
+	xcodebuild -project $(XCODEPROJ) -scheme $(IOS_SCHEME) -configuration $(CONFIGURATION) -derivedDataPath $(DERIVED_DATA) -destination '$(IOS_TEST_DESTINATION)' $(SIGNING_FLAGS) test
 	cd $(PACKAGE_DIR) && xcodebuild -scheme TanzakuKit -derivedDataPath $(CURDIR)/$(DERIVED_DATA) -destination 'platform=macOS' $(SIGNING_FLAGS) test
 
 # Developer ID で署名・公証・staple した Mac 版の DMG を tmp/distribution/Tanzaku-<版>.dmg に作る。必要な環境変数と証明書は AGENTS.md「Mac 版のリリース」。

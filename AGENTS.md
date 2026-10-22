@@ -23,7 +23,7 @@
 | `make` (= `make macos`) | Release ビルドを `/Applications/Tanzaku.app` に配置する。引数なしの `make` の実行対象で、開発者が手で動作確認する時の入口 (検査・テストは含めず CI が行う)。agent の検証手段ではない |
 | `make build-macos` | macOS アプリのビルド (`-derivedDataPath tmp/DerivedData`) |
 | `make build-ios` | iOS アプリのシミュレータ向けのビルド |
-| `make test` | `scripts/ios/resolve_device.sh` のテストと、macOS アプリと `TanzakuKit` のユニットテスト (Swift Testing) |
+| `make test` | `scripts/ios/resolve_device.sh` のテストと、macOS アプリ・iOS アプリ (iPhone 17 のシミュレータ。`IOS_TEST_DESTINATION` で変えられる)・`TanzakuKit` のユニットテスト (Swift Testing) |
 | `make verify` | `build-macos`・`build-ios`・`test` を順に実行する (CI の `.github/workflows/ci.yml` と同じ検査) |
 | `make macos-debug` | Debug ビルドを `/Applications/Tanzaku.app` に上書き配置する。開発者メニュー (見本データの削除等) のような Debug ビルドにしか無い操作を普段使いのデータに対して行う時の一時的な手段で、終わったら `make macos` で Release に戻す。agent の検証手段ではない |
 | `make ios-device` | つないだ iPhone に iOS アプリ (キーボード・共有の拡張を含む) の Debug ビルドを入れる。接続中の実機が 1 台ならそれに入れ、0 台・2 台以上の時は止まる。`DEVICE=<UDID か名前>` で入れる先を指定できる。起動はしない。`make macos` と同じく開発者が手で動作確認する時の入口で、agent の検証手段ではない |

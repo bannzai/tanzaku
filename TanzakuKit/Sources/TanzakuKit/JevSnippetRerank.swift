@@ -93,16 +93,27 @@ func snippetTextMaskingSecrets(text: String) -> String {
   // 秘匿情報を入れる名前と、名前と値の区切り。`x-api-key`・`--api-key=` のようなハイフン区切りと、日本語の名前・全角のコロンを含める。
   // 名前の前は `\b` ではなく英数字が無いことで区切る。ICU の `\b` は日本語の文字と英字の間 (`接続のPASSWORD=`) に境目を認めないため。
   // 区切りの前後は改行をまたがない。値が空の行 (`API_KEY=`) で次の行を値と見なさないため。
+  // 名前は後戻りしない (`(?>...)`)。区切りが続かない長い名前 (`TOKEN` を区切りなしに並べた本文) で、前後の `*` の分け方をすべて試して走査が文字数の二乗になるため。
+  // 最初に見つかった名前で決めても一致は変わらない。名前の後ろの `*` を最後まで取った時しか区切りは続かず、
+  // 英数字の外の文字を含む名前 (`API KEY`・`APIキー`・日本語の名前) は、前の `*` を長く取って最初に試す名前が最も後ろで終わり、それより後ろで終わる名前が無いため。
   let secretName =
-    #"(?i)(?<![A-Z0-9_\-])([A-Z0-9_\-]*(?:TOKEN|SECRET|PASSWORD|PASSWD|API[-_ ]?KEY|ACCESS[-_ ]?KEY|PRIVATE[-_ ]?KEY|CREDENTIAL|パスワード|トークン|API ?キー|秘密鍵|シークレット)[A-Z0-9_\-]*["']?[ \t]*[:=：][ \t]*)"#
-  let replacements: [(pattern: String, template: String)] = [
-    (#"-----BEGIN [A-Z ]*PRIVATE KEY-----[\s\S]*?(-----END [A-Z ]*PRIVATE KEY-----|$)"#, "[REDACTED]"),
-    // 引用符で囲んだ値は空白・改行・エスケープした引用符 (`\"`) を含んでも閉じる引用符まで伏せる。名前も引用符で囲む JSON・YAML (`"password": "..."`) を含める。
-    (secretName + #"(["'])(?:\\[\s\S]|(?!\2)[^\\])*\2"#, "$1$2[REDACTED]$2"),
-    // 閉じる引用符が無い値 (閉じ忘れ)。値がどこで終わるかを決められないため、送る側に残さないよう末尾まで伏せる。上で伏せた値は除く。
-    (secretName + #"(["'])(?!\[REDACTED\])[\s\S]*"#, "$1$2[REDACTED]"),
-    // 引用符の無い値。`,` や `[` を含む値 (`PASSWORD=ab,cd`・`PASSWORD=[ab]`) も伏せるよう、空白・引用符・`}` までを値とする。上で伏せた値は除く。
-    (secretName + #"(?!["']|\[REDACTED\])[^\s"'}]+"#, "$1[REDACTED]"),
+    #"(?i)(?<![A-Z0-9_\-])((?>[A-Z0-9_\-]*(?:TOKEN|SECRET|PASSWORD|PASSWD|API[-_ ]?KEY|ACCESS[-_ ]?KEY|PRIVATE[-_ ]?KEY|CREDENTIAL|パスワード|トークン|API ?キー|秘密鍵|シークレット)[A-Z0-9_\-]*)["']?[ \t]*[:=：][ \t]*)"#
+  // 名前と値の区切りが本文に無ければ名前のパターンは一致しないため掛けない。区切りの無い長い本文 (`credential` を区切りなしに 10,000 回並べた 10 万文字) では、
+  // 名前の走査が CI の実測で 1 パターンあたり 10〜30 ms かかり、全体が Issue #70 の上限 (100 ms) を超えたため。
+  // 正規表現と同じ符号位置で比べる。`Character` で比べると、区切りの直後の結合文字 (`=\u{0301}`) が区切りと 1 文字にまとまり、区切りを見落とすため。
+  let secretNameReplacements: [(pattern: String, template: String)] =
+    text.unicodeScalars.contains(where: { ":=：".unicodeScalars.contains($0) })
+    ? [
+      // 引用符で囲んだ値は空白・改行・エスケープした引用符 (`\"`) を含んでも閉じる引用符まで伏せる。名前も引用符で囲む JSON・YAML (`"password": "..."`) を含める。
+      (secretName + #"(["'])(?:\\[\s\S]|(?!\2)[^\\])*\2"#, "$1$2[REDACTED]$2"),
+      // 閉じる引用符が無い値 (閉じ忘れ)。値がどこで終わるかを決められないため、送る側に残さないよう末尾まで伏せる。上で伏せた値は除く。
+      (secretName + #"(["'])(?!\[REDACTED\])[\s\S]*"#, "$1$2[REDACTED]"),
+      // 引用符の無い値。`,` や `[` を含む値 (`PASSWORD=ab,cd`・`PASSWORD=[ab]`) も伏せるよう、空白・引用符・`}` までを値とする。上で伏せた値は除く。
+      (secretName + #"(?!["']|\[REDACTED\])[^\s"'}]+"#, "$1[REDACTED]"),
+    ]
+    : []
+  let replacements: [(pattern: String, template: String)] =
+    [(#"-----BEGIN [A-Z ]*PRIVATE KEY-----[\s\S]*?(-----END [A-Z ]*PRIVATE KEY-----|$)"#, "[REDACTED]")] + secretNameReplacements + [
     // `Authorization` の値は短い Basic 認証 (`dummy:x` の Base64 等) でも秘匿情報のため、長さによらず伏せる。
     // 認証の方式は決まっておらず (`ApiKey`・`AWS4-HMAC-SHA256` 等)、方式名の後に空白を含む値も続くため、方式名を含む値全体を引用符か行末まで伏せる。
     (#"(?i)((?<![A-Z0-9_\-])authorization["']?[ \t]*[:=][ \t]*["']?)[^"'\n]+"#, "$1[REDACTED]"),
