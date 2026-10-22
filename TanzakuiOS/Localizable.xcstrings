@@ -701,6 +701,16 @@
         }
       }
     },
+    "Unlock your device to use snippets" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "スニペットを使うには端末のロックを解除してください"
+          }
+        }
+      }
+    },
     "Untitled Snippet" : {
       "localizations" : {
         "ja" : {
