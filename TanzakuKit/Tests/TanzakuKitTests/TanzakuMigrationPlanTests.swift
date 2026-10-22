@@ -11,13 +11,13 @@ import Testing
 /// 並行して作ったコンテナが干渉したという仮説で、並行して実行しない。
 @Suite(.serialized)
 struct TanzakuMigrationPlanTests {
-  @Test("SchemaV1・SchemaV2・SchemaV3 を古い順に持ち、隣り合う版の間の移行段階を 2 つ持つ")
+  @Test("SchemaV1・SchemaV2・SchemaV3・SchemaV4 を古い順に持ち、隣り合う版の間の移行段階を 3 つ持つ")
   func schemasAndStages() {
     #expect(
       TanzakuMigrationPlan.schemas.map { ObjectIdentifier($0) }
-        == [ObjectIdentifier(SchemaV1.self), ObjectIdentifier(SchemaV2.self), ObjectIdentifier(SchemaV3.self)]
+        == [ObjectIdentifier(SchemaV1.self), ObjectIdentifier(SchemaV2.self), ObjectIdentifier(SchemaV3.self), ObjectIdentifier(SchemaV4.self)]
     )
-    #expect(TanzakuMigrationPlan.stages.count == 2)
+    #expect(TanzakuMigrationPlan.stages.count == 3)
   }
 
   @Test("SchemaV1 のモデルは同期するストアと端末内のストアのどちらか一方だけに入る")
@@ -49,6 +49,65 @@ struct TanzakuMigrationPlanTests {
     #expect(syncedModelNames == Set(SchemaV1.syncedModels.map { String(describing: $0) }))
     #expect(localModelNames == Set(SchemaV1.localModels.map { String(describing: $0) }))
     #expect(SchemaV3.versionIdentifier == Schema.Version(3, 0, 0))
+  }
+
+  @Test("SchemaV4 のモデルは SchemaV1 と同じ分け方で、同期するストアと端末内のストアのどちらか一方だけに入る")
+  func schemaV4ModelsAreSplitIntoStores() {
+    let syncedModelNames = Set(SchemaV4.syncedModels.map { String(describing: $0) })
+    let localModelNames = Set(SchemaV4.localModels.map { String(describing: $0) })
+    #expect(syncedModelNames.isDisjoint(with: localModelNames))
+    #expect(SchemaV4.models.count == syncedModelNames.count + localModelNames.count)
+    #expect(syncedModelNames == Set(SchemaV1.syncedModels.map { String(describing: $0) }))
+    #expect(localModelNames == Set(SchemaV1.localModels.map { String(describing: $0) }))
+    #expect(SchemaV4.versionIdentifier == Schema.Version(4, 0, 0))
+  }
+
+  @Test("SchemaV3 で保存したファイルのストアを今の版で開くと、添付が残り、MCP のクライアントが更新したスニペットだけが承認待ちになる")
+  func migratesSchemaV3StoreToCurrentVersion() throws {
+    let storeDirectoryURL = FileManager.default.temporaryDirectory.appending(path: "TanzakuMigrationPlanTests-\(UUID().uuidString)", directoryHint: .isDirectory)
+    try FileManager.default.createDirectory(at: storeDirectoryURL, withIntermediateDirectories: true)
+    defer {
+      try? FileManager.default.removeItem(at: storeDirectoryURL)
+    }
+    let syncedStoreURL = storeDirectoryURL.appending(path: "Synced.store")
+    let localStoreURL = storeDirectoryURL.appending(path: "Local.store")
+    try saveSchemaV3Store(syncedStoreURL: syncedStoreURL, localStoreURL: localStoreURL)
+
+    let modelContext = ModelContext(
+      try makeTanzakuModelContainer(storeLocation: .files(syncedStoreURL: syncedStoreURL, localStoreURL: localStoreURL), syncedStoreCloudKitDatabase: .none)
+    )
+    let snippets = try modelContext.fetch(FetchDescriptor<Snippet>()).sorted { ($0.keyword ?? "") < ($1.keyword ?? "") }
+    #expect(snippets.map(\.keyword) == [";dummy-mcp", ";dummy-user"])
+    #expect(snippets.map(\.attachmentFileName) == [nil, "dummy.png"])
+    #expect(snippets.map(\.mcpApprovedContentHash) == [nil, nil])
+    #expect(snippets.map { snippetIsAwaitingKeywordExpansionApproval(snippet: $0) } == [true, false])
+  }
+
+  /// `SchemaV3` だけを知る (移行の計画を持たない) コンテナで、MCP のクライアントが更新したスニペットと、ユーザーが保存した添付のスニペットをファイルのストアに保存する。
+  ///
+  /// 関数を抜けるとコンテナが解放され、今の版のコンテナが同じファイルを開き直せる。
+  private func saveSchemaV3Store(syncedStoreURL: URL, localStoreURL: URL) throws {
+    let modelContext = ModelContext(
+      try ModelContainer(
+        for: Schema(versionedSchema: SchemaV3.self),
+        configurations: [
+          ModelConfiguration(syncedStoreConfigurationName, schema: Schema(SchemaV3.syncedModels), url: syncedStoreURL, cloudKitDatabase: .none),
+          ModelConfiguration(localStoreConfigurationName, schema: Schema(SchemaV3.localModels), url: localStoreURL, cloudKitDatabase: .none),
+        ]
+      )
+    )
+    let mcpSnippet = SchemaV3.Snippet(body: "echo dummy-mcp")
+    mcpSnippet.keyword = ";dummy-mcp"
+    mcpSnippet.updatedByKind = "mcp"
+    mcpSnippet.updatedByClientName = "dummy-client"
+    let userSnippet = SchemaV3.Snippet(body: "")
+    userSnippet.keyword = ";dummy-user"
+    userSnippet.attachmentData = Data([0x89, 0x50, 0x4E, 0x47])
+    userSnippet.attachmentContentType = "public.png"
+    userSnippet.attachmentFileName = "dummy.png"
+    modelContext.insert(mcpSnippet)
+    modelContext.insert(userSnippet)
+    try modelContext.save()
   }
 
   @Test("SchemaV2 で保存したファイルのストアを今の版で開くと、データと lastUsedAt が残り、添付は nil になる")

@@ -93,7 +93,7 @@ struct SnippetGeneratedMetadataTests {
     // タグから付けたスニペットをたどる向きのリレーションを、ストアに確定させてから数える。
     try modelContext.save()
 
-    let existingTagNames = generatedSnippetTagPromptExistingTagNames(tags: try modelContext.fetch(FetchDescriptor<SchemaV3.Tag>()))
+    let existingTagNames = generatedSnippetTagPromptExistingTagNames(tags: try modelContext.fetch(FetchDescriptor<SchemaV4.Tag>()))
 
     #expect(existingTagNames.count == generatedSnippetTagPromptExistingTagLimit)
     #expect(Array(existingTagNames.prefix(3)) == ["shell", "auth", "tag-0"])
@@ -132,7 +132,7 @@ struct SnippetGeneratedMetadataTests {
     #expect(try applyGeneratedSnippetTags(snippet: snippet, generatedText: "shell, tmux", sourceBody: "dummy-command-for-test", modelContext: modelContext))
     #expect(Set((snippet.tags ?? []).map(\.name)) == ["shell", "tmux"])
     #expect((snippet.tags ?? []).first { $0.name == "shell" }?.id == (taggedSnippet.tags ?? []).first?.id)
-    #expect(try modelContext.fetchCount(FetchDescriptor<SchemaV3.Tag>()) == 2)
+    #expect(try modelContext.fetchCount(FetchDescriptor<SchemaV4.Tag>()) == 2)
     #expect(snippet.updatedAt == Date(timeIntervalSince1970: 0))
   }
 
@@ -148,6 +148,6 @@ struct SnippetGeneratedMetadataTests {
     let untaggedSnippet = try insertSnippet(body: "dummy-command-for-test", title: "", tagNames: [])
     #expect(try !applyGeneratedSnippetTags(snippet: untaggedSnippet, generatedText: " , ", sourceBody: "dummy-command-for-test", modelContext: modelContext))
 
-    #expect(try modelContext.fetchCount(FetchDescriptor<SchemaV3.Tag>()) == 1)
+    #expect(try modelContext.fetchCount(FetchDescriptor<SchemaV4.Tag>()) == 1)
   }
 }

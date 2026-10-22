@@ -6,6 +6,7 @@ import Foundation
 /// 片方のキーワードがもう片方の末尾になっている時 (`env` と `;dev-env` など) は長い方を選ぶ。長い方を打った時に短い方の本文に置き換えないため。
 /// スニペットグループのキーワードの方が長く一致している時は `nil` を返し、グループのメニュー (`snippetGroupMatchingTypedText(typedText:snippetGroups:)`) に任せる。
 /// キーワードはスニペットとスニペットグループで共通の名前空間で一意 (`validateKeywordIsUnique(keyword:ownerID:modelContext:)`) のため、同じ長さで両方が一致することは無い。
+/// MCP のクライアントが作成・更新してユーザーがまだ承認していないスニペット (`snippetIsAwaitingKeywordExpansionApproval(snippet:)`) は置き換えない。
 public func snippetMatchingTypedText(typedText: String, snippets: [Snippet], snippetGroups: [SnippetGroup]) -> Snippet? {
   guard
     let snippet =
@@ -14,7 +15,8 @@ public func snippetMatchingTypedText(typedText: String, snippets: [Snippet], sni
         guard let keyword = snippet.keyword, !keyword.isEmpty else {
           return false
         }
-        return typedText.hasSuffix(keyword)
+        // 承認待ちの判定は本文のハッシュを計算するため、キー入力のたびに全スニペットで計算しないよう、キーワードが一致したスニペットだけで行う。
+        return typedText.hasSuffix(keyword) && !snippetIsAwaitingKeywordExpansionApproval(snippet: snippet)
       })
       .max(by: { ($0.keyword ?? "").count < ($1.keyword ?? "").count })
   else {

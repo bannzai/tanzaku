@@ -245,6 +245,9 @@
       insertedSnippetsByKeyword["research"]?.updatedByClientName = "Claude Code"
       insertedSnippetsByKeyword["ghsec"]?.updatedByKind = "mcp"
       insertedSnippetsByKeyword["ghsec"]?.updatedByClientName = "Claude Code"
+      // 設定の「AI エージェント」の承認待ちのスニペットを確かめるため、MCP のツールと同じく承認待ちにする。
+      insertedSnippetsByKeyword["research"]?.mcpApprovedContentHash = snippetMCPUnapprovedContentHash
+      insertedSnippetsByKeyword["ghsec"]?.mcpApprovedContentHash = snippetMCPUnapprovedContentHash
       let sampleGroupKeyword: String? = managerSampleSnippetGroupKeyword
       if try modelContext.fetchCount(FetchDescriptor<SnippetGroup>(predicate: #Predicate { $0.keyword == sampleGroupKeyword })) == 0 {
         let snippetsByKeyword = Dictionary(

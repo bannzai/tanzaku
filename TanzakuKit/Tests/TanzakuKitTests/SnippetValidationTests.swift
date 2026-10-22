@@ -4,7 +4,7 @@ import Testing
 
 @testable import TanzakuKit
 
-/// 保存前の検査 (空の本文・キーワードの一意) を確かめる。
+/// 保存前の検査 (空の本文・キーワードの書式・キーワードの一意) を確かめる。
 struct SnippetValidationTests {
   @Test("本文が空か空白と改行だけならエラーにする", arguments: ["", " ", "\n\t "])
   func emptyBodyIsRejected(body: String) {
@@ -43,6 +43,52 @@ struct SnippetValidationTests {
     #expect(throws: SnippetValidationError.unsupportedAttachmentType(contentType: contentType)) {
       try validateSnippetContent(body: "", attachmentData: Data([0x00]), attachmentContentType: contentType)
     }
+  }
+
+  @Test("空白と改行だけのキーワードは blankKeyword にする", arguments: [" ", "  ", "\t", " \n"])
+  func blankKeywordIsRejected(keyword: String) {
+    #expect(throws: SnippetValidationError.blankKeyword) {
+      try validateKeywordFormat(keyword: keyword)
+    }
+  }
+
+  @Test("1 文字のキーワードと、1 文字に前後の空白を足したキーワードは keywordTooShort にする", arguments: [";", "a", "あ", " a", " ;", "a\n"])
+  func oneCharacterKeywordIsRejected(keyword: String) {
+    #expect(throws: SnippetValidationError.keywordTooShort(minimumLength: 2)) {
+      try validateKeywordFormat(keyword: keyword)
+    }
+  }
+
+  @Test("2 文字以上のキーワード・キーワードなしは書式の検査を通す", arguments: [";a", "ab", " ;a", ";tkw", "", nil] as [String?])
+  func keywordWithEnoughCharactersIsAccepted(keyword: String?) throws {
+    try validateKeywordFormat(keyword: keyword)
+  }
+
+  @Test("編集画面とスニペットグループの保存でも、1 文字と空白だけのキーワードを保存させない")
+  func editsRejectInvalidKeywordFormat() throws {
+    let modelContext = ModelContext(try makeTanzakuModelContainer(storeLocation: .inMemory, syncedStoreCloudKitDatabase: .none))
+    #expect(throws: SnippetValidationError.keywordTooShort(minimumLength: 2)) {
+      try applySnippetEdit(
+        snippet: Snippet(body: ""),
+        body: "echo dummy",
+        attachmentData: nil,
+        attachmentContentType: nil,
+        attachmentFileName: nil,
+        title: "",
+        keyword: ";",
+        language: nil,
+        color: nil,
+        folder: nil,
+        tagNames: [],
+        modelContext: modelContext,
+        now: .now
+      )
+    }
+    #expect(throws: SnippetValidationError.blankKeyword) {
+      try applySnippetGroupEdit(snippetGroup: SnippetGroup(name: ""), name: "dummy-group", keyword: "  ", snippets: [], modelContext: modelContext, now: .now)
+    }
+    #expect(try modelContext.fetchCount(FetchDescriptor<Snippet>()) == 0)
+    #expect(try modelContext.fetchCount(FetchDescriptor<SnippetGroup>()) == 0)
   }
 
   @Test("別のスニペットと同じキーワードはエラーにする")

@@ -3,14 +3,25 @@ import SwiftData
 import SwiftUI
 import TanzakuKit
 
-/// 設定の「AI エージェント」(`documents/design/Settings.dc.html`)。MCP のサーバーの状態・接続のコマンド・アクセストークン・接続済みのクライアント・削除の確認を扱う。
+/// 設定の「AI エージェント」(`documents/design/Settings.dc.html`)。MCP のサーバーの状態・接続のコマンド・アクセストークン・接続済みのクライアント・承認待ちのスニペット・削除の確認を扱う。
 struct AgentSettingsView: View {
   @Environment(MCPServerController.self) private var controller
+  @Environment(\.modelContext) private var modelContext
   /// 接続を許可したクライアント。最近使った順に並べ、まだ使っていないものは許可した新しい順に続ける。
   @Query(sort: [SortDescriptor(\MCPClient.lastUsedAt, order: .reverse), SortDescriptor(\MCPClient.createdAt, order: .reverse)])
   private var clients: [MCPClient]
+  /// キーワードを持つスニペット。更新の新しい順。承認待ちかの判定は `snippetIsAwaitingKeywordExpansionApproval(snippet:)` を正とし、`#Predicate` に写さない。
+  @Query(filter: #Predicate<Snippet> { $0.keyword != nil }, sort: [SortDescriptor(\Snippet.updatedAt, order: .reverse)])
+  private var keywordSnippets: [Snippet]
   /// トークンの再発行の確認を出しているか。
   @State private var isReissueConfirmationPresented = false
+  /// 承認の保存に失敗した理由。
+  @State private var approvalErrorMessage: String?
+
+  /// キーワード展開の承認を待っているスニペット。キーワードの無いスニペットは展開されないため並べない。
+  private var awaitingApprovalSnippets: [Snippet] {
+    keywordSnippets.filter { snippetIsAwaitingKeywordExpansionApproval(snippet: $0) }
+  }
 
   var body: some View {
     @Bindable var controller = controller
@@ -110,6 +121,26 @@ struct AgentSettingsView: View {
       }
 
       Section {
+        if awaitingApprovalSnippets.isEmpty {
+          Text("No snippets are awaiting approval.")
+            .foregroundStyle(.secondary)
+        }
+        ForEach(awaitingApprovalSnippets) { snippet in
+          AwaitingApprovalSnippetRow(snippet: snippet) { displayedContentHash in
+            approve(snippet: snippet, displayedContentHash: displayedContentHash)
+          }
+        }
+        if let approvalErrorMessage {
+          Text(approvalErrorMessage)
+            .foregroundStyle(.red)
+        }
+      } header: {
+        Text("Awaiting approval")
+      } footer: {
+        Text("Keywords of snippets that AI agents added or changed do not expand until you approve them. Saving a snippet in the editor also approves it.")
+      }
+
+      Section {
         Toggle(isOn: $controller.requiresDeletionConfirmation) {
           Text("Require Touch ID to delete")
           Text("Deletions from AI agents are not performed until you confirm with Touch ID.")
@@ -124,6 +155,70 @@ struct AgentSettingsView: View {
     } message: {
       Text("The current token stops working. Clients that are already connected keep their own tokens.")
     }
+  }
+
+  /// スニペットを承認してキーワード展開に使えるようにする。保存に失敗したら承認を取り消して理由を出す。
+  ///
+  /// `displayedContentHash` は行に出していた内容のハッシュ。行を出してから押すまでに MCP の更新や同期で内容が変わっていたら、見ていない内容を承認しないよう承認せずに理由を出す。
+  private func approve(snippet: Snippet, displayedContentHash: String) {
+    guard snippetKeywordExpansionContentHash(snippet: snippet) == displayedContentHash else {
+      approvalErrorMessage = String(localized: "The snippet changed before you approved it. Review it again.")
+      return
+    }
+    do {
+      try approveSnippetKeywordExpansion(snippet: snippet, modelContext: modelContext)
+      approvalErrorMessage = nil
+    } catch {
+      modelContext.rollback()
+      approvalErrorMessage = String(localized: "Could not approve: \(error.localizedDescription)")
+    }
+  }
+}
+
+/// 承認待ちのスニペットの 1 行。承認する前に展開される文面をすべて見られるよう、本文を省略せずに出す。
+private struct AwaitingApprovalSnippetRow: View {
+  let snippet: Snippet
+  /// 「承認」を押した時の処理。行に出している内容のハッシュ (`snippetKeywordExpansionContentHash(snippet:)`) を受け取る。
+  let onApprove: (String) -> Void
+
+  var body: some View {
+    let displayedContentHash = snippetKeywordExpansionContentHash(snippet: snippet)
+    VStack(alignment: .leading, spacing: 6) {
+      HStack(alignment: .firstTextBaseline, spacing: 10) {
+        Text(verbatim: snippet.keyword ?? "")
+          .font(.system(size: 12, weight: .semibold, design: .monospaced))
+        Text(verbatim: snippetDisplayTitle(snippet: snippet))
+          .lineLimit(1)
+          .truncationMode(.tail)
+        Spacer()
+        Button("Approve") {
+          onApprove(displayedContentHash)
+        }
+      }
+      // 同期で別の端末の書き込みと組み合わさったスニペットは、更新した主体が user のまま承認待ちになり、クライアント名を持たない。
+      if snippet.updatedByKind == snippetAuthorKindMCP, let updatedByClientName = snippet.updatedByClientName {
+        Text("Updated \(snippet.updatedAt, format: .dateTime.month().day()) (changed by \(updatedByClientName) via MCP)")
+          .font(.caption)
+          .foregroundStyle(.secondary)
+      } else {
+        Text("Updated \(snippet.updatedAt, format: .dateTime.month().day())")
+          .font(.caption)
+          .foregroundStyle(.secondary)
+      }
+      if let attachmentContentType = snippet.attachmentContentType {
+        Label(snippetAttachmentFileName(originalFileName: snippet.attachmentFileName, contentType: attachmentContentType), systemImage: "photo")
+          .font(.system(size: 12))
+      } else {
+        Text(verbatim: snippet.body)
+          .font(.system(size: 12, design: .monospaced))
+          .textSelection(.enabled)
+          .padding(.vertical, 8)
+          .padding(.horizontal, 10)
+          .frame(maxWidth: .infinity, alignment: .leading)
+          .background(.quaternary.opacity(0.4), in: RoundedRectangle(cornerRadius: 6))
+      }
+    }
+    .padding(.vertical, 4)
   }
 }
 

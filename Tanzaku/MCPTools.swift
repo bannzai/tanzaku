@@ -2,9 +2,6 @@ import Foundation
 import SwiftData
 import TanzakuKit
 
-/// `Snippet.createdByKind` / `updatedByKind` の、MCP のクライアントが作成・更新したことを表す値 (`documents/data-model.md`「Snippet」)。
-let snippetAuthorKindMCP = "mcp"
-
 /// MCP の削除のツールが、確認の画面に出す依頼。
 struct SnippetDeletionRequest: Identifiable {
   /// 確認の画面を依頼ごとに区別する識別子。
@@ -80,13 +77,13 @@ let mcpToolDefinitions: [[String: Any]] = [
     "name": "create_snippet",
     "title": "Create a snippet",
     "description":
-      "Creates a snippet. Only body is required. The keyword must be unique among snippets and snippet groups. The snippet is recorded as created by this MCP client and gets a tag named after this MCP client.",
+      "Creates a snippet. Only body is required. The keyword must be unique among snippets and snippet groups. The snippet is recorded as created by this MCP client and gets a tag named after this MCP client. Its keyword does not expand until the user reviews and approves the snippet in Tanzaku's settings.",
     "inputSchema": [
       "type": "object",
       "properties": [
         "body": ["type": "string", "description": "The text to output. Must not be empty."],
         "title": ["type": "string", "description": "Display name. Without it, the first line of the body is shown."],
-        "keyword": ["type": "string", "description": "Abbreviation that expands to the body."],
+        "keyword": ["type": "string", "description": "Abbreviation that expands to the body. At least 2 characters and not only spaces."],
         "language": ["type": "string", "description": "Language for syntax highlighting, such as swift or shell. Omit for plain text."],
       ],
       "required": ["body"],
@@ -97,14 +94,14 @@ let mcpToolDefinitions: [[String: Any]] = [
     "name": "update_snippet",
     "title": "Update a snippet",
     "description":
-      "Updates a snippet. Only the given fields change. Pass an empty string to clear title, keyword, or language. The body of a snippet that holds an image or video cannot be set. The snippet is recorded as updated by this MCP client.",
+      "Updates a snippet. Only the given fields change. Pass an empty string to clear title, keyword, or language. The body of a snippet that holds an image or video cannot be set. The snippet is recorded as updated by this MCP client, and its keyword does not expand until the user reviews and approves the snippet in Tanzaku's settings.",
     "inputSchema": [
       "type": "object",
       "properties": [
         "id": ["type": "string", "description": "The snippet id (UUID)."],
         "body": ["type": "string", "description": "The text to output. Must not be empty."],
         "title": ["type": "string"],
-        "keyword": ["type": "string"],
+        "keyword": ["type": "string", "description": "At least 2 characters and not only spaces."],
         "language": ["type": "string"],
       ],
       "required": ["id"],
@@ -310,6 +307,7 @@ func createSnippetTool(arguments: [String: Any], client: MCPClient, environment:
   snippet.title = try mcpStringArgument(arguments: arguments, name: "title").flatMap { mcpOptionalText(text: $0) }
   snippet.keyword = try mcpStringArgument(arguments: arguments, name: "keyword").flatMap { mcpOptionalText(text: $0) }
   snippet.language = try mcpStringArgument(arguments: arguments, name: "language").flatMap { mcpOptionalText(text: $0) }
+  try validateKeywordFormat(keyword: snippet.keyword)
   try validateKeywordIsUnique(keyword: snippet.keyword, ownerID: snippet.id, modelContext: environment.modelContext)
   snippet.createdAt = environment.now()
   snippet.updatedAt = snippet.createdAt
@@ -317,6 +315,7 @@ func createSnippetTool(arguments: [String: Any], client: MCPClient, environment:
   snippet.updatedByKind = snippetAuthorKindMCP
   snippet.createdByClientName = client.name
   snippet.updatedByClientName = client.name
+  snippet.mcpApprovedContentHash = snippetMCPUnapprovedContentHash
   environment.modelContext.insert(snippet)
   // リレーションは両方がストアに入っている必要があるため、スニペットを入れた後に張る。
   snippet.tags = try resolvedTags(tagNames: [client.name], modelContext: environment.modelContext)
@@ -340,6 +339,7 @@ func updateSnippetTool(arguments: [String: Any], client: MCPClient, environment:
     try validateSnippetBody(body: body)
   }
   if let keyword {
+    try validateKeywordFormat(keyword: mcpOptionalText(text: keyword))
     try validateKeywordIsUnique(keyword: mcpOptionalText(text: keyword), ownerID: snippet.id, modelContext: environment.modelContext)
   }
   if let body {
@@ -357,6 +357,7 @@ func updateSnippetTool(arguments: [String: Any], client: MCPClient, environment:
   snippet.updatedAt = environment.now()
   snippet.updatedByKind = snippetAuthorKindMCP
   snippet.updatedByClientName = client.name
+  snippet.mcpApprovedContentHash = snippetMCPUnapprovedContentHash
   try saveSnippetChanges(environment: environment)
   return snippet
 }

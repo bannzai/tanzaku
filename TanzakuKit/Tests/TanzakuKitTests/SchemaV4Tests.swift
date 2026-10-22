@@ -4,8 +4,8 @@ import Testing
 
 @testable import TanzakuKit
 
-/// 現在の版 (`SchemaV3`) の既定値と削除ルールが `documents/data-model.md` のとおりかを、インメモリのストアで確かめる。
-struct SchemaV3Tests {
+/// 現在の版 (`SchemaV4`) の既定値と削除ルールが `documents/data-model.md` のとおりかを、インメモリのストアで確かめる。
+struct SchemaV4Tests {
   @Test("Snippet は本文以外が既定値で作られる")
   func snippetDefaults() throws {
     let modelContext = ModelContext(try makeTanzakuModelContainer(storeLocation: .inMemory, syncedStoreCloudKitDatabase: .none))
@@ -27,6 +27,7 @@ struct SchemaV3Tests {
     #expect(snippet.attachmentData == nil)
     #expect(snippet.attachmentContentType == nil)
     #expect(snippet.attachmentFileName == nil)
+    #expect(snippet.mcpApprovedContentHash == nil)
   }
 
   @Test("添付のスニペットを保存すると、別の ModelContext から添付のデータ・種類・ファイル名を読み出せる")
@@ -82,7 +83,7 @@ struct SchemaV3Tests {
   @Test("タグを消してもスニペットは残る")
   func deletingTagKeepsSnippets() throws {
     let modelContext = ModelContext(try makeTanzakuModelContainer(storeLocation: .inMemory, syncedStoreCloudKitDatabase: .none))
-    let tag = SchemaV3.Tag(name: "dummy-tag")
+    let tag = SchemaV4.Tag(name: "dummy-tag")
     let snippet = Snippet(body: "echo dummy")
     modelContext.insert(tag)
     modelContext.insert(snippet)
@@ -92,7 +93,7 @@ struct SchemaV3Tests {
     modelContext.delete(tag)
     try modelContext.save()
 
-    #expect(try modelContext.fetchCount(FetchDescriptor<SchemaV3.Tag>()) == 0)
+    #expect(try modelContext.fetchCount(FetchDescriptor<SchemaV4.Tag>()) == 0)
     #expect(try modelContext.fetch(FetchDescriptor<Snippet>()).map { $0.tags ?? [] } == [[]])
   }
 

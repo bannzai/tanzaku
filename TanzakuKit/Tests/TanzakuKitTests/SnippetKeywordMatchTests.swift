@@ -109,6 +109,61 @@ struct SnippetKeywordMatchTests {
     #expect(snippetMatchingTypedText(typedText: ";dev-env", snippets: [snippet], snippetGroups: [emptySnippetGroup])?.id == snippet.id)
   }
 
+  @Test("MCP のクライアントが作成・更新して承認していないスニペットは選ばず、承認した後は選ぶ")
+  func skipsSnippetAwaitingApprovalUntilApproved() throws {
+    let snippet = try insertSnippet(keyword: ";tkw", body: "dummy-command-for-test")
+    snippet.updatedByKind = snippetAuthorKindMCP
+    snippet.mcpApprovedContentHash = snippetMCPUnapprovedContentHash
+    snippet.updatedByClientName = "dummy-client"
+    try modelContext.save()
+
+    #expect(snippetMatchingTypedText(typedText: ";tkw", snippets: [snippet], snippetGroups: []) == nil)
+
+    try approveSnippetKeywordExpansion(snippet: snippet, modelContext: modelContext)
+
+    #expect(snippetMatchingTypedText(typedText: ";tkw", snippets: [snippet], snippetGroups: [])?.id == snippet.id)
+  }
+
+  @Test("承認していないスニペットの長いキーワードには譲らず、承認済みの短いキーワードのスニペットを選ぶ")
+  func fallsBackToApprovedShorterKeyword() throws {
+    let shortKeywordSnippet = try insertSnippet(keyword: "env", body: "echo short")
+    let longKeywordSnippet = try insertSnippet(keyword: ";dev-env", body: "echo long")
+    longKeywordSnippet.updatedByKind = snippetAuthorKindMCP
+    longKeywordSnippet.mcpApprovedContentHash = snippetMCPUnapprovedContentHash
+    try modelContext.save()
+
+    #expect(
+      snippetMatchingTypedText(typedText: ";dev-env", snippets: [shortKeywordSnippet, longKeywordSnippet], snippetGroups: [])?.id
+        == shortKeywordSnippet.id
+    )
+  }
+
+  @Test("MCP のクライアントが更新した後にユーザーが編集画面で保存したスニペットは、承認しなくても選ぶ")
+  func matchesSnippetSavedByUserAfterMCPUpdate() throws {
+    let snippet = try insertSnippet(keyword: ";tkw", body: "dummy-command-for-test")
+    snippet.updatedByKind = snippetAuthorKindMCP
+    snippet.mcpApprovedContentHash = snippetMCPUnapprovedContentHash
+    try modelContext.save()
+
+    try applySnippetEdit(
+      snippet: snippet,
+      body: "dummy-command-for-test",
+      attachmentData: nil,
+      attachmentContentType: nil,
+      attachmentFileName: nil,
+      title: "",
+      keyword: ";tkw",
+      language: nil,
+      color: nil,
+      folder: nil,
+      tagNames: [],
+      modelContext: modelContext,
+      now: .now
+    )
+
+    #expect(snippetMatchingTypedText(typedText: ";tkw", snippets: [snippet], snippetGroups: [])?.id == snippet.id)
+  }
+
   @Test(
     "キーワードを消すバックスペースの数は、入力欄へ渡さない最後の 1 文字を除いた文字数",
     arguments: [(";tkw", 3), (";focus-app", 9), (";café", 4), (";", 0), ("", 0)]
