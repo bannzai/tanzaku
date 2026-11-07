@@ -34,7 +34,7 @@ jobs:
       id-token: write # Tailscale はランナーを OIDC で認証する
       contents: read
     # simtunnel にはリリースタグが無いため main の commit で固定する (macos-app-session.yml と同じ commit)。
-    uses: bannzai/simtunnel/.github/workflows/session.yml@91d3333b22a3040b1739f5483e2fb957110aedac # main 2026-09-18
+    uses: bannzai/simtunnel/.github/workflows/session.yml@bcd45174e03f11dcb156c315ae1d8adad788a298 # main 2026-10-29
     with:
       session: ${{ inputs.session }}
       device: ${{ inputs.device }}
